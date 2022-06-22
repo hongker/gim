@@ -1,0 +1,95 @@
+syntax = "proto3";
+package client;
+option go_package = "gim/api/client";
+
+// #################################################################
+// 服务端推送数据结构
+
+message MessageUser {
+  string uid = 1; // 用户ID
+  string name = 2; // 用户名
+  string avatar = 3; // 头像
+  map<string, string> payload = 4; // 扩展字段
+}
+
+message MessageItem {
+  string id = 1;
+  MessageUser sender = 2;
+  string type = 4;
+  string content = 5;
+  int64 createdAt = 7;
+  string clientMsgId = 6;
+  int64 sequence = 8;
+}
+
+message MessageSession {
+  string id = 1;
+  string title = 2;
+  int32 type = 3;
+}
+
+// MessageList 消息聚合
+message MessageList {
+  MessageSession session = 1;
+  repeated MessageItem list = 2;
+}
+
+
+// #################################################################
+// 客户端请求与响应
+// AuthRequest tcp认证请求
+message AuthRequest {
+  string appId = 1; // 项目ID
+  string name = 2; // 用户名
+}
+
+message AuthResponse {
+  string uid = 1;
+}
+
+message ConfigRequest {}
+
+message ConfigResponse {
+  string appId = 1;
+  string appName = 2;
+}
+
+message SessionListRequest {}
+message SessionItem {
+  string id = 1;
+  string title = 2;
+  int32 type = 3;
+  MessageItem lastMsg = 4; // 最新一条消息
+
+}
+message SessionListResponse {
+  repeated SessionItem list = 1;
+}
+
+message MessageSendRequest {
+  int32 sessionType = 1;
+  string targetId = 2;
+  string type = 4;
+  string content = 5;
+  string clientMsgId = 6;
+}
+message MessageSendResponse {}
+
+message MessageQueryRequest {
+  string sessionId = 1;
+  string lastMsgId = 2;
+  int32 count = 3;
+}
+message MessageQueryResponse {
+  repeated MessageItem list = 1;
+}
+
+message GroupJoinRequest {
+  string groupId = 1;
+}
+message GroupJoinResponse {}
+
+message GroupQuitRequest {
+  string groupId = 1;
+}
+message GroupQuitResponse {}

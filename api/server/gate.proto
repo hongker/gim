@@ -1,0 +1,27 @@
+syntax = "proto3";
+package server;
+option go_package = "gim/api/server";
+
+import "protocol/protocol.proto";
+
+message PushMsgRequest {
+  repeated string keys = 1;
+  protocol.Proto proto = 2;
+}
+
+message PushMsgResponse {}
+
+
+message BroadcastRoomRequest {
+  string roomID = 1;
+  protocol.Proto proto = 2;
+}
+
+message BroadcastRoomResponse{}
+
+service Gate {
+  //PushMsg push by key or mid
+  rpc PushMsg(PushMsgRequest) returns (PushMsgResponse);
+  // BroadcastRoom broadcast to one room
+  rpc BroadcastRoom(BroadcastRoomRequest) returns (BroadcastRoomResponse);
+}

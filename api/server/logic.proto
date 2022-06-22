@@ -1,0 +1,45 @@
+syntax = "proto3";
+package server;
+option go_package = "gim/api/server";
+
+import "protocol/protocol.proto";
+
+message ReceiveRequest {
+  string mid = 1;
+  protocol.Proto proto = 2;
+}
+
+message ReceiveResponse {
+  bytes data = 1;
+}
+
+
+// HeartbeatRequest 心跳请求
+message HeartbeatRequest {
+
+}
+message HeartbeatResponse {
+
+}
+
+
+// AuthRequest tcp认证请求
+message AuthRequest {
+  string appId = 1; // 项目ID
+  string name = 2; // 用户名
+}
+
+message AuthResponse {
+  string uid = 1;
+}
+
+
+
+service Logic {
+  // Connect
+  rpc Auth(AuthRequest) returns (AuthResponse);
+
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  // Receive
+  rpc Receive(ReceiveRequest) returns (ReceiveResponse);
+}

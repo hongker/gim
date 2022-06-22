@@ -1,0 +1,17 @@
+syntax = "proto3";
+package protocol;
+option go_package = "gim/api/protocol";
+
+message Empty{}
+
+message Proto {
+  int32 ver = 1; // 版本号
+  int32 op = 2; // 操作类型
+  bytes body = 3; // 数据体
+}
+
+message Response {
+  int32 code = 1; // 状态码
+  string msg = 2; // 提示信息
+  bytes data = 3; // 数据体
+}
