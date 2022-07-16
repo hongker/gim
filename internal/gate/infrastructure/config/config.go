@@ -1,4 +1,4 @@
-package gate
+package config
 
 import (
 	"gim/pkg/grpc"
@@ -11,7 +11,7 @@ type Config struct {
 	RPC         grpc.ServerConfig
 }
 
-func InitConfig() *Config {
+func NewConfig() *Config {
 	return &Config{
 		TcpServer:   "0.0.0.0:8001",
 		LogicServer: "0.0.0.0:9002",

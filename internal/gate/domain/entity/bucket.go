@@ -1,4 +1,4 @@
-package gate
+package entity
 
 import "sync"
 

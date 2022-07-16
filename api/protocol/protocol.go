@@ -79,11 +79,22 @@ func (p *Proto) MustPackSuccess(message proto.Message) []byte {
 	return packet
 }
 
+func (p *Proto) MustPackSuccessFromBytes(data []byte) []byte {
+	response := &Response{
+		Code: 0,
+		Msg:  "",
+		Data: data,
+	}
+	packet, _ := p.packResponse(response)
+	return packet
+}
+
 func (p *Proto) packResponse(response *Response) ([]byte, error) {
 	body, err := proto.Marshal(response)
 	if err != nil {
 		return nil, err
 	}
 	p.Body = body
+	p.Op += 1
 	return p.Pack()
 }

@@ -1,4 +1,4 @@
-package gate
+package entity
 
 import "gim/pkg/network"
 
@@ -13,4 +13,8 @@ func (c *Channel) Key() string {
 
 func NewChannel(key string, conn *network.Connection) *Channel {
 	return &Channel{key: key, conn: conn}
+}
+
+func (c *Channel) Conn() *network.Connection  {
+	return c.conn
 }

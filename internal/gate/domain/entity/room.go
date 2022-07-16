@@ -1,8 +1,12 @@
-package gate
+package entity
 
 type Room struct {
 	id       string
 	channels map[string]*Channel
+}
+
+func (room *Room) Channels() map[string]*Channel {
+	return room.channels
 }
 
 func NewRoom(id string) *Room {
