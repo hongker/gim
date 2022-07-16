@@ -4,23 +4,19 @@ import (
 	"context"
 	"gim/api/client"
 	"gim/api/protocol"
-	"gim/api/server"
 	"gim/internal/gate/applications"
-	"gim/internal/gate/domain/entity"
 	"gim/internal/gate/infrastructure/config"
 	"gim/pkg/network"
 	"log"
 )
 
 type Socket struct {
-	logic server.LogicClient
-	bucket *entity.Bucket
 	server network.Server
 	messageApp applications.MessageApp
 }
 
-func NewSocket(conf *config.Config, logicClient server.LogicClient) *Socket {
-	s := &Socket{logic: logicClient, bucket: entity.NewBucket()}
+func NewSocket(conf *config.Config, messageApp applications.MessageApp) *Socket {
+	s := &Socket{messageApp: messageApp}
 	tcpServer := network.NewTCPServer([]string{conf.TcpServer}, network.WithPacketLength(protocol.PacketOffset))
 	tcpServer.Use(s.HandleAuth)
 	tcpServer.SetOnConnect(s.HandleConnect)
@@ -41,7 +37,7 @@ func (s *Socket) HandleConnect(conn *network.Connection) {
 
 func (s *Socket) HandleAuth(ctx *network.Context) {
 	// 判断是否已认证过
-	ch := s.bucket.GetChannel(ctx.Connection().ID())
+	ch := s.messageApp.GetChannel(ctx.Connection().ID())
 	if ch != nil {
 		ctx.Next()
 		return

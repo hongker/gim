@@ -13,6 +13,7 @@ import (
 )
 
 type MessageApp interface {
+	GetChannel(key string) *entity.Channel
 	Push(key string, packet []byte) error
 	PushRoom(key string, packet []byte) error
 	Auth(ctx context.Context, proto *protocol.Proto, conn *network.Connection) (uid string, err error)
@@ -24,8 +25,12 @@ type messageApp struct {
 	bucket *entity.Bucket
 }
 
-func newMessageApp() MessageApp {
-	return &messageApp{bucket: entity.NewBucket()}
+func newMessageApp(logic server.LogicClient) MessageApp {
+	return &messageApp{bucket: entity.NewBucket(), logic:logic }
+}
+
+func (app messageApp) GetChannel(key string) *entity.Channel {
+	return app.bucket.GetChannel(key)
 }
 
 func (app messageApp) Push(key string, packet []byte) error {

@@ -82,7 +82,7 @@ func (app *MessageApp) generate(request *client.MessageSendRequest) (msg *entity
 	msg = &entity.Message{
 		Type:        request.Type,
 		Content:     request.Content,
-		Time:        time.Now().UnixMilli(),
+		Time:        time.Now().UnixNano(),
 		ClientMsgId: request.ClientMsgId,
 		SessionId:   fmt.Sprintf("%d:%s", request.SessionType, request.TargetId),
 	}
