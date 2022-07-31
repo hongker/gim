@@ -18,7 +18,7 @@ type Socket struct {
 func NewSocket(conf *config.Config, messageApp applications.MessageApp) *Socket {
 	s := &Socket{messageApp: messageApp}
 	tcpServer := network.NewTCPServer([]string{conf.TcpServer}, network.WithPacketLength(protocol.PacketOffset))
-	tcpServer.Use(s.HandleAuth)
+	//tcpServer.Use(s.HandleAuth)
 	tcpServer.SetOnConnect(s.HandleConnect)
 	tcpServer.SetOnDisconnect(s.HandleDisconnect)
 	tcpServer.SetOnRequest(s.HandleRequest)
@@ -36,7 +36,7 @@ func (s *Socket) HandleConnect(conn *network.Connection) {
 }
 
 func (s *Socket) HandleAuth(ctx *network.Context) {
-	// 判断是否已认证过
+	 // 判断是否已认证过
 	ch := s.messageApp.GetChannel(ctx.Connection().ID())
 	if ch != nil {
 		ctx.Next()

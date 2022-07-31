@@ -6,7 +6,7 @@ import "sync"
 type Bucket struct {
 	rmu      sync.RWMutex
 	channels map[string]*Channel // 对应私聊,key为uid
-	rooms    map[string]*Room    // 对应群聊,key位groupId
+	rooms    map[string]*Room    // 对应群聊,key为groupId
 }
 
 func NewBucket() *Bucket {
