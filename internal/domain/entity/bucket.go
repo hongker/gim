@@ -28,6 +28,12 @@ func (bucket *Bucket) AddChannel(channel *Channel) {
 	bucket.rmu.Unlock()
 }
 
+func (bucket *Bucket) RemoveChannel(channel *Channel) {
+	bucket.rmu.Lock()
+	delete(bucket.channels, channel.conn.ID())
+	bucket.rmu.Unlock()
+}
+
 func (bucket *Bucket) GetRoom(roomId string) *Room {
 	bucket.rmu.RLock()
 	defer bucket.rmu.RUnlock()

@@ -3,5 +3,5 @@ package repository
 import "context"
 
 type UserRepository interface {
-	Save(ctx context.Context)
+	Save(ctx context.Context) error
 }

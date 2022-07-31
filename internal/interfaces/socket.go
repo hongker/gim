@@ -9,12 +9,13 @@ import (
 	"log"
 )
 
-type Handler func(p *api.Packet) error
+type Handler func(ctx * network.Context,p *api.Packet) error
 
 type Socket struct {
 	server network.Server
 	handlers map[int32]Handler
 	userApp *applications.UserApp
+	gateApp *applications.GateApp
 }
 
 
@@ -44,7 +45,7 @@ func (s *Socket) OnRequest(ctx *network.Context) {
 		return
 	}
 
-	if err := handler(packet); err != nil {
+	if err := handler(ctx, packet); err != nil {
 		Failure(ctx, errors.Convert(err))
 		return
 	}

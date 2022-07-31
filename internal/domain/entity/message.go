@@ -1,6 +1,5 @@
 package entity
 
-import "encoding/json"
 
 type Message struct {
 	Id          string
@@ -13,11 +12,3 @@ type Message struct {
 	FromUser    *User
 }
 
-func (item *Message) Marshal() []byte {
-	b, _ := json.Marshal(item)
-	return b
-}
-
-func (item *Message) Unmarshal(source []byte) error {
-	return json.Unmarshal(source, item)
-}
