@@ -2,7 +2,7 @@ package interfaces
 
 import "gim/pkg/network"
 
-func Success(ctx *network.Context)  {
+func Success(ctx *network.Context, p []byte)  {
 	
 }
 
