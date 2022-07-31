@@ -14,15 +14,21 @@ func (app *GateApp) RegisterConn(uid string, conn *network.Connection) {
 	app.bucket.AddChannel(channel)
 }
 
-func (app *GateApp) RemoveChannel(connId string)   {
-	channel := app.bucket.GetChannel(connId)
+func (app *GateApp) RemoveConn(conn *network.Connection)   {
+	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return
 	}
 	app.bucket.RemoveChannel(channel)
 }
 
-func (app *GateApp) GetChannel() {}
+func (app *GateApp) GetUser(conn *network.Connection) string {
+	channel := app.bucket.GetChannel(conn.ID())
+	if channel == nil {
+		return ""
+	}
+	return channel.Key()
+}
 
 func (app *GateApp) PushUser() {
 

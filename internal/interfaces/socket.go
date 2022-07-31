@@ -7,6 +7,7 @@ import (
 	"gim/pkg/errors"
 	"gim/pkg/network"
 	"log"
+	"time"
 )
 
 type Handler func(ctx * network.Context,p *api.Packet) error
@@ -16,16 +17,27 @@ type Socket struct {
 	handlers map[int32]Handler
 	userApp *applications.UserApp
 	gateApp *applications.GateApp
+	expired time.Duration
 }
 
 
 func (s *Socket) OnConnect(conn *network.Connection) {
 	log.Println("connect:", conn.IP())
+
+	// 如果用户未按时登录，通过定时任务关闭连接，释放资源
+	time.AfterFunc(s.expired, func() {
+		uid := s.gateApp.GetUser(conn)
+		if uid != "" {
+			return
+		}
+		conn.Close()
+	})
 }
 
 
 func (s *Socket) OnDisconnect(conn *network.Connection) {
 	log.Println("disconnect:", conn.IP())
+	s.gateApp.RemoveConn(conn)
 }
 
 
@@ -63,6 +75,7 @@ func (s *Socket) Start() error {
 
 func NewSocket(bind string) *Socket {
 	s := &Socket{handlers: make(map[int32]Handler, 16)}
+	s.expired = time.Minute
 
 	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(protocol.PacketOffset))
 	tcpServer.SetOnConnect(s.OnConnect)
