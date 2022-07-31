@@ -52,11 +52,11 @@ func (s *TcpServer) init() (err error) {
 	)
 	for _, bind = range s.conf.Bind {
 		if addr, err = net.ResolveTCPAddr("tcp", bind); err != nil {
-			log.Printf("net.ResolveTCPAddr(tcp, %s) error(%v)", bind, err)
+			log.Printf("net.ResolveTCPAddr(tcp, %s) errors(%v)", bind, err)
 			return
 		}
 		if listener, err = net.ListenTCP("tcp", addr); err != nil {
-			log.Printf("net.ListenTCP(tcp, %s) error(%v)", bind, err)
+			log.Printf("net.ListenTCP(tcp, %s) errors(%v)", bind, err)
 			return
 		}
 
@@ -79,19 +79,19 @@ func (s *TcpServer) listen(lis *net.TCPListener) {
 	for {
 		if conn, err = lis.AcceptTCP(); err != nil {
 			// if listener close then return
-			log.Printf("listener.Accept(\"%s\") error(%v)", lis.Addr().String(), err)
+			log.Printf("listener.Accept(\"%s\") errors(%v)", lis.Addr().String(), err)
 			return
 		}
 		if err = conn.SetKeepAlive(s.conf.KeepAlive); err != nil {
-			log.Printf("conn.SetKeepAlive() error(%v)", err)
+			log.Printf("conn.SetKeepAlive() errors(%v)", err)
 			return
 		}
 		if err = conn.SetReadBuffer(s.conf.Rcvbuf); err != nil {
-			log.Printf("conn.SetReadBuffer() error(%v)", err)
+			log.Printf("conn.SetReadBuffer() errors(%v)", err)
 			return
 		}
 		if err = conn.SetWriteBuffer(s.conf.Sndbuf); err != nil {
-			log.Printf("conn.SetWriteBuffer() error(%v)", err)
+			log.Printf("conn.SetWriteBuffer() errors(%v)", err)
 			return
 		}
 

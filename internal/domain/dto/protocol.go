@@ -1,7 +1,8 @@
 package dto
 
 type Packet struct {
-
+	Op int
+	Data []byte
 }
 
 

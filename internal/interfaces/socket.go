@@ -3,13 +3,13 @@ package interfaces
 import (
 	"gim/api/protocol"
 	"gim/internal/domain/dto"
+	"gim/pkg/errors"
 	"gim/pkg/network"
 	"log"
 )
 
 type Socket struct {
 	server network.Server
-	
 }
 
 
@@ -26,9 +26,12 @@ func (s *Socket) OnDisconnect(conn *network.Connection) {
 func (s *Socket) OnRequest(ctx *network.Context) {
 	packet := dto.NewPacket()
 	if err := packet.Decode(ctx.Request().Body()); err != nil {
-		ctx.Output(proto.MustPackFromError(protocol.InvalidParameter, err))
+		Failure(ctx, errors.InvalidParameter(err.Error()))
 		return
 	}
+
+	log.Println(packet.Op, packet.Data)
+
 }
 
 

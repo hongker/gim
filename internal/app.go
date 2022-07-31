@@ -20,7 +20,7 @@ func Run()  {
 }
 
 func serve() error  {
-	socket := interfaces.NewSocket("")
+	socket := interfaces.NewSocket("0.0.0.0:8088")
 
 	return errgroup.Do(socket.Start)
 }

@@ -1,4 +1,4 @@
-package error
+package errors
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("error: code=%d msg=%s", e.code, e.msg)
+	return fmt.Sprintf("errors: code=%d msg=%s", e.code, e.msg)
 }
 
 func New(code int, msg string) *Error {
