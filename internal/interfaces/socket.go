@@ -84,6 +84,7 @@ func NewSocket(bind string) *Socket {
 	s.server = tcpServer
 
 	s.userApp = applications.NewUserApp()
+	s.gateApp = applications.NewGateApp()
 
 	s.handlers[api.OperateAuth] = s.login
 	return s

@@ -37,3 +37,9 @@ func (app *GateApp) PushUser() {
 func (app *GateApp) PushGroup() {}
 
 func (app *GateApp) Broadcast() {}
+
+func NewGateApp() *GateApp {
+	return &GateApp{
+		bucket: entity.NewBucket(),
+	}
+}
