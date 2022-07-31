@@ -86,8 +86,8 @@ func (conn *Connection) getScanner(packetDataLength int) *bufio.Scanner {
 	scan.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if !atEOF && len(data) > packetDataLength {
 			length := int(binary.BigEndian.Int32(data[:packetDataLength]))
-			if length <= len(data) {
-				return length, data[:length], nil
+			if length >= 0 && length <= len(data) {
+				return length, data[packetDataLength:length], nil
 			}
 		}
 		return

@@ -13,7 +13,7 @@ type Handler func(p *api.Packet) error
 
 type Socket struct {
 	server network.Server
-	handlers map[int]Handler
+	handlers map[int32]Handler
 	userApp *applications.UserApp
 }
 
@@ -49,11 +49,8 @@ func (s *Socket) OnRequest(ctx *network.Context) {
 		return
 	}
 
-	response, err := packet.Encode()
-	if err != nil {
-		Failure(ctx, errors.Convert(err))
-	}
-	Success(ctx, response)
+	packet.Op += 1
+	Success(ctx, packet.Encode())
 
 }
 
@@ -64,7 +61,7 @@ func (s *Socket) Start() error {
 }
 
 func NewSocket(bind string) *Socket {
-	s := &Socket{handlers: make(map[int]Handler, 16)}
+	s := &Socket{handlers: make(map[int32]Handler, 16)}
 
 	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(protocol.PacketOffset))
 	tcpServer.SetOnConnect(s.OnConnect)
@@ -72,6 +69,7 @@ func NewSocket(bind string) *Socket {
 	tcpServer.SetOnRequest(s.OnRequest)
 	s.server = tcpServer
 
+	s.userApp = applications.NewUserApp()
 
 	s.handlers[api.OperateAuth] = s.login
 	return s
