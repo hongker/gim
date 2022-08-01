@@ -70,23 +70,25 @@ func (s *Socket) OnRequest(ctx *network.Context) {
 
 
 
-func (s *Socket) Start() error {
-	return s.server.Start()
-}
-
-func NewSocket(bind string) *Socket {
-	s := &Socket{handlers: make(map[int32]Handler, 16)}
-	s.expired = time.Minute
-
+func (s *Socket) Start(bind string) error {
 	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(protocol.PacketOffset))
 	tcpServer.SetOnConnect(s.OnConnect)
 	tcpServer.SetOnDisconnect(s.OnDisconnect)
 	tcpServer.SetOnRequest(s.OnRequest)
 	s.server = tcpServer
 
-	s.userApp = applications.NewUserApp()
-	s.gateApp = applications.NewGateApp()
-	s.messageApp = applications.NewMessageApp()
+	return s.server.Start()
+}
+
+func NewSocket(userApp *applications.UserApp,
+	gateApp *applications.GateApp,
+	messageApp *applications.MessageApp) *Socket {
+	s := &Socket{handlers: make(map[int32]Handler, 16)}
+	s.expired = time.Minute
+
+	s.userApp = userApp
+	s.gateApp = gateApp
+	s.messageApp = messageApp
 
 	s.handlers[api.OperateAuth] = s.login
 	s.handlers[api.OperateMessageSend] = s.send

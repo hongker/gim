@@ -12,6 +12,14 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
+	_, err := connect()
+	system.SecurePanic(err)
+
+
+	select {}
+}
+
+func connect() (net.Conn, error) {
 	conn, err := net.Dial("tcp", "127.0.0.1:8088")
 	system.SecurePanic(err)
 	p := api.NewPacket()
@@ -42,5 +50,5 @@ func TestNewClient(t *testing.T) {
 	}()
 	_, err = conn.Write(p.Encode())
 	system.SecurePanic(err)
-	select {}
+	return conn, nil
 }

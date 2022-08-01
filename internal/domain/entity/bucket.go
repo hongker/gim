@@ -22,6 +22,18 @@ func (bucket *Bucket) GetChannel(connId string) *Channel {
 	return bucket.channels[connId]
 }
 
+func (bucket *Bucket) GetChannelByKey(key string) *Channel {
+	bucket.rmu.RLock()
+	defer bucket.rmu.RUnlock()
+	for _, channel := range bucket.channels {
+		if channel.Key() == key {
+			return channel
+		}
+	}
+
+	return nil
+}
+
 func (bucket *Bucket) AddChannel(channel *Channel) {
 	bucket.rmu.Lock()
 	bucket.channels[channel.conn.ID()] = channel

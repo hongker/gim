@@ -19,7 +19,7 @@ const (
 	OperateGroupQuitReply = 404
 )
 
-const (
-	SessionTypePrivate = 0
-	SessionTypeGroup   = 1
+const(
+	PrivateMessage = "private"
+	RoomMessage = "room"
 )

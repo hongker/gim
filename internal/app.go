@@ -2,6 +2,7 @@ package internal
 
 import (
 	"flag"
+	"gim/internal/applications"
 	"gim/internal/infrastructure"
 	"gim/internal/interfaces"
 	"gim/pkg/app"
@@ -18,6 +19,8 @@ func Run()  {
 	container := app.Container()
 
 	infrastructure.Inject(container)
+	applications.Inject(container)
+	interfaces.Inject(container)
 
 	err := container.Invoke(serve)
 	system.SecurePanic(err)
@@ -27,8 +30,8 @@ func Run()  {
 	})
 }
 
-func serve() error  {
-	socket := interfaces.NewSocket(*addr)
-
-	return utils.Execute(socket.Start)
+func serve(socket *interfaces.Socket) error  {
+	return utils.Execute(func() error {
+		return socket.Start(*addr)
+	})
 }

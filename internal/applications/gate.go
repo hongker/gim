@@ -30,11 +30,21 @@ func (app *GateApp) GetUser(conn *network.Connection) string {
 	return channel.Key()
 }
 
-func (app *GateApp) PushUser() {
-
+func (app *GateApp) PushUser(uid string, msg []byte) {
+	channel := app.bucket.GetChannelByKey(uid)
+	if channel == nil {
+		return
+	}
+	channel.Conn().Push(msg)
 }
 
-func (app *GateApp) PushGroup() {}
+func (app *GateApp) PushRoom(rid string, msg []byte) {
+	room := app.bucket.GetRoom(rid)
+	channels := room.Channels()
+	for _, channel := range channels {
+		channel.Conn().Push(msg)
+	}
+}
 
 func (app *GateApp) Broadcast() {}
 

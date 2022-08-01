@@ -35,6 +35,15 @@ func (s *Socket) send(ctx *network.Context, p *api.Packet) error {
 	if err != nil {
 		return err
 	}
+
+	msg := make([]byte, 10)
+	if req.Type == api.PrivateMessage {
+		s.gateApp.PushUser(req.SessionId, msg)
+	}else {
+		s.gateApp.PushRoom(req.SessionId, msg)
+	}
+
+
 	return p.Marshal(nil)
 }
 
