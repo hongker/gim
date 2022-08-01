@@ -2,24 +2,20 @@ package cache
 
 import (
 	"context"
+	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
+	uuid "github.com/satori/go.uuid"
 )
 
-type UserRepo struct {
-	repository.UserRepository
-}
+type UserRepo struct {}
 
-func (repo *UserRepo) Save(ctx context.Context) (err error) {
-	err = repo.UserRepository.Save(ctx)
-	if err != nil {
-		return
-	}
-
+func (repo *UserRepo) Save(ctx context.Context, user *entity.User) (err error) {
+	user.Id = uuid.NewV4().String()
 	return
 }
 
-func NewUserRepo(delegate repository.UserRepository) *UserRepo {
-	return &UserRepo{UserRepository: delegate}
+func NewUserRepo() repository.UserRepository {
+	return &UserRepo{}
 }
 
 

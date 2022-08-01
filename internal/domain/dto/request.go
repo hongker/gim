@@ -5,7 +5,7 @@ type UserLoginRequest struct {
 }
 
 type UserLoginResponse struct {
-	Id string `json:"id"`
+	UID string `json:"uid"`
 	Name string `json:"name"`
 }
 

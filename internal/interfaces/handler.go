@@ -23,12 +23,12 @@ func (s *Socket) login(ctx *network.Context, p *api.Packet) error  {
 		return err
 	}
 
-	resp, err := s.userApp.Login(req)
+	resp, err := s.userApp.Login(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	s.gateApp.RegisterConn(resp.Id, ctx.Connection())
+	s.gateApp.RegisterConn(resp.Uid, ctx.Connection())
 
 	return p.Marshal(resp)
 }
