@@ -1,5 +1,7 @@
 package network
 
+import "context"
+
 // Request 请求
 type Request struct {
 	body []byte // 请求内容
@@ -12,6 +14,7 @@ func (request Request) Body() []byte {
 
 // Context 上下文
 type Context struct {
+	context.Context
 	index int8
 
 	engine *Engine
@@ -38,6 +41,7 @@ func (c *Context) Reset(body []byte, connection *Connection) {
 	c.index = 0
 	c.request.body = body
 	c.connection = connection
+	c.Context = context.Background()
 }
 
 func (ctx *Context) Run() {

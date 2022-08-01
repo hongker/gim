@@ -2,6 +2,7 @@ package internal
 
 import (
 	"flag"
+	"gim/internal/infrastructure"
 	"gim/internal/interfaces"
 	"gim/pkg/app"
 	"gim/pkg/system"
@@ -15,6 +16,8 @@ var (
 func Run()  {
 	flag.Parse()
 	container := app.Container()
+
+	infrastructure.Inject(container)
 
 	err := container.Invoke(serve)
 	system.SecurePanic(err)

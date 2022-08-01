@@ -17,6 +17,7 @@ type Socket struct {
 	handlers map[int32]Handler
 	userApp *applications.UserApp
 	gateApp *applications.GateApp
+	messageApp *applications.MessageApp
 	expired time.Duration
 }
 
@@ -85,7 +86,10 @@ func NewSocket(bind string) *Socket {
 
 	s.userApp = applications.NewUserApp()
 	s.gateApp = applications.NewGateApp()
+	s.messageApp = applications.NewMessageApp()
 
 	s.handlers[api.OperateAuth] = s.login
+	s.handlers[api.OperateMessageSend] = s.send
+	s.handlers[api.OperateMessageQuery] = s.query
 	return s
 }

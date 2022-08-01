@@ -3,6 +3,7 @@ package interfaces
 import (
 	"gim/api"
 	"gim/internal/domain/dto"
+	"gim/internal/domain/entity"
 	"gim/pkg/network"
 )
 
@@ -21,3 +22,33 @@ func (s *Socket) login(ctx *network.Context, p *api.Packet) error  {
 
 	return p.Marshal(resp)
 }
+
+func (s *Socket) send(ctx *network.Context, p *api.Packet) error {
+	req := &dto.MessageSendRequest{}
+	if err := p.Bind(req); err != nil {
+		return err
+	}
+
+	fromUser := &entity.User{}
+
+	err := s.messageApp.Send(ctx, fromUser, req)
+	if err != nil {
+		return err
+	}
+	return p.Marshal(nil)
+}
+
+
+func (s *Socket) query(ctx *network.Context, p *api.Packet) error {
+	req := &dto.MessageQueryRequest{}
+	if err := p.Bind(req); err != nil {
+		return err
+	}
+
+	resp, err := s.messageApp.Query(ctx, req)
+	if err != nil {
+		return err
+	}
+	return p.Marshal(resp)
+}
+
