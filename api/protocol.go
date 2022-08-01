@@ -6,6 +6,11 @@ import (
 	"gim/pkg/bytes"
 )
 
+const(
+	PacketOffset = 4
+	OperateOffset = 8
+
+)
 type Packet struct {
 	Op int32
 	Data []byte
@@ -13,17 +18,18 @@ type Packet struct {
 
 // Decode 解析包体
 func (p *Packet) Decode(body []byte) (err error) {
-	p.Op = binary.BigEndian.Int32(body[:4])
-	p.Data = body[4:]
+	length := binary.BigEndian.Int32(body[:PacketOffset])
+	p.Op = binary.BigEndian.Int32(body[PacketOffset:OperateOffset])
+	p.Data = body[OperateOffset:int(length)]
 	return
 }
 
 // Encode 组装包体
 func (p *Packet) Encode() (buf []byte) {
-	buf = bytes.Get(8 + len(p.Data))
-	binary.BigEndian.PutInt32(buf[:4], int32(len(buf)))
-	binary.BigEndian.PutInt32(buf[4:8], p.Op)
-	copy(buf[8:], p.Data)
+	buf = bytes.Get(OperateOffset + len(p.Data))
+	binary.BigEndian.PutInt32(buf[:PacketOffset], int32(len(buf)))
+	binary.BigEndian.PutInt32(buf[PacketOffset:OperateOffset], p.Op)
+	copy(buf[OperateOffset:], p.Data)
 	return
 }
 

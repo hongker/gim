@@ -2,7 +2,6 @@ package interfaces
 
 import (
 	"gim/api"
-	"gim/api/protocol"
 	"gim/internal/applications"
 	"gim/pkg/errors"
 	"gim/pkg/network"
@@ -71,7 +70,7 @@ func (s *Socket) OnRequest(ctx *network.Context) {
 
 
 func (s *Socket) Start(bind string) error {
-	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(protocol.PacketOffset))
+	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(api.PacketOffset))
 	tcpServer.SetOnConnect(s.OnConnect)
 	tcpServer.SetOnDisconnect(s.OnDisconnect)
 	tcpServer.SetOnRequest(s.OnRequest)

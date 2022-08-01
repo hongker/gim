@@ -29,7 +29,7 @@ func TestClientB(t *testing.T) {
 		Type:        api.PrivateMessage,
 		Content:     "test",
 		ClientMsgId: "",
-		SessionId:   "a4de0cec-0d65-462c-8dc9-672f1f548031",
+		SessionId:   "bfba28cc-18cf-4c08-8f60-3e6802b2e143",
 	})
 
 	conn.Write(p.Encode())
@@ -51,7 +51,7 @@ func connect(name string) (net.Conn, error) {
 			if !atEOF && len(data) > 4 {
 				length := int(binary.BigEndian.Int32(data[:4]))
 				if length >= 0 && length <= len(data) {
-					return length, data[4:length], nil
+					return length, data[:length], nil
 				}
 			}
 			return
