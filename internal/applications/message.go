@@ -14,7 +14,7 @@ type MessageApp struct {
 }
 
 
-func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto.MessageSendRequest) error {
+func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto.MessageSendRequest) (*dto.Message, error) {
 	item := &entity.Message{
 		Id:          uuid.NewV4().String(),
 		Type:        req.Type,
@@ -25,7 +25,15 @@ func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto
 		SessionId:   req.SessionId,
 		FromUser:    fromUser,
 	}
-	return app.repo.Save(ctx, item)
+	if err := app.repo.Save(ctx, item); err != nil {
+		return nil, err
+	}
+	res := &dto.Message{
+		SessionId: item.SessionId,
+		Content:   item.Content,
+		CreatedAt: item.CreatedAt,
+	}
+	return res, nil
 }
 
 
@@ -52,6 +60,6 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 	return nil, nil
 }
 
-func NewMessageApp() *MessageApp {
-	return &MessageApp{}
+func NewMessageApp(repo repository.MessageRepo) *MessageApp {
+	return &MessageApp{repo: repo}
 }

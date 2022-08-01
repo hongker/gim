@@ -31,16 +31,18 @@ func (s *Socket) send(ctx *network.Context, p *api.Packet) error {
 
 	fromUser := &entity.User{}
 
-	err := s.messageApp.Send(ctx, fromUser, req)
+	message, err := s.messageApp.Send(ctx, fromUser, req)
 	if err != nil {
 		return err
 	}
 
-	msg := make([]byte, 10)
+	packet := api.NewPacket()
+	packet.Op = api.OperateMessagePush
+	packet.Marshal(message)
 	if req.Type == api.PrivateMessage {
-		s.gateApp.PushUser(req.SessionId, msg)
+		s.gateApp.PushUser(req.SessionId, packet.Encode())
 	}else {
-		s.gateApp.PushRoom(req.SessionId, msg)
+		s.gateApp.PushRoom(req.SessionId, packet.Encode())
 	}
 
 

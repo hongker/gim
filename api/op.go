@@ -17,6 +17,8 @@ const (
 	OperateGroupJoinReply = 402
 	OperateGroupQuit      = 403
 	OperateGroupQuitReply = 404
+
+	OperateMessagePush = 1001
 )
 
 const(

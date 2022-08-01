@@ -12,19 +12,36 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	_, err := connect()
+	_, err := connect("A")
 	system.SecurePanic(err)
 
 
 	select {}
 }
 
-func connect() (net.Conn, error) {
+func TestClientB(t *testing.T) {
+	conn, err := connect("B")
+	system.SecurePanic(err)
+
+	p := api.NewPacket()
+	p.Op  =api.OperateMessageSend
+	p.Marshal(dto.MessageSendRequest{
+		Type:        api.PrivateMessage,
+		Content:     "test",
+		ClientMsgId: "",
+		SessionId:   "a4de0cec-0d65-462c-8dc9-672f1f548031",
+	})
+
+	conn.Write(p.Encode())
+	select {}
+}
+
+func connect(name string) (net.Conn, error) {
 	conn, err := net.Dial("tcp", "127.0.0.1:8088")
 	system.SecurePanic(err)
 	p := api.NewPacket()
 	p.Op = api.OperateAuth
-	err = p.Marshal(&dto.UserLoginRequest{Name: "test"})
+	err = p.Marshal(&dto.UserLoginRequest{Name: name})
 	system.SecurePanic(err)
 
 	go func() {
