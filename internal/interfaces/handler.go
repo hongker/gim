@@ -4,9 +4,19 @@ import (
 	"gim/api"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
+	"gim/pkg/errors"
 	"gim/pkg/network"
 )
 
+func (s *Socket) WrapHandler(fn func(ctx *network.Context, p *api.Packet) error) Handler{
+	return func(ctx *network.Context, p *api.Packet) {
+		if err := fn(ctx, p); err != nil {
+			Failure(ctx, errors.Convert(err))
+		}else {
+			Success(ctx, p.Encode())
+		}
+	}
+}
 func (s *Socket) login(ctx *network.Context, p *api.Packet) error  {
 	req := &dto.UserLoginRequest{}
 	if err := p.Bind(req); err != nil {

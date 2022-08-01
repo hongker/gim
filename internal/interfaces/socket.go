@@ -9,10 +9,9 @@ import (
 	"time"
 )
 
-type Handler func(ctx * network.Context,p *api.Packet) error
+type Handler func(ctx * network.Context,p *api.Packet)
 
 type Socket struct {
-	server network.Server
 	handlers map[int32]Handler
 	userApp *applications.UserApp
 	gateApp *applications.GateApp
@@ -57,13 +56,7 @@ func (s *Socket) OnRequest(ctx *network.Context) {
 		return
 	}
 
-	if err := handler(ctx, packet); err != nil {
-		Failure(ctx, errors.Convert(err))
-		return
-	}
-
-	packet.Op += 1
-	Success(ctx, packet.Encode())
+	handler(ctx, packet)
 
 }
 
@@ -74,23 +67,22 @@ func (s *Socket) Start(bind string) error {
 	tcpServer.SetOnConnect(s.OnConnect)
 	tcpServer.SetOnDisconnect(s.OnDisconnect)
 	tcpServer.SetOnRequest(s.OnRequest)
-	s.server = tcpServer
 
-	return s.server.Start()
+	return tcpServer.Start()
 }
 
-func NewSocket(userApp *applications.UserApp,
-	gateApp *applications.GateApp,
-	messageApp *applications.MessageApp) *Socket {
-	s := &Socket{handlers: make(map[int32]Handler, 16)}
-	s.expired = time.Minute
+func NewSocket(userApp *applications.UserApp, gateApp *applications.GateApp,
+	messageApp *applications.MessageApp,) *Socket {
+	s := &Socket{
+		handlers: make(map[int32]Handler, 16),
+		userApp: userApp,
+		gateApp: gateApp,
+		messageApp: messageApp,
+		expired: time.Minute,
+	}
 
-	s.userApp = userApp
-	s.gateApp = gateApp
-	s.messageApp = messageApp
-
-	s.handlers[api.OperateAuth] = s.login
-	s.handlers[api.OperateMessageSend] = s.send
-	s.handlers[api.OperateMessageQuery] = s.query
+	s.handlers[api.OperateAuth] = s.WrapHandler(s.login)
+	s.handlers[api.OperateMessageSend] = s.WrapHandler(s.send)
+	s.handlers[api.OperateMessageQuery] = s.WrapHandler(s.query)
 	return s
 }

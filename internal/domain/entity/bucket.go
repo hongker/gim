@@ -22,6 +22,12 @@ func (bucket *Bucket) GetChannel(connId string) *Channel {
 	return bucket.channels[connId]
 }
 
+func (bucket *Bucket) Channels() map[string]*Channel {
+	bucket.rmu.RLock()
+	defer bucket.rmu.RUnlock()
+	return bucket.channels
+}
+
 func (bucket *Bucket) GetChannelByKey(key string) *Channel {
 	bucket.rmu.RLock()
 	defer bucket.rmu.RUnlock()

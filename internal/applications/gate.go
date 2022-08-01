@@ -46,7 +46,11 @@ func (app *GateApp) PushRoom(rid string, msg []byte) {
 	}
 }
 
-func (app *GateApp) Broadcast() {}
+func (app *GateApp) Broadcast(msg []byte) {
+	for _, channel := range app.bucket.Channels() {
+		channel.Conn().Push(msg)
+	}
+}
 
 func NewGateApp() *GateApp {
 	return &GateApp{
