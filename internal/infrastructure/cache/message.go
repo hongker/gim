@@ -6,6 +6,7 @@ import (
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
 	"gim/pkg/store"
+	"sync"
 )
 
 var (
@@ -14,11 +15,12 @@ var (
 
 type MessageRepo struct {
 	collections map[string]*store.SortedSet
+	seqLock sync.Mutex
+	sequences map[string]int64
 }
 
 
 func (repo *MessageRepo) Save(ctx context.Context, message *entity.Message) error {
-
 	repo.getCollection(message.SessionId).AddOrUpdate(message.Id, store.SCORE(message.CreatedAt), message)
 	return nil
 }
@@ -39,6 +41,14 @@ func (repo *MessageRepo) Query(ctx context.Context, query dto.MessageHistoryQuer
 	return res, nil
 }
 
+func (repo *MessageRepo) GenerateSequence(sessionId string) int64 {
+	repo.seqLock.Lock()
+	sequence := repo.sequences[sessionId]
+	sequence++
+	repo.seqLock.Unlock()
+	return sequence
+}
+
 func (repo *MessageRepo) getCollection(sessionId string) (*store.SortedSet) {
 	collection, ok := repo.collections[sessionId]
 	if !ok {
@@ -49,5 +59,8 @@ func (repo *MessageRepo) getCollection(sessionId string) (*store.SortedSet) {
 }
 
 func NewMessageRepo() repository.MessageRepo {
-	return &MessageRepo{collections: make(map[string]*store.SortedSet)}
+	return &MessageRepo{
+		collections: make(map[string]*store.SortedSet),
+		sequences: make(map[string]int64),
+	}
 }

@@ -9,4 +9,5 @@ import (
 type MessageRepo interface {
 	Save(ctx context.Context, message *entity.Message) error
 	Query(ctx context.Context, query dto.MessageHistoryQuery) ([]entity.Message, error)
+	GenerateSequence(sessionId string) int64
 }

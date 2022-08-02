@@ -21,7 +21,7 @@ func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto
 		Content:     req.Content,
 		CreatedAt:   time.Now().UnixNano(),
 		ClientMsgId: req.ClientMsgId,
-		Sequence:    0,
+		Sequence:    app.repo.GenerateSequence(req.SessionId),
 		SessionId:   req.SessionId,
 		FromUser:    fromUser,
 	}
@@ -35,7 +35,6 @@ func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto
 	}
 	return res, nil
 }
-
 
 
 func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
