@@ -45,5 +45,12 @@ func (p *Packet) Marshal(container interface{}) (err error) {
 }
 
 func NewPacket() *Packet {
-	return new(Packet)
+	return &Packet{}
+}
+
+func BuildPacket(operate int32, container interface{}) *Packet  {
+	p := NewPacket()
+	p.Op = operate
+	_ = p.Marshal(container)
+	return p
 }

@@ -23,7 +23,9 @@ func Run()  {
 	interfaces.Inject(container)
 
 	err := container.Invoke(serve)
-	system.SecurePanic(err)
+	if err != nil {
+		panic(err)
+	}
 
 	system.Shutdown(func() {
 		log.Println("server shutdown")

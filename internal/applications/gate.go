@@ -1,6 +1,7 @@
 package applications
 
 import (
+	"gim/api"
 	"gim/internal/domain/entity"
 	"gim/pkg/network"
 )
@@ -22,13 +23,11 @@ func (app *GateApp) RemoveConn(conn *network.Connection)   {
 	app.bucket.RemoveChannel(channel)
 }
 
-func (app *GateApp) GetUser(conn *network.Connection) string {
+func (app *GateApp) CheckConnExist(conn *network.Connection) bool {
 	channel := app.bucket.GetChannel(conn.ID())
-	if channel == nil {
-		return ""
-	}
-	return channel.Key()
+	return channel != nil
 }
+
 
 func (app *GateApp) PushUser(uid string, msg []byte) {
 	channel := app.bucket.GetChannelByKey(uid)
@@ -36,6 +35,14 @@ func (app *GateApp) PushUser(uid string, msg []byte) {
 		return
 	}
 	channel.Conn().Push(msg)
+}
+
+func (app *GateApp) Push(sessionType string, sessionId string, msg []byte) {
+	if sessionType== api.PrivateMessage {
+		app.PushUser(sessionId, msg)
+	}else {
+		app.PushRoom(sessionId, msg)
+	}
 }
 
 func (app *GateApp) PushRoom(rid string, msg []byte) {
