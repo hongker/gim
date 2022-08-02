@@ -5,7 +5,6 @@ import (
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
-	uuid "github.com/satori/go.uuid"
 	"time"
 )
 
@@ -16,9 +15,9 @@ type MessageApp struct {
 
 func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto.MessageSendRequest) (*dto.Message, error) {
 	item := &entity.Message{
-		Id:          uuid.NewV4().String(),
 		Type:        req.Type,
 		Content:     req.Content,
+		ContentType: req.ContentType,
 		CreatedAt:   time.Now().UnixNano(),
 		ClientMsgId: req.ClientMsgId,
 		Sequence:    app.repo.GenerateSequence(req.SessionId),
@@ -29,9 +28,12 @@ func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto
 		return nil, err
 	}
 	res := &dto.Message{
+		Id: item.Id,
 		SessionId: item.SessionId,
 		Content:   item.Content,
+		ContentType: item.ContentType,
 		CreatedAt: item.CreatedAt,
+		Sequence: item.Sequence,
 	}
 	return res, nil
 }

@@ -12,6 +12,7 @@ type UserLoginResponse struct {
 type MessageSendRequest struct {
 	Type        string `json:"type"`
 	Content     string `json:"content"`
+	ContentType string `json:"content_type"`
 	ClientMsgId string `json:"client_msg_id"`
 	SessionId   string `json:"session_id"`
 
@@ -28,9 +29,12 @@ type MessageQueryResponse struct {
 }
 
 type Message struct {
+	Id string `json:"id"`
 	SessionId string `json:"session_id"`
+	ContentType string `json:"content_type"`
 	Content string `json:"content"`
 	CreatedAt int64 `json:"created_at"`
+	Sequence int64 `json:"sequence"`
 }
 
 type GroupJoinRequest struct {

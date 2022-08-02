@@ -12,13 +12,6 @@ import (
 	"time"
 )
 
-func TestNewClient(t *testing.T) {
-	_, err := connect("A")
-	system.SecurePanic(err)
-
-
-	select {}
-}
 
 func TestClientB(t *testing.T) {
 	_, err := connect("B")
@@ -32,17 +25,21 @@ func TestClientC(t *testing.T) {
 	conn, err := connect("C")
 	system.SecurePanic(err)
 
-	p := api.NewPacket()
-	p.Op  =api.OperateMessageSend
-	p.Marshal(dto.MessageSendRequest{
-		Type:        api.RoomMessage,
-		Content:     "testRoom",
-		ClientMsgId: "",
-		SessionId:   "1001",
-	})
+	for {
+		p := api.NewPacket()
+		p.Op  =api.OperateMessageSend
+		p.Marshal(dto.MessageSendRequest{
+			Type:        api.RoomMessage,
+			Content:     "testRoom",
+			ContentType: api.TextMessage,
+			ClientMsgId: "",
+			SessionId:   "1001",
+		})
 
-	conn.Write(p.Encode())
-	select {}
+		conn.Write(p.Encode())
+		time.Sleep(time.Second * 3)
+	}
+
 }
 
 func connect(name string) (net.Conn, error) {

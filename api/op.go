@@ -25,3 +25,7 @@ const(
 	PrivateMessage = "private"
 	RoomMessage = "room"
 )
+
+const (
+	TextMessage = "text"
+)

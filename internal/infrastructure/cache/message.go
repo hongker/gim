@@ -6,6 +6,7 @@ import (
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
 	"gim/pkg/store"
+	uuid "github.com/satori/go.uuid"
 	"sync"
 )
 
@@ -21,6 +22,7 @@ type MessageRepo struct {
 
 
 func (repo *MessageRepo) Save(ctx context.Context, message *entity.Message) error {
+	message.Id = uuid.NewV4().String()
 	repo.getCollection(message.SessionId).AddOrUpdate(message.Id, store.SCORE(message.CreatedAt), message)
 	return nil
 }
@@ -45,6 +47,7 @@ func (repo *MessageRepo) GenerateSequence(sessionId string) int64 {
 	repo.seqLock.Lock()
 	sequence := repo.sequences[sessionId]
 	sequence++
+	repo.sequences[sessionId] = sequence
 	repo.seqLock.Unlock()
 	return sequence
 }

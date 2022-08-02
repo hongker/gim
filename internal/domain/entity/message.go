@@ -5,6 +5,7 @@ type Message struct {
 	Id          string
 	Type        string
 	Content     string
+	ContentType string
 	CreatedAt        int64
 	ClientMsgId string
 	Sequence    int64

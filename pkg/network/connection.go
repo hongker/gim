@@ -47,7 +47,7 @@ func (conn *Connection) IP() string {
 func (conn *Connection) Close() {
 	conn.once.Do(func() {
 		close(conn.done)
-		close(conn.sendQueue)
+		//close(conn.sendQueue)
 		_ = conn.instance.Close()
 	})
 
