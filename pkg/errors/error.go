@@ -19,6 +19,13 @@ func (e Error) Error() string {
 	return fmt.Sprintf("errors: code=%d msg=%s", e.code, e.msg)
 }
 
+func (e Error) Code() int {
+	return e.code
+}
+func (e Error) Message() string {
+	return e.msg
+}
+
 func New(code int, msg string) *Error {
 	return &Error{code: code, msg: msg}
 }
@@ -29,6 +36,15 @@ func InvalidParameter(msg string) *Error {
 
 func Failure(msg string) *Error {
 	return New(CodeFailure, msg)
+}
+
+func WithMessage(err error, msg string) *Error {
+	e := Convert(err)
+	if e == nil {
+		return nil
+	}
+	e.msg = fmt.Sprintf("%s: %s", msg, e.msg)
+	return e
 }
 
 

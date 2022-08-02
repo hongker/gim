@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"gim/api"
 	"gim/internal/applications"
 	"gim/internal/domain/dto"
+	"gim/internal/interfaces/helper"
+	"gim/pkg/errors"
 	"gim/pkg/network"
 )
 
@@ -12,20 +13,20 @@ type UserHandler struct {
 	gateApp *applications.GateApp
 }
 
-func (handler *UserHandler) Login(ctx *network.Context, p *api.Packet) error  {
+func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error)  {
 	req := &dto.UserLoginRequest{}
-	if err := p.Bind(req); err != nil {
-		return err
+	if err := helper.Bind(ctx, req); err != nil {
+		return nil, errors.InvalidParameter(err.Error())
 	}
 
 	resp, err := handler.userApp.Login(ctx, req)
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "login")
 	}
 
 	handler.gateApp.RegisterConn(resp.UID, ctx.Connection())
 
-	return p.Marshal(resp)
+	return resp, nil
 }
 
 func NewUserHandler(userApp *applications.UserApp,

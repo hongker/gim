@@ -5,6 +5,8 @@ import (
 	"gim/internal/applications"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
+	"gim/internal/interfaces/helper"
+	"gim/pkg/errors"
 	"gim/pkg/network"
 )
 
@@ -14,37 +16,37 @@ type MessageHandler struct {
 }
 
 
-func (handler *MessageHandler) Send(ctx *network.Context, p *api.Packet) error {
+func (handler *MessageHandler) Send(ctx *network.Context) (interface{}, error) {
 	req := &dto.MessageSendRequest{}
-	if err := p.Bind(req); err != nil {
-		return err
+	if err := helper.Bind(ctx, req); err != nil {
+		return nil, errors.InvalidParameter(err.Error())
 	}
 
 	fromUser := &entity.User{}
 
 	message, err := handler.messageApp.Send(ctx, fromUser, req)
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "send message")
 	}
 
 	packet := api.BuildPacket(api.OperateMessagePush, message)
 	handler.gateApp.Push(req.Type, req.SessionId, packet.Encode())
 
-	return p.Marshal(nil)
+	return nil, nil
 }
 
 
-func (handler *MessageHandler) Query(ctx *network.Context, p *api.Packet) error {
+func (handler *MessageHandler) Query(ctx *network.Context) (interface{}, error) {
 	req := &dto.MessageQueryRequest{}
-	if err := p.Bind(req); err != nil {
-		return err
+	if err := helper.Bind(ctx, req); err != nil {
+		return nil, errors.InvalidParameter(err.Error())
 	}
 
 	resp, err := handler.messageApp.Query(ctx, req)
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "query message")
 	}
-	return p.Marshal(resp)
+	return resp, nil
 }
 
 func NewMessageHandler(messageApp *applications.MessageApp,

@@ -4,24 +4,34 @@ import (
 	"gim/api"
 	"gim/internal/applications"
 	"gim/internal/interfaces/handler"
+	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
 	"log"
 	"time"
 )
 
-type Handler func(ctx * network.Context,p *api.Packet)
+type Handler func(ctx * network.Context)
 
 type Socket struct {
 	handlers map[int32]Handler
-	userApp *applications.UserApp
 	gateApp *applications.GateApp
-	messageApp *applications.MessageApp
 	expired time.Duration
 }
 
 
-func (s *Socket) OnConnect(conn *network.Connection) {
+func (s *Socket) Start(bind string) error {
+	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(api.PacketOffset))
+	tcpServer.SetOnConnect(s.onConnect)
+	tcpServer.SetOnDisconnect(s.onDisconnect)
+	tcpServer.Use(s.recover,)
+	tcpServer.SetOnRequest(s.onRequest)
+
+	return tcpServer.Start()
+}
+
+
+func (s *Socket) onConnect(conn *network.Connection) {
 	log.Println("connect:", conn.IP())
 
 	// 如果用户未按时登录，通过定时任务关闭连接，释放资源
@@ -34,31 +44,33 @@ func (s *Socket) OnConnect(conn *network.Connection) {
 }
 
 
-func (s *Socket) OnDisconnect(conn *network.Connection) {
+func (s *Socket) onDisconnect(conn *network.Connection) {
 	log.Println("disconnect:", conn.IP())
 	s.gateApp.RemoveConn(conn)
 }
 
 
-func (s *Socket) OnRequest(ctx *network.Context) {
+func (s *Socket) onRequest(ctx *network.Context) {
 	packet := api.NewPacket()
 	if err := packet.Decode(ctx.Request().Body()); err != nil {
-		Failure(ctx, errors.InvalidParameter(err.Error()))
+		helper.Failure(ctx, errors.InvalidParameter(err.Error()))
 		return
 	}
 
 	log.Println(packet.Op, packet.Data)
+	helper.SetContextPacket(ctx, packet)
 
-
-	h, ok := s.handlers[packet.Op]
+	processor, ok := s.handlers[packet.Op]
 	if !ok {
-		Failure(ctx, errors.InvalidParameter("invalid operate"))
+		helper.Failure(ctx, errors.InvalidParameter("invalid operate"))
 		return
 	}
 
-	h(ctx, packet)
+	processor(ctx)
 
 }
+
+
 
 func (s *Socket) recover(ctx *network.Context) {
 	defer func() {
@@ -66,34 +78,29 @@ func (s *Socket) recover(ctx *network.Context) {
 			log.Printf("recover: err=%v\n", err)
 		}
 	}()
+
+	ctx.Next()
 }
 
-func (s *Socket) Start(bind string) error {
-	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(api.PacketOffset))
-	tcpServer.SetOnConnect(s.OnConnect)
-	tcpServer.SetOnDisconnect(s.OnDisconnect)
-	tcpServer.Use(s.recover)
-	tcpServer.SetOnRequest(s.OnRequest)
 
-	return tcpServer.Start()
-}
 
-func (s *Socket) wrapHandler(fn func(ctx *network.Context, p *api.Packet) error) Handler{
-	return func(ctx *network.Context, p *api.Packet) {
-		if err := fn(ctx, p); err != nil {
-			Failure(ctx, errors.Convert(err))
+func (s *Socket) wrapHandler(fn func(ctx *network.Context) (interface{}, error)) Handler{
+	return func(ctx *network.Context) {
+		if response, err := fn(ctx); err != nil {
+			helper.Failure(ctx, err)
 		}else {
-			Success(ctx, p.Encode())
+			helper.Success(ctx, response)
 		}
 	}
 }
 
-func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler) *Socket {
+func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler, gateApp *applications.GateApp) *Socket {
 	s := &Socket{
 		handlers: make(map[int32]Handler, 16),
 		expired: time.Minute,
 	}
 
+	s.gateApp = gateApp
 	s.handlers[api.OperateAuth] = s.wrapHandler(userHandler.Login)
 	s.handlers[api.OperateMessageSend] = s.wrapHandler(messageHandler.Send)
 	s.handlers[api.OperateMessageQuery] = s.wrapHandler(messageHandler.Query)

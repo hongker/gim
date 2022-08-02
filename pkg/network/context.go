@@ -44,6 +44,10 @@ func (c *Context) Reset(body []byte, connection *Connection) {
 	c.Context = context.Background()
 }
 
+func (c *Context) WithValue(key string, value interface{}) {
+	c.Context = context.WithValue(c.Context, key, value)
+}
+
 func (ctx *Context) Run() {
 	ctx.engine.handleChains[0](ctx)
 }
