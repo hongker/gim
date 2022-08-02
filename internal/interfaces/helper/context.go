@@ -2,6 +2,7 @@ package helper
 
 import (
 	"gim/api"
+	"gim/internal/domain/dto"
 	"gim/pkg/network"
 )
 
@@ -15,4 +16,11 @@ func GetContextPacket(ctx *network.Context) *api.Packet  {
 
 func Bind(ctx *network.Context, container interface{}) error  {
 	return GetContextPacket(ctx).Bind(container)
+}
+
+func SetContextUser(ctx *network.Context, user *dto.User)  {
+	ctx.WithValue( "user", user)
+}
+func GetContextUser(ctx *network.Context) *dto.User  {
+	return ctx.Value("user").(*dto.User)
 }

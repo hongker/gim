@@ -94,15 +94,24 @@ func (s *Socket) wrapHandler(fn func(ctx *network.Context) (interface{}, error))
 	}
 }
 
-func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler, gateApp *applications.GateApp) *Socket {
+func (s *Socket) registerHandler(operate int32, handler func(ctx *network.Context) (interface{}, error))  {
+	s.handlers[operate] = s.wrapHandler(handler)
+}
+
+func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler,
+	groupHandler *handler.GroupHandler,
+	gateApp *applications.GateApp) *Socket {
 	s := &Socket{
 		handlers: make(map[int32]Handler, 16),
 		expired: time.Minute,
 	}
 
 	s.gateApp = gateApp
-	s.handlers[api.OperateAuth] = s.wrapHandler(userHandler.Login)
-	s.handlers[api.OperateMessageSend] = s.wrapHandler(messageHandler.Send)
-	s.handlers[api.OperateMessageQuery] = s.wrapHandler(messageHandler.Query)
+	s.registerHandler(api.OperateAuth, userHandler.Login)
+	s.registerHandler(api.OperateMessageSend, messageHandler.Send)
+	s.registerHandler(api.OperateMessageQuery, messageHandler.Query)
+	s.registerHandler(api.OperateGroupJoin, groupHandler.Join)
+	s.registerHandler(api.OperateGroupLeave, groupHandler.Leave)
 	return s
 }
+

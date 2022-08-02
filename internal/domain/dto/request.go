@@ -32,3 +32,13 @@ type Message struct {
 	Content string `json:"content"`
 	CreatedAt int64 `json:"created_at"`
 }
+
+type GroupJoinRequest struct {
+	GroupId string `json:"group_id"`
+}
+type GroupJoinResponse struct{}
+
+type GroupLeaveRequest struct {
+	GroupId string `json:"group_id"`
+}
+type GroupLeaveResponse struct{}

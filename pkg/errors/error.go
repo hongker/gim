@@ -7,6 +7,7 @@ import (
 const(
 	CodeFailure = 1001
 	CodeInvalidParameter = 1002
+	CodeDataNotFound = 1003
 
 )
 
@@ -32,6 +33,9 @@ func New(code int, msg string) *Error {
 
 func InvalidParameter(msg string) *Error {
 	return New(CodeInvalidParameter, msg)
+}
+func DataNotFound(msg string) *Error {
+	return New(CodeDataNotFound, msg)
 }
 
 func Failure(msg string) *Error {

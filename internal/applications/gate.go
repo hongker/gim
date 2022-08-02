@@ -29,7 +29,7 @@ func (app *GateApp) CheckConnExist(conn *network.Connection) bool {
 }
 
 
-func (app *GateApp) PushUser(uid string, msg []byte) {
+func (app *GateApp) pushUser(uid string, msg []byte) {
 	channel := app.bucket.GetChannelByKey(uid)
 	if channel == nil {
 		return
@@ -39,13 +39,13 @@ func (app *GateApp) PushUser(uid string, msg []byte) {
 
 func (app *GateApp) Push(sessionType string, sessionId string, msg []byte) {
 	if sessionType== api.PrivateMessage {
-		app.PushUser(sessionId, msg)
+		app.pushUser(sessionId, msg)
 	}else {
-		app.PushRoom(sessionId, msg)
+		app.pushRoom(sessionId, msg)
 	}
 }
 
-func (app *GateApp) PushRoom(rid string, msg []byte) {
+func (app *GateApp) pushRoom(rid string, msg []byte) {
 	room := app.bucket.GetRoom(rid)
 	channels := room.Channels()
 	for _, channel := range channels {
@@ -57,6 +57,23 @@ func (app *GateApp) Broadcast(msg []byte) {
 	for _, channel := range app.bucket.Channels() {
 		channel.Conn().Push(msg)
 	}
+}
+
+func (app *GateApp) JoinRoom(roomId string, conn *network.Connection, ) {
+	channel := app.bucket.GetChannel(conn.ID())
+	if channel == nil {
+		return
+	}
+	app.bucket.PutRoom(roomId, channel)
+}
+
+
+func (app *GateApp) LeaveRoom(roomId string, conn *network.Connection, ) {
+	channel := app.bucket.GetChannel(conn.ID())
+	if channel == nil {
+		return
+	}
+	app.bucket.GetRoom(roomId).Remove(channel)
 }
 
 func NewGateApp() *GateApp {
