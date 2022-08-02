@@ -29,7 +29,7 @@ func (repo *MessageRepo) Save(ctx context.Context, message *entity.Message) erro
 
 func (repo *MessageRepo) Query(ctx context.Context, query dto.MessageHistoryQuery) ([]entity.Message, error) {
 	collection := repo.getCollection(query.SessionId)
-	nodes := collection.GetByScoreRange(minScore, store.SCORE(query.Last), &store.GetByScoreRangeOptions{
+	nodes := collection.GetByScoreRange( store.SCORE(query.Last), minScore, &store.GetByScoreRangeOptions{
 		Limit:        query.Limit,
 		ExcludeStart: false,
 		ExcludeEnd:   false,

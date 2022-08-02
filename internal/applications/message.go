@@ -42,7 +42,7 @@ func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto
 func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
 	items, err := app.repo.Query(ctx, dto.MessageHistoryQuery{
 		SessionId: req.SessionId,
-		Limit:     10,
+		Limit:     req.Limit,
 		Last:      req.Last,
 	})
 	if err != nil {
@@ -52,13 +52,16 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 	res := &dto.MessageQueryResponse{Items: make([]dto.Message, 0, len(items))}
 	for _, item := range items {
 		res.Items = append(res.Items, dto.Message{
+			Id: item.Id,
 			SessionId: item.SessionId,
 			Content:   item.Content,
+			ContentType: item.ContentType,
 			CreatedAt: item.CreatedAt,
+			Sequence: item.Sequence,
 		})
 	}
 
-	return nil, nil
+	return res, nil
 }
 
 func NewMessageApp(repo repository.MessageRepo) *MessageApp {

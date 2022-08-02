@@ -23,6 +23,7 @@ type MessageSendResponse struct {}
 type MessageQueryRequest struct {
 	SessionId string `json:"session_id"`
 	Last int64 `json:"last"`
+	Limit int `json:"limit"`
 }
 type MessageQueryResponse struct {
 	Items []Message `json:"items"`

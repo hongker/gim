@@ -14,10 +14,22 @@ import (
 
 
 func TestClientB(t *testing.T) {
-	_, err := connect("B")
+	conn, err := connect("B")
 	system.SecurePanic(err)
 
-	select {}
+	for {
+		p := api.NewPacket()
+		p.Op  =api.OperateMessageQuery
+		p.Marshal(dto.MessageQueryRequest{
+			SessionId: "1001",
+			Limit:     3,
+			Last:      time.Now().UnixNano(),
+		})
+
+		conn.Write(p.Encode())
+		time.Sleep(time.Second * 30)
+	}
+
 }
 
 
