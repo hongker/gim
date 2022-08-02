@@ -7,7 +7,6 @@ import (
 	"gim/internal/interfaces"
 	"gim/pkg/app"
 	"gim/pkg/system"
-	"gim/pkg/utils"
 	"log"
 )
 
@@ -22,7 +21,10 @@ func Run()  {
 	applications.Inject(container)
 	interfaces.Inject(container)
 
-	err := container.Invoke(serve)
+	err := container.Invoke(func(socket *interfaces.Socket) error {
+		return socket.Start(*addr)
+	})
+
 	if err != nil {
 		panic(err)
 	}
@@ -32,8 +34,3 @@ func Run()  {
 	})
 }
 
-func serve(socket *interfaces.Socket) error  {
-	return utils.Execute(func() error {
-		return socket.Start(*addr)
-	})
-}

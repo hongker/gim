@@ -17,7 +17,7 @@ func NewUserApp(repo repository.UserRepository) *UserApp {
 
 func (app *UserApp) Login(ctx context.Context, req *dto.UserLoginRequest) (res *dto.UserLoginResponse,err error)    {
 	user := &entity.User{Name: req.Name}
-	if err := app.repo.Save(ctx, user); err != nil {
+	if err = app.repo.Save(ctx, user); err != nil {
 		return
 	}
 

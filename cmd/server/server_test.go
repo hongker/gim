@@ -29,7 +29,7 @@ func TestClientB(t *testing.T) {
 		Type:        api.PrivateMessage,
 		Content:     "test",
 		ClientMsgId: "",
-		SessionId:   "bfba28cc-18cf-4c08-8f60-3e6802b2e143",
+		SessionId:   "eed87d01-560a-4262-9c65-051484b9ad84",
 	})
 
 	conn.Write(p.Encode())
