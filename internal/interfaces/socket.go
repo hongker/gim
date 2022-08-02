@@ -24,7 +24,7 @@ func (s *Socket) Start(bind string) error {
 	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(api.PacketOffset))
 	tcpServer.SetOnConnect(s.onConnect)
 	tcpServer.SetOnDisconnect(s.onDisconnect)
-	tcpServer.Use(s.recover,)
+	//tcpServer.Use(s.recover,)
 	tcpServer.SetOnRequest(s.onRequest)
 
 	return tcpServer.Start()
@@ -59,6 +59,14 @@ func (s *Socket) onRequest(ctx *network.Context) {
 
 	log.Println(packet.Op, packet.Data)
 	helper.SetContextPacket(ctx, packet)
+	if packet.Op != api.OperateAuth {
+		user := s.gateApp.GetUser(ctx.Connection())
+		if user == nil {
+			helper.Failure(ctx, errors.New(errors.CodeForbidden, "auth is required"))
+			return
+		}
+		helper.SetContextUser(ctx, user)
+	}
 
 	processor, ok := s.handlers[packet.Op]
 	if !ok {

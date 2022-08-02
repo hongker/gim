@@ -8,6 +8,7 @@ const(
 	CodeFailure = 1001
 	CodeInvalidParameter = 1002
 	CodeDataNotFound = 1003
+	CodeForbidden = 1004
 
 )
 

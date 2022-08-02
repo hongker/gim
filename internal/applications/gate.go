@@ -2,6 +2,7 @@ package applications
 
 import (
 	"gim/api"
+	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
 	"gim/pkg/network"
 )
@@ -28,6 +29,14 @@ func (app *GateApp) CheckConnExist(conn *network.Connection) bool {
 	return channel != nil
 }
 
+func (app *GateApp) GetUser(conn *network.Connection) *dto.User {
+	channel := app.bucket.GetChannel(conn.ID())
+	if channel == nil {
+		return nil
+	}
+	return &dto.User{Id: channel.Key()}
+}
+
 
 func (app *GateApp) pushUser(uid string, msg []byte) {
 	channel := app.bucket.GetChannelByKey(uid)
@@ -47,6 +56,9 @@ func (app *GateApp) Push(sessionType string, sessionId string, msg []byte) {
 
 func (app *GateApp) pushRoom(rid string, msg []byte) {
 	room := app.bucket.GetRoom(rid)
+	if room == nil {
+		return
+	}
 	channels := room.Channels()
 	for _, channel := range channels {
 		channel.Conn().Push(msg)
@@ -73,7 +85,12 @@ func (app *GateApp) LeaveRoom(roomId string, conn *network.Connection, ) {
 	if channel == nil {
 		return
 	}
-	app.bucket.GetRoom(roomId).Remove(channel)
+
+	room := app.bucket.GetRoom(roomId)
+	if room == nil {
+		return
+	}
+	room.Remove(channel)
 }
 
 func NewGateApp() *GateApp {

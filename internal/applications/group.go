@@ -33,13 +33,16 @@ func (app *GroupApp) Join(ctx context.Context, groupId string, user *dto.User) e
 		return errors.Failure("find group user")
 	}
 
-	err := app.groupUserRepo.Create(ctx, &entity.GroupUser{
+	if err := app.groupUserRepo.Create(ctx, &entity.GroupUser{
 		GroupId:   group.GroupId,
 		UserId:    user.Id,
 		CreatedAt: time.Now().Unix(),
-	})
+	}); err != nil {
+		return errors.WithMessage(err, "create group user")
+	}
 
-	return errors.WithMessage(err, "create group user")
+
+	return nil
 }
 
 func (app *GroupApp) Leave(ctx context.Context, groupId string, user *dto.User) error {

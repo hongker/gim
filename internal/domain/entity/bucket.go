@@ -65,5 +65,6 @@ func (bucket *Bucket) PutRoom(roomId string, channel *Channel) {
 		room = NewRoom(roomId)
 	}
 	room.Add(channel)
+	bucket.rooms[roomId] = room
 	bucket.rmu.Unlock()
 }

@@ -9,6 +9,7 @@ import (
 	"gim/pkg/system"
 	"net"
 	"testing"
+	"time"
 )
 
 func TestNewClient(t *testing.T) {
@@ -20,16 +21,24 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestClientB(t *testing.T) {
-	conn, err := connect("B")
+	_, err := connect("B")
+	system.SecurePanic(err)
+
+	select {}
+}
+
+
+func TestClientC(t *testing.T) {
+	conn, err := connect("C")
 	system.SecurePanic(err)
 
 	p := api.NewPacket()
 	p.Op  =api.OperateMessageSend
 	p.Marshal(dto.MessageSendRequest{
-		Type:        api.PrivateMessage,
-		Content:     "test",
+		Type:        api.RoomMessage,
+		Content:     "testRoom",
 		ClientMsgId: "",
-		SessionId:   "eed87d01-560a-4262-9c65-051484b9ad84",
+		SessionId:   "1001",
 	})
 
 	conn.Write(p.Encode())
@@ -67,5 +76,9 @@ func connect(name string) (net.Conn, error) {
 	}()
 	_, err = conn.Write(p.Encode())
 	system.SecurePanic(err)
+
+	time.Sleep(time.Second)
+	joinGroupPacket := api.BuildPacket(api.OperateGroupJoin, dto.GroupJoinRequest{GroupId: "1001"})
+	_, err = conn.Write(joinGroupPacket.Encode())
 	return conn, nil
 }
