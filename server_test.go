@@ -21,7 +21,7 @@ func TestClientB(t *testing.T) {
 		p := api.NewPacket()
 		p.Op  =api.OperateMessageQuery
 		p.Marshal(dto.MessageQueryRequest{
-			SessionId: "1001",
+			SessionId: "group:1001",
 			Limit:     3,
 			Last:      time.Now().UnixNano(),
 		})
@@ -49,7 +49,7 @@ func TestClientC(t *testing.T) {
 		})
 
 		conn.Write(p.Encode())
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Millisecond * 500)
 	}
 
 }

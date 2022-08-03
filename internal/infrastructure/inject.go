@@ -1,13 +1,13 @@
 package infrastructure
 
 import (
-	"gim/internal/infrastructure/cache"
+	"gim/internal/infrastructure/memory"
 	"go.uber.org/dig"
 )
 
-func Inject(container *dig.Container)  {
-	_ = container.Provide(cache.NewMessageRepo)
-	_ = container.Provide(cache.NewUserRepo)
-	_ = container.Provide(cache.NewGroupRepo)
-	_ = container.Provide(cache.NewGroupUserRepo)
+func Inject(container *dig.Container, storeType string)  {
+	_ = container.Provide(memory.NewMessageRepo)
+	_ = container.Provide(memory.NewUserRepo)
+	_ = container.Provide(memory.NewGroupRepo)
+	_ = container.Provide(memory.NewGroupUserRepo)
 }

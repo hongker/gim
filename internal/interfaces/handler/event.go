@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"gim/api"
 	"gim/internal/aggregate"
+	"gim/internal/domain/dto"
 	"gim/internal/domain/event"
 	"gim/pkg/network"
 	"time"
@@ -18,6 +20,19 @@ func (h *EventHandler) RegisterEvents()  {
 	event.Listen(event.Disconnect, h.Disconnect)
 	event.Listen(event.JoinGroup, h.JoinGroup)
 	event.Listen(event.LeaveGroup, h.LeaveGroup)
+	event.Listen(event.Push, h.Push)
+}
+
+func (h *EventHandler) Push(params ...interface{})   {
+	if len(params) <= 1 {
+		return
+	}
+
+	sessionType := params[0].(string)
+	targetId := params[1].(string)
+	batchMessages := params[2].(*dto.BatchMessage)
+	packet := api.BuildPacket(api.OperateMessagePush, batchMessages)
+	h.gateApp.Push(sessionType, targetId, packet.Encode())
 }
 
 func (h *EventHandler) Connect(params ...interface{}) {

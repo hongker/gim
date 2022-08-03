@@ -1,41 +1,31 @@
-package cache
+package memory
 
 import (
 	"context"
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
 	"gim/pkg/errors"
-	"sync"
+	"gim/pkg/store"
 )
 
 type GroupRepo struct {
-	mu sync.RWMutex
-	items map[string]*entity.Group
+	store *store.Hash
 }
 
 func (repo *GroupRepo) Find(ctx context.Context, id string) (*entity.Group, error) {
-	repo.mu.RLock()
-	defer repo.mu.RUnlock()
-	item, ok := repo.items[id]
+	item, ok := repo.store.Get(id)
 	if !ok {
 		return nil, errors.DataNotFound("group not found")
 	}
-	return item, nil
+	return item.(*entity.Group), nil
 }
 
 func (repo *GroupRepo) Create(ctx context.Context, group *entity.Group) error {
-	repo.mu.Lock()
-	defer repo.mu.Unlock()
-	_, ok := repo.items[group.GroupId]
-	if ok {
-		return errors.DataNotFound("group exist")
-	}
-	repo.items[group.GroupId] = group
-	return nil
+	return repo.store.Save(group.GroupId, group)
 }
 
 func NewGroupRepo() repository.GroupRepo {
 	return &GroupRepo{
-		items: make(map[string]*entity.Group),
+		store: store.NewHash(),
 	}
 }

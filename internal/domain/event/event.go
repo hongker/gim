@@ -8,6 +8,7 @@ const(
 	Disconnect = "Disconnect"
 	JoinGroup = "JoinGroup"
 	LeaveGroup = "LeaveGroup"
+	Push = "Push"
 )
 
 // Event

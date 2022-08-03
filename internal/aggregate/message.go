@@ -2,18 +2,42 @@ package aggregate
 
 import (
 	"context"
+	"gim/api"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
+	"gim/internal/domain/event"
 	"gim/internal/domain/repository"
+	"gim/internal/domain/types"
+	"sync"
 	"time"
 )
 
 type MessageApp struct {
 	repo repository.MessageRepo
+	rmu sync.RWMutex
+	queues map[string]*types.Queue
 }
 
+func (app *MessageApp) getQueue(sessionType string, targetId string) *types.Queue  {
+	app.rmu.Lock()
+	defer app.rmu.Unlock()
+	if q, ok := app.queues[targetId]; ok {
+		return q
+	}
+	q := types.NewQueue(10)
+	app.queues[targetId] = q
+	go q.Poll(time.Second , func(items []interface{}) {
+		batchMessages := &dto.BatchMessage{Items: make([]dto.Message, len(items))}
+		for i, item := range items {
+			batchMessages.Items[i] = item.(dto.Message)
+		}
 
-func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) (*dto.Message, error) {
+		event.Trigger(event.Push, sessionType, targetId, batchMessages)
+	})
+	return q
+}
+
+func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) ( error) {
 	sessionId := req.SessionId(sender.Id)
 	item := &entity.Message{
 		SessionType: req.Type,
@@ -26,9 +50,9 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 		FromUser:    &entity.User{Id: sender.Id},
 	}
 	if err := app.repo.Save(ctx, item); err != nil {
-		return nil, err
+		return  err
 	}
-	res := &dto.Message{
+	res := dto.Message{
 		Id: item.Id,
 		Session: dto.Session{Id: item.SessionId, Type: item.SessionType},
 		Content:   item.Content,
@@ -39,7 +63,14 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 			Id: item.FromUser.Id,
 		},
 	}
-	return res, nil
+
+	if item.SessionType == api.UserSession {
+		// send direct
+	}else {
+		app.getQueue(item.SessionType, req.TargetId).Offer(res)
+	}
+
+	return  nil
 }
 
 
@@ -70,5 +101,6 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 }
 
 func NewMessageApp(repo repository.MessageRepo) *MessageApp {
-	return &MessageApp{repo: repo}
+	app := &MessageApp{repo: repo, queues: map[string]*types.Queue{}}
+	return app
 }

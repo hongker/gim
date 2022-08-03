@@ -5,3 +5,7 @@ type MessageHistoryQuery struct {
 	Limit int
 	Last int64
 }
+
+type BatchMessage struct {
+	Items []Message `json:"items"`
+}

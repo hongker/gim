@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"gim/api"
 	"gim/internal/aggregate"
 	"gim/internal/domain/dto"
 	"gim/internal/interfaces/helper"
@@ -23,13 +22,11 @@ func (handler *MessageHandler) Send(ctx *network.Context) (interface{}, error) {
 
 	sender := helper.GetContextUser(ctx)
 
-	message, err := handler.messageApp.Send(ctx, sender, req)
+	err := handler.messageApp.Send(ctx, sender, req)
 	if err != nil {
 		return nil, errors.WithMessage(err, "send message")
 	}
 
-	packet := api.BuildPacket(api.OperateMessagePush, message)
-	handler.gateApp.Push(req.Type,req.TargetId, packet.Encode())
 
 	return nil, nil
 }

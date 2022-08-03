@@ -12,12 +12,14 @@ import (
 
 var (
 	addr = flag.String("addr", "0.0.0.0:8088", "socket address")
+	pluginStore = flag.String("plugin-store", "memory", "plugin store")
 )
 func Run()  {
 	flag.Parse()
 	container := app.Container()
 
-	infrastructure.Inject(container)
+
+	infrastructure.Inject(container, *pluginStore)
 	aggregate.Inject(container)
 	interfaces.Inject(container)
 
