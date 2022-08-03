@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"gim/internal/applications"
+	"gim/internal/aggregate"
 	"gim/internal/domain/dto"
 	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
@@ -9,8 +9,8 @@ import (
 )
 
 type GroupHandler struct {
-	groupApp *applications.GroupApp
-	gateApp *applications.GateApp
+	groupApp *aggregate.GroupApp
+	gateApp *aggregate.GateApp
 }
 
 func (handler *GroupHandler) Join(ctx *network.Context) (interface{}, error) {
@@ -20,7 +20,7 @@ func (handler *GroupHandler) Join(ctx *network.Context) (interface{}, error) {
 	}
 
 	user := helper.GetContextUser(ctx)
-	err := handler.groupApp.Join(ctx, req.GroupId, user)
+	err := handler.groupApp.Join(ctx, user, req.GroupId)
 	if err != nil {
 		return nil, errors.WithMessage(err, "join group")
 	}
@@ -36,7 +36,7 @@ func (handler *GroupHandler) Leave(ctx *network.Context) ( interface{},  error) 
 	}
 
 	user := helper.GetContextUser(ctx)
-	err := handler.groupApp.Leave(ctx, req.GroupId, user)
+	err := handler.groupApp.Leave(ctx, user, req.GroupId)
 	if err != nil {
 		return nil, errors.WithMessage(err, "leave group")
 	}
@@ -44,6 +44,6 @@ func (handler *GroupHandler) Leave(ctx *network.Context) ( interface{},  error) 
 	return nil, nil
 }
 
-func NewGroupHandler(groupApp *applications.GroupApp, gateApp *applications.GateApp) *GroupHandler {
+func NewGroupHandler(groupApp *aggregate.GroupApp, gateApp *aggregate.GateApp) *GroupHandler {
 	return &GroupHandler{groupApp: groupApp, gateApp: gateApp}
 }

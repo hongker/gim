@@ -1,4 +1,4 @@
-package applications
+package aggregate
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type GroupApp struct {
 	groupUserRepo repository.GroupUserRepo
 }
 
-func (app *GroupApp) Join(ctx context.Context, groupId string, user *dto.User) error {
+func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) error {
 	group, _ := app.groupRepo.Find(ctx, groupId)
 	if group == nil {
 		group = &entity.Group{
@@ -45,7 +45,7 @@ func (app *GroupApp) Join(ctx context.Context, groupId string, user *dto.User) e
 	return nil
 }
 
-func (app *GroupApp) Leave(ctx context.Context, groupId string, user *dto.User) error {
+func (app *GroupApp) Leave(ctx context.Context, user *dto.User, groupId string) error {
 	return app.groupUserRepo.Delete(ctx, groupId ,user.Id)
 }
 func NewGroupApp(groupRepo repository.GroupRepo, groupUserRepo repository.GroupUserRepo) (*GroupApp)   {

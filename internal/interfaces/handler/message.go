@@ -2,7 +2,7 @@ package handler
 
 import (
 	"gim/api"
-	"gim/internal/applications"
+	"gim/internal/aggregate"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
 	"gim/internal/interfaces/helper"
@@ -11,8 +11,8 @@ import (
 )
 
 type MessageHandler struct {
-	messageApp *applications.MessageApp
-	gateApp *applications.GateApp
+	messageApp *aggregate.MessageApp
+	gateApp *aggregate.GateApp
 }
 
 
@@ -49,8 +49,8 @@ func (handler *MessageHandler) Query(ctx *network.Context) (interface{}, error) 
 	return resp, nil
 }
 
-func NewMessageHandler(messageApp *applications.MessageApp,
-gateApp *applications.GateApp) *MessageHandler {
+func NewMessageHandler(messageApp *aggregate.MessageApp,
+gateApp *aggregate.GateApp) *MessageHandler {
 	return &MessageHandler{
 		messageApp: messageApp,
 		gateApp:    gateApp,

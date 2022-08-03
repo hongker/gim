@@ -1,21 +1,22 @@
-package applications
+package aggregate
 
 import (
 	"gim/api"
 	"gim/internal/domain/dto"
-	"gim/internal/domain/entity"
+	"gim/internal/domain/types"
 	"gim/pkg/network"
 )
 
 type GateApp struct {
-	bucket *entity.Bucket
+	bucket *types.Bucket
 }
 
+// RegisterConn register user connection
 func (app *GateApp) RegisterConn(uid string, conn *network.Connection) {
-	channel := entity.NewChannel(uid, conn)
+	channel := types.NewChannel(uid, conn)
 	app.bucket.AddChannel(channel)
 }
-
+// RemoveConn remove connection from bucket
 func (app *GateApp) RemoveConn(conn *network.Connection)   {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
@@ -24,11 +25,13 @@ func (app *GateApp) RemoveConn(conn *network.Connection)   {
 	app.bucket.RemoveChannel(channel)
 }
 
+// CheckConnExist checks if the connection is already exist
 func (app *GateApp) CheckConnExist(conn *network.Connection) bool {
 	channel := app.bucket.GetChannel(conn.ID())
 	return channel != nil
 }
 
+// GetUser return the user of connection
 func (app *GateApp) GetUser(conn *network.Connection) *dto.User {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
@@ -37,6 +40,14 @@ func (app *GateApp) GetUser(conn *network.Connection) *dto.User {
 	return &dto.User{Id: channel.Key()}
 }
 
+// Push push message to session target
+func (app *GateApp) Push(sessionType string, sessionId string, msg []byte) {
+	if sessionType== api.UserSession {
+		app.pushUser(sessionId, msg)
+	}else {
+		app.pushRoom(sessionId, msg)
+	}
+}
 
 func (app *GateApp) pushUser(uid string, msg []byte) {
 	channel := app.bucket.GetChannelByKey(uid)
@@ -46,31 +57,19 @@ func (app *GateApp) pushUser(uid string, msg []byte) {
 	channel.Conn().Push(msg)
 }
 
-func (app *GateApp) Push(sessionType string, sessionId string, msg []byte) {
-	if sessionType== api.PrivateMessage {
-		app.pushUser(sessionId, msg)
-	}else {
-		app.pushRoom(sessionId, msg)
-	}
-}
-
 func (app *GateApp) pushRoom(rid string, msg []byte) {
 	room := app.bucket.GetRoom(rid)
 	if room == nil {
 		return
 	}
-	channels := room.Channels()
-	for _, channel := range channels {
-		channel.Conn().Push(msg)
-	}
+	room.Push(msg)
 }
-
+// Broadcast push message to everyone
 func (app *GateApp) Broadcast(msg []byte) {
-	for _, channel := range app.bucket.Channels() {
-		channel.Conn().Push(msg)
-	}
+	app.bucket.Push(msg)
 }
 
+// JoinRoom
 func (app *GateApp) JoinRoom(roomId string, conn *network.Connection, ) {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
@@ -78,8 +77,7 @@ func (app *GateApp) JoinRoom(roomId string, conn *network.Connection, ) {
 	}
 	app.bucket.PutRoom(roomId, channel)
 }
-
-
+// LeaveRoom
 func (app *GateApp) LeaveRoom(roomId string, conn *network.Connection, ) {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
@@ -95,6 +93,6 @@ func (app *GateApp) LeaveRoom(roomId string, conn *network.Connection, ) {
 
 func NewGateApp() *GateApp {
 	return &GateApp{
-		bucket: entity.NewBucket(),
+		bucket: types.NewBucket(),
 	}
 }

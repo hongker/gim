@@ -22,8 +22,8 @@ const (
 )
 
 const(
-	PrivateMessage = "private"
-	RoomMessage = "room"
+	UserSession = "user" // session of user to user
+	GroupSession = "group" // session of group
 )
 
 const (

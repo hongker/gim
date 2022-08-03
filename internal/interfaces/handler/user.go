@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"gim/internal/applications"
+	"gim/internal/aggregate"
 	"gim/internal/domain/dto"
 	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
@@ -9,8 +9,8 @@ import (
 )
 
 type UserHandler struct {
-	userApp *applications.UserApp
-	gateApp *applications.GateApp
+	userApp *aggregate.UserApp
+	gateApp *aggregate.GateApp
 }
 
 func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error)  {
@@ -29,8 +29,8 @@ func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error)  {
 	return resp, nil
 }
 
-func NewUserHandler(userApp *applications.UserApp,
-gateApp *applications.GateApp) *UserHandler {
+func NewUserHandler(userApp *aggregate.UserApp,
+gateApp *aggregate.GateApp) *UserHandler {
 	return &UserHandler{
 		userApp: userApp,
 		gateApp: gateApp,

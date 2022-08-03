@@ -1,4 +1,4 @@
-package entity
+package types
 
 import "sync"
 
@@ -22,10 +22,12 @@ func (bucket *Bucket) GetChannel(connId string) *Channel {
 	return bucket.channels[connId]
 }
 
-func (bucket *Bucket) Channels() map[string]*Channel {
+func (bucket *Bucket) Push(msg []byte) {
 	bucket.rmu.RLock()
 	defer bucket.rmu.RUnlock()
-	return bucket.channels
+	for _, channel := range bucket.channels {
+		channel.Conn().Push(msg)
+	}
 }
 
 func (bucket *Bucket) GetChannelByKey(key string) *Channel {

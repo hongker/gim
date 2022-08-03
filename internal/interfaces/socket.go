@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"gim/api"
-	"gim/internal/applications"
+	"gim/internal/aggregate"
 	"gim/internal/interfaces/handler"
 	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
@@ -15,7 +15,7 @@ type Handler func(ctx * network.Context)
 
 type Socket struct {
 	handlers map[int32]Handler
-	gateApp *applications.GateApp
+	gateApp *aggregate.GateApp
 	expired time.Duration
 }
 
@@ -24,7 +24,7 @@ func (s *Socket) Start(bind string) error {
 	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(api.PacketOffset))
 	tcpServer.SetOnConnect(s.onConnect)
 	tcpServer.SetOnDisconnect(s.onDisconnect)
-	//tcpServer.Use(s.recover,)
+	tcpServer.Use(s.recover,)
 	tcpServer.SetOnRequest(s.onRequest)
 
 	return tcpServer.Start()
@@ -108,7 +108,7 @@ func (s *Socket) registerHandler(operate int32, handler func(ctx *network.Contex
 
 func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler,
 	groupHandler *handler.GroupHandler,
-	gateApp *applications.GateApp) *Socket {
+	gateApp *aggregate.GateApp) *Socket {
 	s := &Socket{
 		handlers: make(map[int32]Handler, 16),
 		expired: time.Minute,

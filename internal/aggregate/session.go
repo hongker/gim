@@ -1,4 +1,4 @@
-package applications
+package aggregate
 
 import "gim/internal/domain/entity"
 
