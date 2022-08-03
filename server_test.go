@@ -45,7 +45,7 @@ func TestClientC(t *testing.T) {
 			Content:     "testRoom",
 			ContentType: api.TextMessage,
 			ClientMsgId: "",
-			SessionId:   "1001",
+			TargetId:   "1001",
 		})
 
 		conn.Write(p.Encode())

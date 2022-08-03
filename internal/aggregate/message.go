@@ -14,14 +14,15 @@ type MessageApp struct {
 
 
 func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) (*dto.Message, error) {
+	sessionId := req.SessionId(sender.Id)
 	item := &entity.Message{
-		SessionType:        req.Type,
+		SessionType: req.Type,
 		Content:     req.Content,
 		ContentType: req.ContentType,
 		CreatedAt:   time.Now().UnixNano(),
 		ClientMsgId: req.ClientMsgId,
-		Sequence:    app.repo.GenerateSequence(req.SessionId),
-		SessionId:   req.SessionId,
+		Sequence:    app.repo.GenerateSequence(sessionId),
+		SessionId:   sessionId,
 		FromUser:    &entity.User{Id: sender.Id},
 	}
 	if err := app.repo.Save(ctx, item); err != nil {

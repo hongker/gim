@@ -29,7 +29,7 @@ func (handler *MessageHandler) Send(ctx *network.Context) (interface{}, error) {
 	}
 
 	packet := api.BuildPacket(api.OperateMessagePush, message)
-	handler.gateApp.Push(req.Type, req.SessionId, packet.Encode())
+	handler.gateApp.Push(req.Type,req.TargetId, packet.Encode())
 
 	return nil, nil
 }

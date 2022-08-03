@@ -1,5 +1,10 @@
 package dto
 
+import (
+	"fmt"
+	"gim/api"
+)
+
 type UserLoginRequest struct {
 	Name string `json:"name"`
 }
@@ -11,11 +16,23 @@ type UserLoginResponse struct {
 
 type MessageSendRequest struct {
 	Type        string `json:"type"`
+	TargetId string `json:"target_id"`
 	Content     string `json:"content"`
 	ContentType string `json:"content_type"`
 	ClientMsgId string `json:"client_msg_id"`
-	SessionId   string `json:"session_id"`
 
+
+}
+
+func (req MessageSendRequest) SessionId(uid string) string {
+	if req.Type == api.GroupSession {
+		return fmt.Sprintf("%v:%s", req.Type, req.TargetId)
+	}
+
+	if uid > req.TargetId {
+		return fmt.Sprintf("%v:%s:%s", req.Type, req.TargetId, uid)
+	}
+	return fmt.Sprintf("%v:%s:%s", req.Type, uid, req.TargetId)
 }
 
 type MessageSendResponse struct {}

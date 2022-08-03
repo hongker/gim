@@ -41,11 +41,11 @@ func (app *GateApp) GetUser(conn *network.Connection) *dto.User {
 }
 
 // Push push message to session target
-func (app *GateApp) Push(sessionType string, sessionId string, msg []byte) {
+func (app *GateApp) Push(sessionType string, targetId string, msg []byte) {
 	if sessionType== api.UserSession {
-		app.pushUser(sessionId, msg)
+		app.pushUser(targetId, msg)
 	}else {
-		app.pushRoom(sessionId, msg)
+		app.pushRoom(targetId, msg)
 	}
 }
 
