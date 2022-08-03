@@ -4,7 +4,6 @@ import (
 	"gim/api"
 	"gim/internal/aggregate"
 	"gim/internal/domain/dto"
-	"gim/internal/domain/entity"
 	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
@@ -22,9 +21,9 @@ func (handler *MessageHandler) Send(ctx *network.Context) (interface{}, error) {
 		return nil, errors.InvalidParameter(err.Error())
 	}
 
-	fromUser := &entity.User{}
+	sender := helper.GetContextUser(ctx)
 
-	message, err := handler.messageApp.Send(ctx, fromUser, req)
+	message, err := handler.messageApp.Send(ctx, sender, req)
 	if err != nil {
 		return nil, errors.WithMessage(err, "send message")
 	}

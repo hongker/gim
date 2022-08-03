@@ -13,27 +13,30 @@ type MessageApp struct {
 }
 
 
-func (app *MessageApp) Send(ctx context.Context, fromUser *entity.User, req *dto.MessageSendRequest) (*dto.Message, error) {
+func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) (*dto.Message, error) {
 	item := &entity.Message{
-		Type:        req.Type,
+		SessionType:        req.Type,
 		Content:     req.Content,
 		ContentType: req.ContentType,
 		CreatedAt:   time.Now().UnixNano(),
 		ClientMsgId: req.ClientMsgId,
 		Sequence:    app.repo.GenerateSequence(req.SessionId),
 		SessionId:   req.SessionId,
-		FromUser:    fromUser,
+		FromUser:    &entity.User{Id: sender.Id},
 	}
 	if err := app.repo.Save(ctx, item); err != nil {
 		return nil, err
 	}
 	res := &dto.Message{
 		Id: item.Id,
-		SessionId: item.SessionId,
+		Session: dto.Session{Id: item.SessionId, Type: item.SessionType},
 		Content:   item.Content,
 		ContentType: item.ContentType,
 		CreatedAt: item.CreatedAt,
 		Sequence: item.Sequence,
+		FromUser: dto.User{
+			Id: item.FromUser.Id,
+		},
 	}
 	return res, nil
 }
@@ -53,11 +56,12 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 	for _, item := range items {
 		res.Items = append(res.Items, dto.Message{
 			Id: item.Id,
-			SessionId: item.SessionId,
+			Session: dto.Session{Id: item.SessionId, Type: item.SessionType},
 			Content:   item.Content,
 			ContentType: item.ContentType,
 			CreatedAt: item.CreatedAt,
 			Sequence: item.Sequence,
+			FromUser: dto.User{Id: item.FromUser.Id},
 		})
 	}
 

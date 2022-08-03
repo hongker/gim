@@ -31,11 +31,12 @@ type MessageQueryResponse struct {
 
 type Message struct {
 	Id string `json:"id"`
-	SessionId string `json:"session_id"`
+	Session Session `json:"session"`
 	ContentType string `json:"content_type"`
 	Content string `json:"content"`
 	CreatedAt int64 `json:"created_at"`
 	Sequence int64 `json:"sequence"`
+	FromUser User `json:"from_user"`
 }
 
 type GroupJoinRequest struct {

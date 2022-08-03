@@ -3,13 +3,13 @@ package entity
 
 type Message struct {
 	Id          string
-	Type        string
+	SessionId   string
+	SessionType string
 	Content     string
 	ContentType string
-	CreatedAt        int64
+	CreatedAt   int64
 	ClientMsgId string
 	Sequence    int64
-	SessionId   string
 	FromUser    *User
 }
 
