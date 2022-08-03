@@ -1,0 +1,73 @@
+package handler
+
+import (
+	"gim/internal/aggregate"
+	"gim/internal/domain/event"
+	"gim/pkg/network"
+	"time"
+)
+
+type EventHandler struct {
+	expired time.Duration
+	gateApp *aggregate.GateApp
+}
+
+func (h *EventHandler) RegisterEvents()  {
+	event.Listen(event.Connect, h.Connect)
+	event.Listen(event.Login, h.Login)
+	event.Listen(event.Disconnect, h.Disconnect)
+	event.Listen(event.JoinGroup, h.JoinGroup)
+	event.Listen(event.LeaveGroup, h.LeaveGroup)
+}
+
+func (h *EventHandler) Connect(params ...interface{}) {
+	if len(params) <= 1 {
+		return
+	}
+	conn := params[0].(*network.Connection)
+	// 如果用户未按时登录，通过定时任务关闭连接，释放资源
+	time.AfterFunc(h.expired, func() {
+		if !h.gateApp.CheckConnExist(conn) {
+			conn.Close()
+		}
+
+	})
+}
+
+func (h *EventHandler) Login(params ...interface{}) {
+	if len(params) <= 1 {
+		return
+	}
+	uid := params[0].(string)
+	conn := params[1].(*network.Connection)
+	h.gateApp.RegisterConn(uid, conn)
+}
+func (h *EventHandler) Disconnect(params ...interface{}) {
+	if len(params) < 1 {
+		return
+	}
+	conn := params[0].(*network.Connection)
+	h.gateApp.RemoveConn(conn)
+}
+func (h *EventHandler) JoinGroup(params ...interface{}) {
+	if len(params) <= 1 {
+		return
+	}
+	roomId := params[0].(string)
+	conn := params[1].(*network.Connection)
+	h.gateApp.JoinRoom(roomId, conn)
+
+}
+func (h *EventHandler) LeaveGroup(params ...interface{}) {
+	if len(params) <= 1 {
+		return
+	}
+	roomId := params[0].(string)
+	conn := params[1].(*network.Connection)
+	h.gateApp.LeaveRoom(roomId, conn)
+}
+
+func NewEventHandler(gateApp *aggregate.GateApp) *EventHandler {
+	h :=  &EventHandler{gateApp: gateApp, expired: time.Minute}
+	return h
+}

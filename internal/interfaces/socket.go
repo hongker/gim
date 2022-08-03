@@ -3,12 +3,12 @@ package interfaces
 import (
 	"gim/api"
 	"gim/internal/aggregate"
+	"gim/internal/domain/event"
 	"gim/internal/interfaces/handler"
 	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
 	"log"
-	"time"
 )
 
 type Handler func(ctx * network.Context)
@@ -16,7 +16,6 @@ type Handler func(ctx * network.Context)
 type Socket struct {
 	handlers map[int32]Handler
 	gateApp *aggregate.GateApp
-	expired time.Duration
 }
 
 
@@ -34,19 +33,13 @@ func (s *Socket) Start(bind string) error {
 func (s *Socket) onConnect(conn *network.Connection) {
 	log.Println("connect:", conn.IP())
 
-	// 如果用户未按时登录，通过定时任务关闭连接，释放资源
-	time.AfterFunc(s.expired, func() {
-		if !s.gateApp.CheckConnExist(conn) {
-			conn.Close()
-		}
-
-	})
+	event.Trigger(event.Connect, conn)
 }
 
 
 func (s *Socket) onDisconnect(conn *network.Connection) {
 	log.Println("disconnect:", conn.IP())
-	s.gateApp.RemoveConn(conn)
+	event.Trigger(event.Disconnect, conn)
 }
 
 
@@ -60,6 +53,7 @@ func (s *Socket) onRequest(ctx *network.Context) {
 	log.Println(packet.Op, packet.Data)
 	helper.SetContextPacket(ctx, packet)
 	if packet.Op != api.OperateAuth {
+		// failure when user not authenticated
 		user := s.gateApp.GetUser(ctx.Connection())
 		if user == nil {
 			helper.Failure(ctx, errors.New(errors.CodeForbidden, "auth is required"))
@@ -107,19 +101,19 @@ func (s *Socket) registerHandler(operate int32, handler func(ctx *network.Contex
 }
 
 func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler,
-	groupHandler *handler.GroupHandler,
-	gateApp *aggregate.GateApp) *Socket {
+	groupHandler *handler.GroupHandler, gateApp *aggregate.GateApp, eventHandler *handler.EventHandler) *Socket {
 	s := &Socket{
 		handlers: make(map[int32]Handler, 16),
-		expired: time.Minute,
+		gateApp: gateApp,
 	}
 
-	s.gateApp = gateApp
 	s.registerHandler(api.OperateAuth, userHandler.Login)
 	s.registerHandler(api.OperateMessageSend, messageHandler.Send)
 	s.registerHandler(api.OperateMessageQuery, messageHandler.Query)
 	s.registerHandler(api.OperateGroupJoin, groupHandler.Join)
 	s.registerHandler(api.OperateGroupLeave, groupHandler.Leave)
+
+	eventHandler.RegisterEvents()
 	return s
 }
 

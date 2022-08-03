@@ -91,8 +91,10 @@ func (app *GateApp) LeaveRoom(roomId string, conn *network.Connection, ) {
 	room.Remove(channel)
 }
 
+
 func NewGateApp() *GateApp {
-	return &GateApp{
+	app := &GateApp{
 		bucket: types.NewBucket(),
 	}
+	return app
 }

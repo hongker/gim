@@ -3,6 +3,7 @@ package handler
 import (
 	"gim/internal/aggregate"
 	"gim/internal/domain/dto"
+	"gim/internal/domain/event"
 	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
@@ -10,7 +11,6 @@ import (
 
 type GroupHandler struct {
 	groupApp *aggregate.GroupApp
-	gateApp *aggregate.GateApp
 }
 
 func (handler *GroupHandler) Join(ctx *network.Context) (interface{}, error) {
@@ -25,7 +25,8 @@ func (handler *GroupHandler) Join(ctx *network.Context) (interface{}, error) {
 		return nil, errors.WithMessage(err, "join group")
 	}
 
-	handler.gateApp.JoinRoom(req.GroupId, ctx.Connection())
+	event.Trigger(event.JoinGroup, req.GroupId, ctx.Connection())
+
 	return nil, nil
 }
 
@@ -40,10 +41,10 @@ func (handler *GroupHandler) Leave(ctx *network.Context) ( interface{},  error) 
 	if err != nil {
 		return nil, errors.WithMessage(err, "leave group")
 	}
-	handler.gateApp.LeaveRoom(req.GroupId, ctx.Connection())
+	event.Trigger(event.LeaveGroup, req.GroupId, ctx.Connection())
 	return nil, nil
 }
 
-func NewGroupHandler(groupApp *aggregate.GroupApp, gateApp *aggregate.GateApp) *GroupHandler {
-	return &GroupHandler{groupApp: groupApp, gateApp: gateApp}
+func NewGroupHandler(groupApp *aggregate.GroupApp, ) *GroupHandler {
+	return &GroupHandler{groupApp: groupApp, }
 }

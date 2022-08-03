@@ -30,7 +30,7 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 
 	groupUser, _ := app.groupUserRepo.Find(ctx, group.GroupId, user.Id)
 	if groupUser != nil {
-		return errors.Failure("find group user")
+		return errors.Failure("group user is exist")
 	}
 
 	if err := app.groupUserRepo.Create(ctx, &entity.GroupUser{
@@ -40,7 +40,6 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 	}); err != nil {
 		return errors.WithMessage(err, "create group user")
 	}
-
 
 	return nil
 }

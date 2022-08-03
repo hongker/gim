@@ -41,7 +41,7 @@ func TestClientC(t *testing.T) {
 		p := api.NewPacket()
 		p.Op  =api.OperateMessageSend
 		p.Marshal(dto.MessageSendRequest{
-			Type:        api.RoomMessage,
+			Type:        api.GroupSession,
 			Content:     "testRoom",
 			ContentType: api.TextMessage,
 			ClientMsgId: "",

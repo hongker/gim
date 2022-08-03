@@ -3,6 +3,7 @@ package handler
 import (
 	"gim/internal/aggregate"
 	"gim/internal/domain/dto"
+	"gim/internal/domain/event"
 	"gim/internal/interfaces/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
@@ -10,7 +11,6 @@ import (
 
 type UserHandler struct {
 	userApp *aggregate.UserApp
-	gateApp *aggregate.GateApp
 }
 
 func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error)  {
@@ -24,15 +24,13 @@ func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error)  {
 		return nil, errors.WithMessage(err, "login")
 	}
 
-	handler.gateApp.RegisterConn(resp.UID, ctx.Connection())
+	event.Trigger(event.Login, resp.UID, ctx.Connection())
 
 	return resp, nil
 }
 
-func NewUserHandler(userApp *aggregate.UserApp,
-gateApp *aggregate.GateApp) *UserHandler {
+func NewUserHandler(userApp *aggregate.UserApp,) *UserHandler {
 	return &UserHandler{
 		userApp: userApp,
-		gateApp: gateApp,
 	}
 }
