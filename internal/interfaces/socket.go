@@ -23,8 +23,8 @@ func (s *Socket) Start(bind string) error {
 	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(api.PacketOffset))
 	tcpServer.SetOnConnect(s.onConnect)
 	tcpServer.SetOnDisconnect(s.onDisconnect)
-	tcpServer.Use(s.recover,)
 	tcpServer.SetOnRequest(s.onRequest)
+	tcpServer.Use(s.recover, s.decodePacket, s.validateUser)
 
 	return tcpServer.Start()
 }
@@ -32,7 +32,6 @@ func (s *Socket) Start(bind string) error {
 
 func (s *Socket) onConnect(conn *network.Connection) {
 	log.Println("connect:", conn.IP())
-
 	event.Trigger(event.Connect, conn)
 }
 
@@ -44,24 +43,7 @@ func (s *Socket) onDisconnect(conn *network.Connection) {
 
 
 func (s *Socket) onRequest(ctx *network.Context) {
-	packet := api.NewPacket()
-	if err := packet.Decode(ctx.Request().Body()); err != nil {
-		helper.Failure(ctx, errors.InvalidParameter(err.Error()))
-		return
-	}
-
-	log.Println(packet.Op, packet.Data)
-	helper.SetContextPacket(ctx, packet)
-	if packet.Op != api.OperateAuth {
-		// failure when user not authenticated
-		user := s.gateApp.GetUser(ctx.Connection())
-		if user == nil {
-			helper.Failure(ctx, errors.New(errors.CodeForbidden, "auth is required"))
-			return
-		}
-		helper.SetContextUser(ctx, user)
-	}
-
+	packet := helper.GetContextPacket(ctx)
 	processor, ok := s.handlers[packet.Op]
 	if !ok {
 		helper.Failure(ctx, errors.InvalidParameter("invalid operate"))
@@ -72,7 +54,35 @@ func (s *Socket) onRequest(ctx *network.Context) {
 
 }
 
+func (s *Socket) decodePacket(ctx *network.Context) {
+	packet := api.NewPacket()
+	if err := packet.Decode(ctx.Request().Body()); err != nil {
+		helper.Failure(ctx, errors.InvalidParameter(err.Error()))
+		ctx.Abort()
+		return
+	}
 
+	log.Println(packet.Op, string(packet.Data))
+	helper.SetContextPacket(ctx, packet)
+	ctx.Next()
+}
+
+func (s *Socket) validateUser(ctx *network.Context) {
+	packet := helper.GetContextPacket(ctx)
+	if packet.Op == api.OperateAuth {
+		ctx.Next()
+		return
+	}
+
+	user := s.gateApp.GetUser(ctx.Connection())
+	if user == nil {
+		helper.Failure(ctx, errors.New(errors.CodeForbidden, "auth is required"))
+		ctx.Abort()
+		return
+	}
+	helper.SetContextUser(ctx, user)
+	ctx.Next()
+}
 
 func (s *Socket) recover(ctx *network.Context) {
 	defer func() {
