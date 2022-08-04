@@ -1,11 +1,11 @@
-package interfaces
+package presentation
 
 import (
 	"gim/api"
-	"gim/internal/aggregate"
+	"gim/internal/application"
 	"gim/internal/domain/event"
-	"gim/internal/interfaces/handler"
-	"gim/internal/interfaces/helper"
+	"gim/internal/presentation/handler"
+	"gim/internal/presentation/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
 	"log"
@@ -15,7 +15,7 @@ type Handler func(ctx * network.Context)
 
 type Socket struct {
 	handlers map[int32]Handler
-	gateApp *aggregate.GateApp
+	gateApp *application.GateApp
 }
 
 
@@ -111,7 +111,7 @@ func (s *Socket) registerHandler(operate int32, handler func(ctx *network.Contex
 }
 
 func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler,
-	groupHandler *handler.GroupHandler, gateApp *aggregate.GateApp, eventHandler *handler.EventHandler) *Socket {
+	groupHandler *handler.GroupHandler, gateApp *application.GateApp, eventHandler *handler.EventHandler) *Socket {
 	s := &Socket{
 		handlers: make(map[int32]Handler, 16),
 		gateApp: gateApp,

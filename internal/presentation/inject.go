@@ -1,7 +1,7 @@
-package interfaces
+package presentation
 
 import (
-	"gim/internal/interfaces/handler"
+	"gim/internal/presentation/handler"
 	"go.uber.org/dig"
 )
 

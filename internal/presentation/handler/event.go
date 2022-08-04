@@ -2,7 +2,7 @@ package handler
 
 import (
 	"gim/api"
-	"gim/internal/aggregate"
+	"gim/internal/application"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/event"
 	"gim/pkg/network"
@@ -11,7 +11,7 @@ import (
 
 type EventHandler struct {
 	expired time.Duration
-	gateApp *aggregate.GateApp
+	gateApp *application.GateApp
 }
 
 func (h *EventHandler) RegisterEvents()  {
@@ -82,7 +82,7 @@ func (h *EventHandler) LeaveGroup(params ...interface{}) {
 	h.gateApp.LeaveRoom(roomId, conn)
 }
 
-func NewEventHandler(gateApp *aggregate.GateApp) *EventHandler {
+func NewEventHandler(gateApp *application.GateApp) *EventHandler {
 	h :=  &EventHandler{gateApp: gateApp, expired: time.Minute}
 	return h
 }

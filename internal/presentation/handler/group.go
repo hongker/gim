@@ -1,16 +1,16 @@
 package handler
 
 import (
-	"gim/internal/aggregate"
+	"gim/internal/application"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/event"
-	"gim/internal/interfaces/helper"
+	"gim/internal/presentation/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
 )
 
 type GroupHandler struct {
-	groupApp *aggregate.GroupApp
+	groupApp *application.GroupApp
 }
 
 func (handler *GroupHandler) Join(ctx *network.Context) (interface{}, error) {
@@ -45,6 +45,6 @@ func (handler *GroupHandler) Leave(ctx *network.Context) ( interface{},  error) 
 	return nil, nil
 }
 
-func NewGroupHandler(groupApp *aggregate.GroupApp, ) *GroupHandler {
+func NewGroupHandler(groupApp *application.GroupApp, ) *GroupHandler {
 	return &GroupHandler{groupApp: groupApp, }
 }

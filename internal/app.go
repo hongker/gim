@@ -2,9 +2,9 @@ package internal
 
 import (
 	"flag"
-	"gim/internal/aggregate"
+	"gim/internal/application"
 	"gim/internal/infrastructure"
-	"gim/internal/interfaces"
+	"gim/internal/presentation"
 	"gim/pkg/app"
 	"gim/pkg/system"
 	"log"
@@ -20,10 +20,10 @@ func Run()  {
 
 
 	infrastructure.Inject(container, *pluginStore)
-	aggregate.Inject(container)
-	interfaces.Inject(container)
+	application.Inject(container)
+	presentation.Inject(container)
 
-	err := container.Invoke(func(socket *interfaces.Socket) error {
+	err := container.Invoke(func(socket *presentation.Socket) error {
 		return socket.Start(*addr)
 	})
 

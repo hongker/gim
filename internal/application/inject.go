@@ -1,4 +1,4 @@
-package aggregate
+package application
 
 import "go.uber.org/dig"
 
