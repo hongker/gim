@@ -7,6 +7,7 @@ import (
 	"gim/internal/domain/dto"
 	"gim/pkg/binary"
 	"gim/pkg/system"
+	uuid "github.com/satori/go.uuid"
 	"net"
 	"testing"
 	"time"
@@ -43,7 +44,7 @@ func TestSendUserMessage(t *testing.T) {
 			Type:        api.UserSession,
 			Content:     "testSendUserMessage",
 			ContentType: api.TextMessage,
-			ClientMsgId: "",
+			RequestId: "",
 			TargetId:   "8f66603c-823a-458e-93e2-647ca52fe122",
 		})
 
@@ -64,7 +65,7 @@ func TestSendGroupMessage(t *testing.T) {
 			Type:        api.GroupSession,
 			Content:     "testRoom",
 			ContentType: api.TextMessage,
-			ClientMsgId: "",
+			RequestId: uuid.NewV4().String(),
 			TargetId:   "1001",
 		})
 

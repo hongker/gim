@@ -49,7 +49,7 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 		Content:     req.Content,
 		ContentType: req.ContentType,
 		CreatedAt:   time.Now().UnixNano(),
-		ClientMsgId: req.ClientMsgId,
+		RequestId: req.RequestId,
 		Sequence:    app.repo.GenerateSequence(sessionId),
 		SessionId:   sessionId,
 		FromUser:    &entity.User{Id: sender.Id},
@@ -59,6 +59,7 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 	}
 	res := dto.Message{
 		Id: item.Id,
+		RequestId: item.RequestId,
 		Session: dto.Session{Id: item.SessionId, Type: item.SessionType},
 		Content:   item.Content,
 		ContentType: item.ContentType,
@@ -89,6 +90,7 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 	for _, item := range items {
 		res.Items = append(res.Items, dto.Message{
 			Id: item.Id,
+			RequestId: item.RequestId,
 			Session: dto.Session{Id: item.SessionId, Type: item.SessionType},
 			Content:   item.Content,
 			ContentType: item.ContentType,

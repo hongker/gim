@@ -8,7 +8,7 @@ type Message struct {
 	Content     string
 	ContentType string
 	CreatedAt   int64
-	ClientMsgId string
+	RequestId string
 	Sequence    int64
 	FromUser    *User
 }

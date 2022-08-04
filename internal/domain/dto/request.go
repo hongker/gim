@@ -19,9 +19,7 @@ type MessageSendRequest struct {
 	TargetId string `json:"target_id"`
 	Content     string `json:"content"`
 	ContentType string `json:"content_type"`
-	ClientMsgId string `json:"client_msg_id"`
-
-
+	RequestId string `json:"request_id"`
 }
 
 func (req MessageSendRequest) SessionId(uid string) string {
@@ -48,6 +46,7 @@ type MessageQueryResponse struct {
 
 type Message struct {
 	Id string `json:"id"`
+	RequestId string `json:"request_id"`
 	Session Session `json:"session"`
 	ContentType string `json:"content_type"`
 	Content string `json:"content"`
