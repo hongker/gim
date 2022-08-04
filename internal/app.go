@@ -4,6 +4,7 @@ import (
 	"flag"
 	"gim/internal/application"
 	"gim/internal/infrastructure"
+	"gim/internal/infrastructure/config"
 	"gim/internal/presentation"
 	"gim/pkg/app"
 	"gim/pkg/system"
@@ -12,20 +13,18 @@ import (
 
 var (
 	addr = flag.String("addr", "0.0.0.0:8088", "socket address")
-	pluginStore = flag.String("plugin-store", "memory", "plugin store")
+	messagePushCount = flag.Int("msg-push-count", 10, "number of message pushed")
+	messageStoreCount = flag.Int("msg-store-count", 10000, "number of message stored")
 )
 func Run()  {
 	flag.Parse()
 	container := app.Container()
 
-
-	infrastructure.Inject(container, *pluginStore)
+	infrastructure.Inject(container)
 	application.Inject(container)
 	presentation.Inject(container)
 
-	err := container.Invoke(func(socket *presentation.Socket) error {
-		return socket.Start(*addr)
-	})
+	err := container.Invoke(serve)
 
 	if err != nil {
 		panic(err)
@@ -36,3 +35,16 @@ func Run()  {
 	})
 }
 
+func serve(socket *presentation.Socket, conf *config.Config) error {
+	options := []config.Option{}
+	if *messagePushCount > 0 {
+		options = append(options, config.WithMessagePushCount(*messageStoreCount))
+	}
+
+	if *messageStoreCount > 0 {
+		options = append(options, config.WithMessageMaxStoreSize(*messageStoreCount))
+	}
+	conf.WithOptions(options...)
+
+	return socket.Start(*addr)
+}
