@@ -15,15 +15,21 @@ var (
 )
 
 type MessageRepo struct {
+	colLock sync.Mutex
 	collections map[string]*store.SortedSet
 	seqLock sync.Mutex
 	sequences map[string]int64
+	maxCap int // 每个会话的最大容量
 }
 
 
 func (repo *MessageRepo) Save(ctx context.Context, message *entity.Message) error {
+	collection := repo.getCollection(message.SessionId)
+	if collection.GetCount() >= repo.maxCap { // 超过容量的就删除最早的
+		collection.PopMin()
+	}
 	message.Id = uuid.NewV4().String()
-	repo.getCollection(message.SessionId).AddOrUpdate(message.Id, store.SCORE(message.CreatedAt), message)
+	collection.AddOrUpdate(message.Id, store.SCORE(message.CreatedAt), message)
 	return nil
 }
 
@@ -53,6 +59,8 @@ func (repo *MessageRepo) GenerateSequence(sessionId string) int64 {
 }
 
 func (repo *MessageRepo) getCollection(sessionId string) (*store.SortedSet) {
+	repo.colLock.Lock()
+	defer repo.colLock.Unlock()
 	collection, ok := repo.collections[sessionId]
 	if !ok {
 		collection = store.New()
@@ -65,5 +73,6 @@ func NewMessageRepo() repository.MessageRepo {
 	return &MessageRepo{
 		collections: make(map[string]*store.SortedSet),
 		sequences: make(map[string]int64),
+		maxCap: 1000,
 	}
 }

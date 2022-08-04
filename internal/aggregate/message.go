@@ -7,7 +7,7 @@ import (
 	"gim/internal/domain/entity"
 	"gim/internal/domain/event"
 	"gim/internal/domain/repository"
-	"gim/internal/domain/types"
+	"gim/pkg/queue"
 	"sync"
 	"time"
 )
@@ -15,11 +15,11 @@ import (
 type MessageApp struct {
 	repo repository.MessageRepo
 	rmu sync.RWMutex
-	queues map[string]*types.Queue
+	queues map[string]*queue.Queue
 	queueCap int
 }
 
-func (app *MessageApp) getQueue(sessionType string, targetId string) *types.Queue  {
+func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queue {
 	app.rmu.Lock()
 	defer app.rmu.Unlock()
 	if q, ok := app.queues[targetId]; ok {
@@ -29,7 +29,7 @@ func (app *MessageApp) getQueue(sessionType string, targetId string) *types.Queu
 	if sessionType == api.UserSession {
 		limit = false
 	}
-	q := types.NewQueue(app.queueCap, limit)
+	q := queue.NewQueue(app.queueCap, limit)
 	app.queues[targetId] = q
 	go q.Poll(time.Second , func(items []interface{}) {
 		batchMessages := &dto.BatchMessage{Items: make([]dto.Message, len(items))}
@@ -102,6 +102,6 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 }
 
 func NewMessageApp(repo repository.MessageRepo) *MessageApp {
-	app := &MessageApp{repo: repo, queues: map[string]*types.Queue{}, queueCap: 10}
+	app := &MessageApp{repo: repo, queues: map[string]*queue.Queue{}, queueCap: 10}
 	return app
 }
