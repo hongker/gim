@@ -14,7 +14,7 @@ import (
 
 
 func TestQueyrMessage(t *testing.T) {
-	conn, err := connect("someUserA")
+	conn, err := connect("someUserA", true)
 	system.SecurePanic(err)
 
 	for {
@@ -32,9 +32,29 @@ func TestQueyrMessage(t *testing.T) {
 
 }
 
+func TestSendUserMessage(t *testing.T) {
+	conn, err := connect("someUserB", false)
+	system.SecurePanic(err)
+
+	for {
+		p := api.NewPacket()
+		p.Op  =api.OperateMessageSend
+		p.Marshal(dto.MessageSendRequest{
+			Type:        api.UserSession,
+			Content:     "testSendUserMessage",
+			ContentType: api.TextMessage,
+			ClientMsgId: "",
+			TargetId:   "8f66603c-823a-458e-93e2-647ca52fe122",
+		})
+
+		conn.Write(p.Encode())
+		time.Sleep(time.Millisecond * 500)
+	}
+}
+
 
 func TestSendGroupMessage(t *testing.T) {
-	conn, err := connect("someUserB")
+	conn, err := connect("someUserB", true)
 	system.SecurePanic(err)
 
 	for {
@@ -54,7 +74,7 @@ func TestSendGroupMessage(t *testing.T) {
 
 }
 
-func connect(name string) (net.Conn, error) {
+func connect(name string, joinGroup bool) (net.Conn, error) {
 	conn, err := net.Dial("tcp", "127.0.0.1:8088")
 	system.SecurePanic(err)
 	p := api.NewPacket()
@@ -86,8 +106,11 @@ func connect(name string) (net.Conn, error) {
 	_, err = conn.Write(p.Encode())
 	system.SecurePanic(err)
 
-	time.Sleep(time.Second)
-	joinGroupPacket := api.BuildPacket(api.OperateGroupJoin, dto.GroupJoinRequest{GroupId: "1001"})
-	_, err = conn.Write(joinGroupPacket.Encode())
+	if joinGroup {
+		time.Sleep(time.Second)
+		joinGroupPacket := api.BuildPacket(api.OperateGroupJoin, dto.GroupJoinRequest{GroupId: "1001"})
+		_, err = conn.Write(joinGroupPacket.Encode())
+	}
+
 	return conn, nil
 }
