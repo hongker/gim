@@ -16,6 +16,7 @@ type MessageApp struct {
 	repo repository.MessageRepo
 	rmu sync.RWMutex
 	queues map[string]*types.Queue
+	queueCap int
 }
 
 func (app *MessageApp) getQueue(sessionType string, targetId string) *types.Queue  {
@@ -24,7 +25,11 @@ func (app *MessageApp) getQueue(sessionType string, targetId string) *types.Queu
 	if q, ok := app.queues[targetId]; ok {
 		return q
 	}
-	q := types.NewQueue(10)
+	limit := true
+	if sessionType == api.UserSession {
+		limit = false
+	}
+	q := types.NewQueue(app.queueCap, limit)
 	app.queues[targetId] = q
 	go q.Poll(time.Second , func(items []interface{}) {
 		batchMessages := &dto.BatchMessage{Items: make([]dto.Message, len(items))}
@@ -64,11 +69,7 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 		},
 	}
 
-	if item.SessionType == api.UserSession {
-		// send direct
-	}else {
-		app.getQueue(item.SessionType, req.TargetId).Offer(res)
-	}
+	app.getQueue(item.SessionType, req.TargetId).Offer(res)
 
 	return  nil
 }
@@ -101,6 +102,6 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 }
 
 func NewMessageApp(repo repository.MessageRepo) *MessageApp {
-	app := &MessageApp{repo: repo, queues: map[string]*types.Queue{}}
+	app := &MessageApp{repo: repo, queues: map[string]*types.Queue{}, queueCap: 10}
 	return app
 }

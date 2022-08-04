@@ -13,8 +13,8 @@ import (
 )
 
 
-func TestClientB(t *testing.T) {
-	conn, err := connect("B")
+func TestQueyrMessage(t *testing.T) {
+	conn, err := connect("someUserA")
 	system.SecurePanic(err)
 
 	for {
@@ -33,8 +33,8 @@ func TestClientB(t *testing.T) {
 }
 
 
-func TestClientC(t *testing.T) {
-	conn, err := connect("C")
+func TestSendGroupMessage(t *testing.T) {
+	conn, err := connect("someUserB")
 	system.SecurePanic(err)
 
 	for {
