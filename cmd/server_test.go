@@ -22,7 +22,7 @@ func TestQueryMessage(t *testing.T) {
 		p := api.NewPacket()
 		p.Op  =api.OperateMessageQuery
 		p.Marshal(dto.MessageQueryRequest{
-			SessionId: "group:1001",
+			SessionId: "group:1",
 			Limit:     3,
 			Last:      time.Now().UnixNano(),
 		})
@@ -34,7 +34,7 @@ func TestQueryMessage(t *testing.T) {
 }
 
 func TestSendUserMessage(t *testing.T) {
-	conn, err := connect("someUserB", false)
+	conn, err := connect("someUser", false)
 	system.SecurePanic(err)
 
 	for {
@@ -45,7 +45,7 @@ func TestSendUserMessage(t *testing.T) {
 			Content:     "testSendUserMessage",
 			ContentType: api.TextMessage,
 			RequestId: "",
-			TargetId:   "8f66603c-823a-458e-93e2-647ca52fe122",
+			TargetId:   "8",
 		})
 
 		conn.Write(p.Encode())
