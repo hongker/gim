@@ -21,6 +21,7 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 		group = &entity.Group{
 			GroupId: groupId,
 			Title: fmt.Sprintf("group:%d", groupId),
+			Creator: user.Id,
 			CreatedAt: time.Now().Unix(),
 		}
 		if err := app.groupRepo.Create(ctx, group); err != nil {

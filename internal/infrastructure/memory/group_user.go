@@ -52,6 +52,7 @@ func (repo *GroupUserRepo) Delete(ctx context.Context, groupId string, userId st
 		return nil
 	}
 	delete(groupUsers, userId)
+	repo.items[groupId] = groupUsers
 
 	return nil
 }
