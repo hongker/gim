@@ -13,7 +13,7 @@ import (
 )
 
 
-func TestQueyrMessage(t *testing.T) {
+func TestQueryMessage(t *testing.T) {
 	conn, err := connect("someUserA", true)
 	system.SecurePanic(err)
 
