@@ -66,7 +66,7 @@ func TestSendGroupMessage(t *testing.T) {
 			Content:     "testRoom",
 			ContentType: api.TextMessage,
 			RequestId: uuid.NewV4().String(),
-			TargetId:   "1001",
+			TargetId:   "1",
 		})
 
 		conn.Write(p.Encode())
@@ -76,7 +76,7 @@ func TestSendGroupMessage(t *testing.T) {
 }
 
 func connect(name string, joinGroup bool) (net.Conn, error) {
-	conn, err := net.Dial("tcp", "127.0.0.1:8088")
+	conn, err := net.Dial("tcp", "127.0.0.1:8080")
 	system.SecurePanic(err)
 	p := api.NewPacket()
 	p.Op = api.OperateAuth
@@ -109,7 +109,7 @@ func connect(name string, joinGroup bool) (net.Conn, error) {
 
 	if joinGroup {
 		time.Sleep(time.Second)
-		joinGroupPacket := api.BuildPacket(api.OperateGroupJoin, dto.GroupJoinRequest{GroupId: "1001"})
+		joinGroupPacket := api.BuildPacket(api.OperateGroupJoin, dto.GroupJoinRequest{GroupId: "1"})
 		_, err = conn.Write(joinGroupPacket.Encode())
 	}
 

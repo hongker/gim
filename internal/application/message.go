@@ -52,7 +52,7 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 		ContentType: req.ContentType,
 		CreatedAt:   time.Now().UnixNano(),
 		RequestId: req.RequestId,
-		Sequence:    app.repo.GenerateSequence(sessionId),
+		Sequence:    app.repo.GenerateSequence(ctx, sessionId),
 		SessionId:   sessionId,
 		FromUser:    &entity.User{Id: sender.Id},
 	}

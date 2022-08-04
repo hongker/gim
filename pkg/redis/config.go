@@ -32,7 +32,7 @@ type Config struct {
 }
 
 // Options 单机选项
-func (conf *Config) Options() *redis.Options {
+func (conf Config) Options() *redis.Options {
 	address := net.JoinHostPort(conf.Host, strconv.Itoa(conf.Port))
 
 	return &redis.Options{
@@ -45,7 +45,7 @@ func (conf *Config) Options() *redis.Options {
 }
 
 // ClusterOption 集群选项
-func (conf *Config) ClusterOption() *redis.ClusterOptions {
+func (conf Config) ClusterOption() *redis.ClusterOptions {
 	return &redis.ClusterOptions{
 		Addrs:       conf.Cluster,
 		Password:    conf.Auth,

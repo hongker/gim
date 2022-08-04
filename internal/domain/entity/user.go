@@ -7,8 +7,8 @@ type User struct {
 	Name string `json:"name"`
 }
 
-func (u User) Encode() string {
-	b, _ := json.Marshal(u)
+func Encode(container interface{}) string {
+	b, _ := json.Marshal(container)
 	return string(b)
 }
 

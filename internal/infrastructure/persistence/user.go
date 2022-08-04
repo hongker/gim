@@ -6,25 +6,25 @@ import (
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
 	"gim/pkg/errors"
-	"gim/pkg/redis"
+	"github.com/go-redis/redis/v8"
 	"strconv"
 	"time"
 )
 
 type UserRepository struct {
-	redisConn *redis.Connection
+	redisConn redis.UniversalClient
 	expired time.Duration
 }
 
 const(
 	userIdKey = "userId"
 	userPrefix = "user"
-	userExpired = time.Hour * 24 * 365
 )
 
 func (repo *UserRepository) getUserCacheKey(userId string) (string)  {
 	return fmt.Sprintf("%s:%s", userPrefix, userId)
 }
+
 
 func (repo UserRepository) Save(ctx context.Context, item *entity.User) error {
 	res, err := repo.redisConn.Incr(ctx, userIdKey).Result()
@@ -33,9 +33,8 @@ func (repo UserRepository) Save(ctx context.Context, item *entity.User) error {
 	}
 	item.Id = strconv.FormatInt(res, 10)
 
-	err = repo.redisConn.Set(ctx, repo.getUserCacheKey(item.Id), item.Encode(), repo.expired).Err()
+	err = repo.redisConn.Set(ctx, repo.getUserCacheKey(item.Id), entity.Encode(item), repo.expired).Err()
 	return nil
-
 }
 
 func (repo UserRepository) Get(ctx context.Context, userId string) (*entity.User, error) {
@@ -48,6 +47,7 @@ func (repo UserRepository) Get(ctx context.Context, userId string) (*entity.User
 	return item, err
 }
 
-func NewUserRepository(redisConn *redis.Connection) repository.UserRepository  {
-	return &UserRepository{redisConn: redisConn, expired: userExpired}
+
+func NewUserRepository(redisConn redis.UniversalClient) repository.UserRepository  {
+	return &UserRepository{redisConn: redisConn, expired: time.Hour*24*30}
 }

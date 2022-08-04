@@ -19,7 +19,6 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 	group, _ := app.groupRepo.Find(ctx, groupId)
 	if group == nil {
 		group = &entity.Group{
-			GroupId: groupId,
 			Title: fmt.Sprintf("group:%d", groupId),
 			Creator: user.Id,
 			CreatedAt: time.Now().Unix(),
@@ -29,13 +28,13 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 		}
 	}
 
-	groupUser, _ := app.groupUserRepo.Find(ctx, group.GroupId, user.Id)
+	groupUser, _ := app.groupUserRepo.Find(ctx, group.Id, user.Id)
 	if groupUser != nil {
 		return errors.Failure("group user is exist")
 	}
 
 	if err := app.groupUserRepo.Create(ctx, &entity.GroupUser{
-		GroupId:   group.GroupId,
+		GroupId:   group.Id,
 		UserId:    user.Id,
 		CreatedAt: time.Now().Unix(),
 	}); err != nil {

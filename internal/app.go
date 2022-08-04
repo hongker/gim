@@ -12,9 +12,7 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "0.0.0.0:8088", "socket address")
-	messagePushCount = flag.Int("msg-push-count", 10, "number of message pushed")
-	messageStoreCount = flag.Int("msg-store-count", 10000, "number of message stored")
+	configFile = flag.String("conf", "./app.yaml", "configuration file")
 )
 func Run()  {
 	flag.Parse()
@@ -24,8 +22,13 @@ func Run()  {
 	application.Inject(container)
 	presentation.Inject(container)
 
-	err := container.Invoke(serve)
+	if err := container.Invoke(func(conf *config.Config) error{
+		return conf.LoadFile(*configFile)
+	}); err != nil {
+		panic(err)
+	}
 
+	err := container.Invoke(serve)
 	if err != nil {
 		panic(err)
 	}
@@ -36,15 +39,5 @@ func Run()  {
 }
 
 func serve(socket *presentation.Socket, conf *config.Config) error {
-	options := []config.Option{}
-	if *messagePushCount > 0 {
-		options = append(options, config.WithMessagePushCount(*messageStoreCount))
-	}
-
-	if *messageStoreCount > 0 {
-		options = append(options, config.WithMessageMaxStoreSize(*messageStoreCount))
-	}
-	conf.WithOptions(options...)
-
-	return socket.Start(*addr)
+	return socket.Start(conf.Addr())
 }

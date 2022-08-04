@@ -6,11 +6,8 @@ import (
 	"log"
 )
 
-type Connection struct {
-	redis.UniversalClient
-}
 
-func Connect(conf *Config) (*Connection, error) {
+func Connect(conf Config) (redis.UniversalClient, error) {
 	var client redis.UniversalClient
 	if len(conf.Cluster) >0 {
 		client = redis.NewClusterClient(conf.ClusterOption())
@@ -24,5 +21,5 @@ func Connect(conf *Config) (*Connection, error) {
 	}
 	log.Println("Connect redis success:", conf.Host)
 
-	return &Connection{UniversalClient: client}, nil
+	return client, nil
 }
