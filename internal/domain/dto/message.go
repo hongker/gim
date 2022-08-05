@@ -7,5 +7,6 @@ type MessageHistoryQuery struct {
 }
 
 type BatchMessage struct {
+	Count int `json:"count"`
 	Items []Message `json:"items"`
 }

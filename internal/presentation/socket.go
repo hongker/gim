@@ -62,7 +62,7 @@ func (s *Socket) decodePacket(ctx *network.Context) {
 		return
 	}
 
-	log.Println(packet.Op, string(packet.Data))
+	//log.Println(packet.Op, string(packet.Data))
 	helper.SetContextPacket(ctx, packet)
 	ctx.Next()
 }

@@ -37,7 +37,7 @@ func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queu
 	q := queue.NewQueue(app.queueCap, limit)
 	app.queues[targetId] = q
 	go q.Poll(time.Second , func(items []interface{}) {
-		batchMessages := &dto.BatchMessage{Items: make([]dto.Message, len(items))}
+		batchMessages := &dto.BatchMessage{Count: len(items),Items: make([]dto.Message, len(items))}
 		for i, item := range items {
 			batchMessages.Items[i] = item.(dto.Message)
 		}

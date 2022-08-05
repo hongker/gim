@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"gim/pkg/binary"
 	"gim/pkg/bytes"
 )
@@ -20,6 +21,9 @@ type Packet struct {
 func (p *Packet) Decode(body []byte) (err error) {
 	length := binary.BigEndian.Int32(body[:PacketOffset])
 	p.Op = binary.BigEndian.Int32(body[PacketOffset:OperateOffset])
+	if length > 1000 {
+		fmt.Println(string(body))
+	}
 	p.Data = body[OperateOffset:int(length)]
 	return
 }
@@ -29,7 +33,7 @@ func (p *Packet) Encode() (buf []byte) {
 	buf = bytes.Get(OperateOffset + len(p.Data))
 	binary.BigEndian.PutInt32(buf[:PacketOffset], int32(len(buf)))
 	binary.BigEndian.PutInt32(buf[PacketOffset:OperateOffset], p.Op)
-	copy(buf[OperateOffset:], p.Data)
+	binary.BigEndian.PutString(buf[OperateOffset:], string(p.Data))
 	return
 }
 

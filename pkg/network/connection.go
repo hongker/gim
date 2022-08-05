@@ -3,6 +3,7 @@ package network
 import (
 	"bufio"
 	"gim/pkg/binary"
+	"gim/pkg/bytes"
 	uuid "github.com/satori/go.uuid"
 	"log"
 	"net"
@@ -102,6 +103,55 @@ func (conn *Connection) handleRequest(engine *Engine) {
 	// 会导致内存随着连接的增加而增加
 	ctxPool := engine.contextPool()
 
+	packetDataLength := 4
+	for {
+		select {
+		case <-conn.done: // 退出
+			return
+		default:
+			b := bytes.Get(512)
+			_, err := conn.instance.Read(b[:packetDataLength])
+			if err != nil {
+				log.Println("read error: ", err)
+				return
+			}
+			length := int(binary.BigEndian.Int32(b[:packetDataLength]))
+			_, err = conn.instance.Read(b[packetDataLength:length])
+			if err != nil {
+				log.Println("read error: ", err)
+				return
+			}
+			//if !conn.scanner.Scan() {
+			//	log.Println("scanner failed:", conn.scanner.Err())
+			//	return
+			//}
+
+			// 通过对象池初始化时，会导致内存缓慢上涨,直到稳定
+			ctx := ctxPool.Get().(*Context)
+			ctx.Reset(b[:length], conn)
+
+			// 执行回调
+			go func() {
+				defer func() {
+					ctxPool.Put(ctx)
+					bytes.Put(b)
+				}()
+				ctx.Run()
+			}()
+		}
+
+	}
+
+}
+
+
+// handleRequest 处理请求
+func (conn *Connection) handleRequestWithScanner(engine *Engine) {
+	defer conn.Close()
+	// 利用对象池实例化context,避免GC
+	// 会导致内存随着连接的增加而增加
+	ctxPool := engine.contextPool()
+
 	for {
 		select {
 		case <-conn.done: // 退出
@@ -111,8 +161,8 @@ func (conn *Connection) handleRequest(engine *Engine) {
 				log.Println("scanner failed:", conn.scanner.Err())
 				return
 			}
+
 			// 通过对象池初始化时，会导致内存缓慢上涨,直到稳定
-			//ctx := &Context{engine: engine}
 			ctx := ctxPool.Get().(*Context)
 			ctx.Reset(conn.scanner.Bytes(), conn)
 
