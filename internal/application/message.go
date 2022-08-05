@@ -8,6 +8,7 @@ import (
 	"gim/internal/domain/event"
 	"gim/internal/domain/repository"
 	"gim/internal/infrastructure/config"
+	"gim/pkg/errors"
 	"gim/pkg/queue"
 	"sync"
 	"time"
@@ -15,10 +16,12 @@ import (
 
 type MessageApp struct {
 	repo repository.MessageRepo
+	groupRepo repository.GroupRepo
 	rmu sync.RWMutex
 	queues map[string]*queue.Queue
 	queueCap int
 	messageCap int
+
 }
 
 func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queue {
@@ -45,6 +48,9 @@ func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queu
 }
 
 func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) ( error) {
+	if err := app.validate(ctx, sender, req); err != nil {
+		return err
+	}
 	sessionId := req.SessionId(sender.Id)
 	item := &entity.Message{
 		SessionType: req.Type,
@@ -83,6 +89,20 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 	return  nil
 }
 
+func (app *MessageApp) validate(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) error{
+	if req.Type == api.UserSession {
+		if sender.Id ==req.TargetId {
+			return errors.InvalidParameter("sender same as target")
+		}
+	} else if req.Type == api.GroupSession {
+		_, err := app.groupRepo.Find(ctx, req.TargetId)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
 
 func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
 	items, err := app.repo.Query(ctx, dto.MessageHistoryQuery{
@@ -111,9 +131,10 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 	return res, nil
 }
 
-func NewMessageApp(repo repository.MessageRepo, config *config.Config) *MessageApp {
+func NewMessageApp(repo repository.MessageRepo, groupRepo repository.GroupRepo, config *config.Config) *MessageApp {
 	app := &MessageApp{
 		repo: repo,
+		groupRepo: groupRepo,
 		queues: map[string]*queue.Queue{},
 		queueCap: config.Message.PushCount,
 		messageCap: config.Message.MaxStoreSize,

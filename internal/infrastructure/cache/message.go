@@ -1,10 +1,9 @@
-package memory
+package cache
 
 import (
 	"context"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
-	"gim/internal/domain/repository"
 	"gim/pkg/store"
 	uuid "github.com/satori/go.uuid"
 	"sync"
@@ -73,11 +72,4 @@ func (repo *MessageRepo) getCollection(sessionId string) (*store.SortedSet) {
 		repo.collections[sessionId] = collection
 	}
 	return collection
-}
-
-func NewMessageRepo() repository.MessageRepo {
-	return &MessageRepo{
-		collections: make(map[string]*store.SortedSet),
-		sequences: make(map[string]int64),
-	}
 }

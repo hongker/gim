@@ -10,8 +10,14 @@ import (
 type Config struct {
 	viper *viper.Viper
 	Server  Server
+	Cache Cache
 	Redis redis.Config
 	Message Message
+}
+
+type Cache struct {
+	Expired time.Duration
+	Cleanup time.Duration
 }
 
 func (c *Config) LoadFile(path ...string) (err error) {
@@ -54,6 +60,10 @@ func New() *Config {
 		Server: Server{
 			Protocol: "tcp",
 			Port:     8080,
+		},
+		Cache: Cache{
+			Expired: time.Minute * 5,
+			Cleanup: time.Minute * 10,
 		},
 		Redis: redis.Config{
 			Host:        "127.0.0.1",
