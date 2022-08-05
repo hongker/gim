@@ -85,11 +85,11 @@ func (s *Socket) validateUser(ctx *network.Context) {
 }
 
 func (s *Socket) recover(ctx *network.Context) {
-	//defer func() {
-	//	if err := recover(); err != nil {
-	//		log.Printf("recover: err=%v\n", err)
-	//	}
-	//}()
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("recover: err=%v\n", err)
+		}
+	}()
 
 	ctx.Next()
 }

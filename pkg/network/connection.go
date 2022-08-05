@@ -70,7 +70,9 @@ func (conn *Connection) dispatchResponse() {
 			}
 
 			// 写数据
-			if _, err = conn.instance.Write(msg); err != nil {
+			_, err = conn.instance.Write(msg)
+			bytes.Put(msg) // 回收数组
+			if err != nil {
 				return
 			}
 		}
