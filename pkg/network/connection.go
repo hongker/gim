@@ -100,7 +100,7 @@ func (conn *Connection) handleRequest(engine *Engine) {
 	defer conn.Close()
 	// 利用对象池实例化context,避免GC
 	// 会导致内存随着连接的增加而增加
-	ctxPool := engine.ContextPool()
+	ctxPool := engine.contextPool()
 
 	for {
 		select {
@@ -117,10 +117,10 @@ func (conn *Connection) handleRequest(engine *Engine) {
 			ctx.Reset(conn.scanner.Bytes(), conn)
 
 			// 执行回调
-			ctx.Run()
-
-			// 回收
-			ctxPool.Put(ctx)
+			go func() {
+				defer ctxPool.Put(ctx)
+				ctx.Run()
+			}()
 		}
 
 	}

@@ -7,6 +7,7 @@ import (
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
 	"github.com/go-redis/redis/v8"
+	uuid "github.com/satori/go.uuid"
 	"strconv"
 	"time"
 )
@@ -28,6 +29,7 @@ func (repo MessageRepo) getSequenceCacheKey(sessionId string) string {
 }
 
 func (repo MessageRepo) Save(ctx context.Context, message *entity.Message) error {
+	message.Id = uuid.NewV4().String()
 	err := repo.redisConn.ZAdd(ctx, repo.getCacheKey(message.SessionId), &redis.Z{
 		Score: float64(message.CreatedAt),
 		Member: entity.Encode(message),
