@@ -1,7 +1,6 @@
 package network
 
 import (
-	"bufio"
 	"gim/pkg/binary"
 	"gim/pkg/bytes"
 	uuid "github.com/satori/go.uuid"
@@ -15,10 +14,10 @@ type Connection struct {
 	instance net.Conn
 
 	sendQueue chan []byte
-	scanner   *bufio.Scanner // 读取请求数据
 
 	once *sync.Once
 	done chan struct{} // 关闭标识
+	packetDataLength int
 }
 
 func (conn *Connection) ID() string {
@@ -28,9 +27,9 @@ func (conn *Connection) ID() string {
 func (conn *Connection) init(sendQueueSize int, packetDataLength int) {
 	conn.id = uuid.NewV4().String()
 	conn.sendQueue = make(chan []byte, sendQueueSize)
-	conn.scanner = conn.getScanner(packetDataLength)
 	conn.once = new(sync.Once)
 	conn.done = make(chan struct{})
+	conn.packetDataLength = packetDataLength
 }
 
 func (conn *Connection) Push(msg []byte) {
@@ -79,25 +78,6 @@ func (conn *Connection) dispatchResponse() {
 	}
 }
 
-func (conn *Connection) getScanner(packetDataLength int) *bufio.Scanner {
-	scan := bufio.NewScanner(conn.instance)
-	if packetDataLength <= 0 {
-		return scan
-	}
-
-	// 处理粘包问题：先读取包体长度
-	scan.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if !atEOF && len(data) > packetDataLength {
-			length := int(binary.BigEndian.Int32(data[:packetDataLength]))
-			if length >= 0 && length <= len(data) {
-				return length, data[:length], nil
-			}
-		}
-		return
-	})
-	return scan
-}
-
 // handleRequest 处理请求
 func (conn *Connection) handleRequest(engine *Engine) {
 	defer conn.Close()
@@ -105,28 +85,23 @@ func (conn *Connection) handleRequest(engine *Engine) {
 	// 会导致内存随着连接的增加而增加
 	ctxPool := engine.contextPool()
 
-	packetDataLength := 4
 	for {
 		select {
 		case <-conn.done: // 退出
 			return
 		default:
 			b := bytes.Get(512)
-			_, err := conn.instance.Read(b[:packetDataLength])
+			_, err := conn.instance.Read(b[:conn.packetDataLength])
 			if err != nil {
 				log.Println("read error: ", err)
 				return
 			}
-			length := int(binary.BigEndian.Int32(b[:packetDataLength]))
-			_, err = conn.instance.Read(b[packetDataLength:length])
+			length := int(binary.BigEndian.Int32(b[:conn.packetDataLength]))
+			_, err = conn.instance.Read(b[conn.packetDataLength:length])
 			if err != nil {
 				log.Println("read error: ", err)
 				return
 			}
-			//if !conn.scanner.Scan() {
-			//	log.Println("scanner failed:", conn.scanner.Err())
-			//	return
-			//}
 
 			// 通过对象池初始化时，会导致内存缓慢上涨,直到稳定
 			ctx := ctxPool.Get().(*Context)
@@ -146,35 +121,3 @@ func (conn *Connection) handleRequest(engine *Engine) {
 
 }
 
-
-// handleRequest 处理请求
-func (conn *Connection) handleRequestWithScanner(engine *Engine) {
-	defer conn.Close()
-	// 利用对象池实例化context,避免GC
-	// 会导致内存随着连接的增加而增加
-	ctxPool := engine.contextPool()
-
-	for {
-		select {
-		case <-conn.done: // 退出
-			return
-		default:
-			if !conn.scanner.Scan() {
-				log.Println("scanner failed:", conn.scanner.Err())
-				return
-			}
-
-			// 通过对象池初始化时，会导致内存缓慢上涨,直到稳定
-			ctx := ctxPool.Get().(*Context)
-			ctx.Reset(conn.scanner.Bytes(), conn)
-
-			// 执行回调
-			go func() {
-				defer ctxPool.Put(ctx)
-				ctx.Run()
-			}()
-		}
-
-	}
-
-}
