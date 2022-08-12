@@ -12,15 +12,14 @@ type Server interface {
 	SetOnDisconnect(func(conn *Connection))
 }
 
-func NewTCPServer(bind []string, opts ...Option) *TcpServer {
+func NewTCPServer(bind string, opts ...Option) *TcpServer {
 	conf := defaultConfig()
 	conf.Bind = bind
 	for _, setter := range opts {
 		setter(conf)
 	}
 	return &TcpServer{
-		Callback: Callback{},
-		engine:   newEngine(32),
+		engine:   newEngine(conf.ContextPoolSize),
 		conf:     conf,
 	}
 }
@@ -50,22 +49,20 @@ func (s *TcpServer) init() (err error) {
 		listener *net.TCPListener
 		addr     *net.TCPAddr
 	)
-	for _, bind = range s.conf.Bind {
-		if addr, err = net.ResolveTCPAddr("tcp", bind); err != nil {
-			log.Printf("net.ResolveTCPAddr(tcp, %s) errors(%v)", bind, err)
-			return
-		}
-		if listener, err = net.ListenTCP("tcp", addr); err != nil {
-			log.Printf("net.ListenTCP(tcp, %s) errors(%v)", bind, err)
-			return
-		}
+	if addr, err = net.ResolveTCPAddr("tcp", bind); err != nil {
+		log.Printf("net.ResolveTCPAddr(tcp, %s) errors(%v)", bind, err)
+		return
+	}
+	if listener, err = net.ListenTCP("tcp", addr); err != nil {
+		log.Printf("net.ListenTCP(tcp, %s) errors(%v)", bind, err)
+		return
+	}
 
-		log.Printf("start tcp listen: %s", bind)
+	log.Printf("start tcp listen: %s", bind)
 
-		// 利用多线程处理连接初始化
-		for i := 0; i < s.conf.Accept; i++ {
-			go s.listen(listener)
-		}
+	// 利用多线程处理连接初始化
+	for i := 0; i < s.conf.Accept; i++ {
+		go s.listen(listener)
 	}
 	return
 }
@@ -116,8 +113,6 @@ func (s *TcpServer) handle(conn *net.TCPConn) {
 	connection := &Connection{instance: conn}
 	connection.init(s.conf.QueueSize, s.conf.DataLength)
 
-	// 分发响应数据
-	go connection.dispatchResponse()
 
 	// 开启连接事件回调
 	s.OnConnect(connection)

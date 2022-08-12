@@ -20,7 +20,7 @@ type Socket struct {
 
 
 func (s *Socket) Start(bind string) error {
-	tcpServer := network.NewTCPServer([]string{bind}, network.WithPacketLength(api.PacketOffset))
+	tcpServer := network.NewTCPServer(bind, network.WithPacketLength(api.PacketOffset))
 	tcpServer.SetOnConnect(s.onConnect)
 	tcpServer.SetOnDisconnect(s.onDisconnect)
 	tcpServer.SetOnRequest(s.onRequest)

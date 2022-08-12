@@ -10,8 +10,8 @@ import (
 )
 
 type Connection struct {
-	id       string
 	instance net.Conn
+	id       string
 
 	sendQueue chan []byte
 
@@ -20,30 +20,26 @@ type Connection struct {
 	packetDataLength int
 }
 
+// ID return unique id of connection
 func (conn *Connection) ID() string {
 	return conn.id
 }
 
-func (conn *Connection) init(sendQueueSize int, packetDataLength int) {
-	conn.id = uuid.NewV4().String()
-	conn.sendQueue = make(chan []byte, sendQueueSize)
-	conn.once = new(sync.Once)
-	conn.done = make(chan struct{})
-	conn.packetDataLength = packetDataLength
+// IP return ip of connection
+func (conn *Connection) IP() string {
+	ip, _, _ := net.SplitHostPort(conn.instance.RemoteAddr().String())
+	return ip
 }
 
+// Push send message to client, if queue is full, msg will be disposed
 func (conn *Connection) Push(msg []byte) {
 	select {
 	case conn.sendQueue <- msg:
 	default:
 	}
 }
-func (conn *Connection) IP() string {
-	ip, _, _ := net.SplitHostPort(conn.instance.RemoteAddr().String())
-	return ip
-}
 
-// Close 关闭请求
+// Close shutdown the connection
 func (conn *Connection) Close() {
 	conn.once.Do(func() {
 		close(conn.done)
@@ -53,7 +49,21 @@ func (conn *Connection) Close() {
 
 }
 
-// 分发数据
+// =====================private function======================================
+
+// init initialize connection param
+func (conn *Connection) init(sendQueueSize int, packetDataLength int) {
+	conn.id = uuid.NewV4().String()
+	conn.sendQueue = make(chan []byte, sendQueueSize)
+	conn.once = new(sync.Once)
+	conn.done = make(chan struct{})
+	conn.packetDataLength = packetDataLength
+
+	// 分发响应数据
+	go conn.dispatchResponse()
+}
+
+// dispatchResponse
 func (conn *Connection) dispatchResponse() {
 	defer conn.Close()
 

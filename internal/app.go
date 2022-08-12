@@ -8,6 +8,7 @@ import (
 	"gim/internal/presentation"
 	"gim/pkg/app"
 	"gim/pkg/system"
+	"gim/pkg/utils"
 	"log"
 )
 
@@ -22,22 +23,20 @@ func Run()  {
 	application.Inject(container)
 	presentation.Inject(container)
 
-	if err := container.Invoke(func(conf *config.Config) error{
-		return conf.LoadFile(*configFile)
-	}); err != nil {
-		panic(err)
-	}
-
 	err := container.Invoke(serve)
-	if err != nil {
-		panic(err)
-	}
+	system.SecurePanic(err)
 
 	system.Shutdown(func() {
 		log.Println("server shutdown")
 	})
 }
 
+
 func serve(socket *presentation.Socket, conf *config.Config) error {
-	return socket.Start(conf.Addr())
+	return utils.Execute(func() error {
+		return conf.LoadFile(*configFile)
+	}, func() error {
+		return socket.Start(conf.Addr())
+	})
+
 }

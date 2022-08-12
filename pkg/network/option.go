@@ -25,3 +25,9 @@ func WithDebug() Option {
 		conf.Debug = true
 	}
 }
+
+func WithContextPoolSize(size int) Option {
+	return func(conf *Config) {
+		conf.ContextPoolSize = size
+	}
+}
