@@ -19,6 +19,10 @@ type Socket struct {
 }
 
 
+func (s *Socket) RegisterHandler(operate int32, handler func(ctx *network.Context) (interface{}, error))  {
+	s.handlers[operate] = s.wrapHandler(handler)
+}
+
 func (s *Socket) Start(bind string) error {
 	tcpServer := network.NewTCPServer(bind, network.WithPacketLength(api.PacketOffset))
 	tcpServer.SetOnConnect(s.onConnect)
@@ -106,9 +110,6 @@ func (s *Socket) wrapHandler(fn func(ctx *network.Context) (interface{}, error))
 	}
 }
 
-func (s *Socket) registerHandler(operate int32, handler func(ctx *network.Context) (interface{}, error))  {
-	s.handlers[operate] = s.wrapHandler(handler)
-}
 
 func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler,
 	groupHandler *handler.GroupHandler, gateApp *application.GateApp, eventHandler *handler.EventHandler) *Socket {
@@ -117,11 +118,11 @@ func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.Message
 		gateApp: gateApp,
 	}
 
-	s.registerHandler(api.OperateAuth, userHandler.Login)
-	s.registerHandler(api.OperateMessageSend, messageHandler.Send)
-	s.registerHandler(api.OperateMessageQuery, messageHandler.Query)
-	s.registerHandler(api.OperateGroupJoin, groupHandler.Join)
-	s.registerHandler(api.OperateGroupLeave, groupHandler.Leave)
+	s.RegisterHandler(api.OperateAuth, userHandler.Login)
+	s.RegisterHandler(api.OperateMessageSend, messageHandler.Send)
+	s.RegisterHandler(api.OperateMessageQuery, messageHandler.Query)
+	s.RegisterHandler(api.OperateGroupJoin, groupHandler.Join)
+	s.RegisterHandler(api.OperateGroupLeave, groupHandler.Leave)
 
 	eventHandler.RegisterEvents()
 	return s
