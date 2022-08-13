@@ -19,6 +19,7 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 	group, _ := app.groupRepo.Find(ctx, groupId)
 	if group == nil {
 		group = &entity.Group{
+			Id: groupId,
 			Title: fmt.Sprintf("group:%d", groupId),
 			Creator: user.Id,
 			CreatedAt: time.Now().Unix(),
