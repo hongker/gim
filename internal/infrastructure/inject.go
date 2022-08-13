@@ -24,13 +24,13 @@ func newRedis(conf *config.Config) (redis.UniversalClient, error) {
 	return gredis.Connect(conf.Redis)
 }
 
-func newGroupRepository(redisConn redis.UniversalClient, factory cache.Factory) repository.GroupRepo   {
+func newGroupRepository(redisConn redis.UniversalClient, factory *cache.Factory) repository.GroupRepo   {
 	delegate := persistence.NewGroupRepo(redisConn)
 	return cache.NewGroupRepo(delegate, factory.Create())
 }
 
 
-func newUserRepository(redisConn redis.UniversalClient, factory cache.Factory) repository.UserRepository   {
+func newUserRepository(redisConn redis.UniversalClient, factory *cache.Factory) repository.UserRepository   {
 	delegate := persistence.NewUserRepository(redisConn)
 	return cache.NewUserRepo(delegate, factory.Create())
 }

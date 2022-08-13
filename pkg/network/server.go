@@ -46,7 +46,7 @@ func (s *TcpServer) Use(handlers ...HandleFunc) {
 // accept 一般使用cpu核数作为参数，提高处理能力
 func (s *TcpServer) init() (err error) {
 	var (
-		bind     string
+		bind     = s.conf.Bind
 		listener *net.TCPListener
 		addr     *net.TCPAddr
 	)

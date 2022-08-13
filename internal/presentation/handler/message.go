@@ -10,7 +10,6 @@ import (
 
 type MessageHandler struct {
 	messageApp *application.MessageApp
-	gateApp *application.GateApp
 }
 
 
@@ -45,10 +44,8 @@ func (handler *MessageHandler) Query(ctx *network.Context) (interface{}, error) 
 	return resp, nil
 }
 
-func NewMessageHandler(messageApp *application.MessageApp,
-gateApp *application.GateApp) *MessageHandler {
+func NewMessageHandler(messageApp *application.MessageApp) *MessageHandler {
 	return &MessageHandler{
 		messageApp: messageApp,
-		gateApp:    gateApp,
 	}
 }

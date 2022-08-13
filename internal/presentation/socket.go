@@ -15,7 +15,7 @@ import (
 type Handler func(ctx * network.Context)
 
 type Socket struct {
-	server network.Server
+	conf *config.Config
 	handlers map[int32]Handler
 	collection *types.Collection
 }
@@ -26,12 +26,13 @@ func (s *Socket) RegisterHandler(operate int32, handler func(ctx *network.Contex
 }
 
 func (s *Socket) Start() error {
-	s.server.SetOnConnect(s.onConnect)
-	s.server.SetOnDisconnect(s.onDisconnect)
-	s.server.SetOnRequest(s.onRequest)
-	s.server.Use(s.recover, s.unpack, s.validateUser)
+	server := network.NewTCPServer(s.conf.Addr(), network.WithPacketLength(api.PacketOffset))
+	server.SetOnConnect(s.onConnect)
+	server.SetOnDisconnect(s.onDisconnect)
+	server.SetOnRequest(s.onRequest)
+	server.Use(s.recover, s.unpack, s.validateUser)
 
-	return s.server.Start()
+	return server.Start()
 }
 
 
@@ -117,7 +118,7 @@ func NewSocket(conf *config.Config,
 	messageHandler *handler.MessageHandler,
 	groupHandler *handler.GroupHandler) *Socket {
 	s := &Socket{
-		server: network.NewTCPServer(conf.Addr(), network.WithPacketLength(api.PacketOffset)),
+		conf: conf,
 		handlers: make(map[int32]Handler, 16),
 		collection: types.NewCollection(),
 	}
