@@ -4,7 +4,6 @@ import (
 	"context"
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
-	"gim/internal/infrastructure/config"
 	"gim/pkg/errors"
 	"github.com/patrickmn/go-cache"
 )
@@ -29,8 +28,8 @@ func (repo *UserRepo) Find(ctx context.Context, id string) (*entity.User, error)
 }
 
 
-func NewUserRepo(delegate repository.UserRepository,conf *config.Config) repository.UserRepository {
-	return &UserRepo{UserRepository: delegate,store: cache.New(conf.Cache.Expired, conf.Cache.Cleanup)}
+func NewUserRepo(delegate repository.UserRepository,store *cache.Cache) repository.UserRepository {
+	return &UserRepo{UserRepository: delegate,store: store}
 }
 
 

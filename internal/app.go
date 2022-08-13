@@ -8,12 +8,18 @@ import (
 	"gim/internal/presentation"
 	"gim/pkg/app"
 	"gim/pkg/system"
-	"gim/pkg/utils"
 	"log"
 )
 
 var (
 	configFile = flag.String("conf", "./app.yaml", "configuration file")
+
+	port = flag.Int("port", 8080, "server port")
+	maxLimit = flag.Int("max-limit", 1000, "max number of session history messages")
+)
+
+var (
+	Version = "1.0.0"
 )
 func Run()  {
 	flag.Parse()
@@ -33,8 +39,14 @@ func Run()  {
 
 
 func serve(socket *presentation.Socket, conf *config.Config) error {
-	return utils.Execute(func() error {
-		return conf.LoadFile(*configFile)
-	}, socket.Start)
+	log.Printf("version: %v is running...", Version)
+	if err := conf.LoadFile(*configFile); err != nil {
+		return err
+	}
+
+	conf.Server.Port = *port
+	conf.Message.MaxStoreSize = *maxLimit
+
+	return socket.Start()
 
 }

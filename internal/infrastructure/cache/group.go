@@ -4,7 +4,6 @@ import (
 	"context"
 	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
-	"gim/internal/infrastructure/config"
 	"gim/pkg/errors"
 	"github.com/patrickmn/go-cache"
 )
@@ -30,9 +29,9 @@ func (repo *GroupRepo) Find(ctx context.Context, id string) (*entity.Group, erro
 }
 
 
-func NewGroupRepo(delegate repository.GroupRepo, conf *config.Config) repository.GroupRepo {
+func NewGroupRepo(delegate repository.GroupRepo, store *cache.Cache) repository.GroupRepo {
 	return &GroupRepo{
 		GroupRepo: delegate,
-		store: cache.New(conf.Cache.Expired, conf.Cache.Cleanup),
+		store: store,
 	}
 }
