@@ -12,14 +12,15 @@ import (
 
 func Inject(container *dig.Container)  {
 	_ = container.Provide(config.New)
-	_ = container.Provide(func(conf *config.Config) redis.Config{
-		return conf.Redis
-	})
-	_ = container.Provide(redis.Connect)
+	_ = container.Provide(newRedis)
 	_ = container.Provide(persistence.NewMessageRepo)
-	_ = container.Provide(persistence.NewUserRepository)
+	_ = container.Provide(newUserRepository)
 	_ = container.Provide(newGroupRepository)
 	_ = container.Provide(persistence.NewGroupUserRepo)
+}
+
+func newRedis(conf *config.Config) (goredis.UniversalClient, error) {
+	return redis.Connect(conf.Redis)
 }
 
 func newGroupRepository(redisConn goredis.UniversalClient, conf *config.Config) repository.GroupRepo   {

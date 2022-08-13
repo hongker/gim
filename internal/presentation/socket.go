@@ -117,7 +117,7 @@ func NewSocket(conf *config.Config,
 	messageHandler *handler.MessageHandler,
 	groupHandler *handler.GroupHandler) *Socket {
 	s := &Socket{
-		server: network.NewTCPServer(conf.Addr(), network.WithPacketLength(api.PacketOffset))
+		server: network.NewTCPServer(conf.Addr(), network.WithPacketLength(api.PacketOffset)),
 		handlers: make(map[int32]Handler, 16),
 		collection: types.NewCollection(),
 	}
