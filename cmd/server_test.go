@@ -114,7 +114,7 @@ func TestSendGroupMessage(t *testing.T) {
 		p := newGroupMessagePacket()
 
 		conn.Write(p.Encode())
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 100)
 	}
 
 }

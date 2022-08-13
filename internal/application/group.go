@@ -20,7 +20,7 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 	if group == nil {
 		group = &entity.Group{
 			Id: groupId,
-			Title: fmt.Sprintf("group:%d", groupId),
+			Title: fmt.Sprintf("group:%s", groupId),
 			Creator: user.Id,
 			CreatedAt: time.Now().Unix(),
 		}

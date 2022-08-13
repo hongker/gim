@@ -3,6 +3,7 @@ package system
 import (
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 )
 
@@ -25,4 +26,9 @@ func Shutdown(callback func()) {
 			return
 		}
 	}
+}
+func GetMem() uint64 {
+	var memStat runtime.MemStats
+	runtime.ReadMemStats(&memStat)
+	return memStat.Sys
 }

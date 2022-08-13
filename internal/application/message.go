@@ -47,10 +47,20 @@ func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queu
 	return q
 }
 
-func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) ( error) {
-	if err := app.validate(ctx, sender, req); err != nil {
-		return err
+func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) (err error) {
+	var group *entity.Group
+	if req.Type == api.UserSession {
+		if sender.Id ==req.TargetId {
+			return errors.InvalidParameter("sender same as target")
+		}
+	} else if req.Type == api.GroupSession {
+		group, err = app.groupRepo.Find(ctx, req.TargetId)
+		if err != nil {
+			return errors.WithMessage(err, "find group")
+		}
+
 	}
+
 	sessionId := req.SessionId(sender.Id)
 	item := &entity.Message{
 		SessionType: req.Type,
@@ -60,7 +70,8 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 		RequestId: req.RequestId,
 		Sequence:    app.repo.GenerateSequence(ctx, sessionId),
 		SessionId:   sessionId,
-		FromUser:    &entity.User{Id: sender.Id},
+		FromUser:    &entity.User{Id: sender.Id, Name: sender.Name},
+		Group: group,
 	}
 	if err := app.repo.Save(ctx, item); err != nil {
 		return  err
@@ -74,7 +85,7 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 	res := dto.Message{
 		Id: item.Id,
 		RequestId: item.RequestId,
-		Session: dto.Session{Id: item.SessionId, Type: item.SessionType},
+		Session: item.Session(),
 		Content:   item.Content,
 		ContentType: item.ContentType,
 		CreatedAt: item.CreatedAt,
@@ -89,20 +100,6 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 	return  nil
 }
 
-func (app *MessageApp) validate(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) error{
-	if req.Type == api.UserSession {
-		if sender.Id ==req.TargetId {
-			return errors.InvalidParameter("sender same as target")
-		}
-	} else if req.Type == api.GroupSession {
-		_, err := app.groupRepo.Find(ctx, req.TargetId)
-		if err != nil {
-			return errors.WithMessage(err, "find group")
-		}
-
-	}
-	return nil
-}
 
 func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
 	items, err := app.repo.Query(ctx, dto.MessageHistoryQuery{
