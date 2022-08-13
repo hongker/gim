@@ -1,23 +1,22 @@
-package application
+package types
 
 import (
 	"gim/api"
 	"gim/internal/domain/dto"
-	"gim/internal/domain/types"
 	"gim/pkg/network"
 )
 
-type GateApp struct {
-	bucket *types.Bucket
+type Collection struct {
+	bucket *Bucket
 }
 
 // RegisterConn register user connection
-func (app *GateApp) RegisterConn(uid string, conn *network.Connection) {
-	channel := types.NewChannel(uid, conn)
+func (app *Collection) RegisterConn(uid string, conn *network.Connection) {
+	channel := NewChannel(uid, conn)
 	app.bucket.AddChannel(channel)
 }
 // RemoveConn remove connection from bucket
-func (app *GateApp) RemoveConn(conn *network.Connection)   {
+func (app *Collection) RemoveConn(conn *network.Connection)   {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return
@@ -26,13 +25,13 @@ func (app *GateApp) RemoveConn(conn *network.Connection)   {
 }
 
 // CheckConnExist checks if the connection is already exist
-func (app *GateApp) CheckConnExist(conn *network.Connection) bool {
+func (app *Collection) CheckConnExist(conn *network.Connection) bool {
 	channel := app.bucket.GetChannel(conn.ID())
 	return channel != nil
 }
 
 // GetUser return the user of connection
-func (app *GateApp) GetUser(conn *network.Connection) *dto.User {
+func (app *Collection) GetUser(conn *network.Connection) *dto.User {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return nil
@@ -41,7 +40,7 @@ func (app *GateApp) GetUser(conn *network.Connection) *dto.User {
 }
 
 // Push push message to session target
-func (app *GateApp) Push(sessionType string, targetId string, msg []byte) {
+func (app *Collection) Push(sessionType string, targetId string, msg []byte) {
 	if sessionType== api.UserSession {
 		app.pushUser(targetId, msg)
 	}else {
@@ -49,7 +48,7 @@ func (app *GateApp) Push(sessionType string, targetId string, msg []byte) {
 	}
 }
 
-func (app *GateApp) pushUser(uid string, msg []byte) {
+func (app *Collection) pushUser(uid string, msg []byte) {
 	channel := app.bucket.GetChannelByKey(uid)
 	if channel == nil {
 		return
@@ -57,7 +56,7 @@ func (app *GateApp) pushUser(uid string, msg []byte) {
 	channel.Conn().Push(msg)
 }
 
-func (app *GateApp) pushRoom(rid string, msg []byte) {
+func (app *Collection) pushRoom(rid string, msg []byte) {
 	room := app.bucket.GetRoom(rid)
 	if room == nil {
 		return
@@ -65,12 +64,12 @@ func (app *GateApp) pushRoom(rid string, msg []byte) {
 	room.Push(msg)
 }
 // Broadcast push message to everyone
-func (app *GateApp) Broadcast(msg []byte) {
+func (app *Collection) Broadcast(msg []byte) {
 	app.bucket.Push(msg)
 }
 
 // JoinRoom
-func (app *GateApp) JoinRoom(roomId string, conn *network.Connection, ) {
+func (app *Collection) JoinRoom(roomId string, conn *network.Connection, ) {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return
@@ -78,7 +77,7 @@ func (app *GateApp) JoinRoom(roomId string, conn *network.Connection, ) {
 	app.bucket.PutRoom(roomId, channel)
 }
 // LeaveRoom
-func (app *GateApp) LeaveRoom(roomId string, conn *network.Connection, ) {
+func (app *Collection) LeaveRoom(roomId string, conn *network.Connection, ) {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return
@@ -92,9 +91,9 @@ func (app *GateApp) LeaveRoom(roomId string, conn *network.Connection, ) {
 }
 
 
-func NewGateApp() *GateApp {
-	app := &GateApp{
-		bucket: types.NewBucket(),
+func NewCollection() *Collection {
+	app := &Collection{
+		bucket: NewBucket(),
 	}
 	return app
 }

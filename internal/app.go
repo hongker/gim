@@ -35,8 +35,6 @@ func Run()  {
 func serve(socket *presentation.Socket, conf *config.Config) error {
 	return utils.Execute(func() error {
 		return conf.LoadFile(*configFile)
-	}, func() error {
-		return socket.Start(conf.Addr())
-	})
+	}, socket.Start)
 
 }

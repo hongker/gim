@@ -2,8 +2,9 @@ package presentation
 
 import (
 	"gim/api"
-	"gim/internal/application"
 	"gim/internal/domain/event"
+	"gim/internal/domain/types"
+	"gim/internal/infrastructure/config"
 	"gim/internal/presentation/handler"
 	"gim/internal/presentation/helper"
 	"gim/pkg/errors"
@@ -14,8 +15,9 @@ import (
 type Handler func(ctx * network.Context)
 
 type Socket struct {
+	server network.Server
 	handlers map[int32]Handler
-	gateApp *application.GateApp
+	collection *types.Collection
 }
 
 
@@ -23,14 +25,13 @@ func (s *Socket) RegisterHandler(operate int32, handler func(ctx *network.Contex
 	s.handlers[operate] = s.wrapHandler(handler)
 }
 
-func (s *Socket) Start(bind string) error {
-	tcpServer := network.NewTCPServer(bind, network.WithPacketLength(api.PacketOffset))
-	tcpServer.SetOnConnect(s.onConnect)
-	tcpServer.SetOnDisconnect(s.onDisconnect)
-	tcpServer.SetOnRequest(s.onRequest)
-	tcpServer.Use(s.recover, s.unpack, s.validateUser)
+func (s *Socket) Start() error {
+	s.server.SetOnConnect(s.onConnect)
+	s.server.SetOnDisconnect(s.onDisconnect)
+	s.server.SetOnRequest(s.onRequest)
+	s.server.Use(s.recover, s.unpack, s.validateUser)
 
-	return tcpServer.Start()
+	return s.server.Start()
 }
 
 
@@ -78,7 +79,7 @@ func (s *Socket) validateUser(ctx *network.Context) {
 		return
 	}
 
-	user := s.gateApp.GetUser(ctx.Connection())
+	user := s.collection.GetUser(ctx.Connection())
 	if user == nil {
 		helper.Failure(ctx, errors.New(errors.CodeForbidden, "auth is required"))
 		ctx.Abort()
@@ -111,11 +112,14 @@ func (s *Socket) wrapHandler(fn func(ctx *network.Context) (interface{}, error))
 }
 
 
-func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.MessageHandler,
-	groupHandler *handler.GroupHandler, gateApp *application.GateApp, eventHandler *handler.EventHandler) *Socket {
+func NewSocket(conf *config.Config,
+	userHandler *handler.UserHandler,
+	messageHandler *handler.MessageHandler,
+	groupHandler *handler.GroupHandler) *Socket {
 	s := &Socket{
+		server: network.NewTCPServer(conf.Addr(), network.WithPacketLength(api.PacketOffset))
 		handlers: make(map[int32]Handler, 16),
-		gateApp: gateApp,
+		collection: types.NewCollection(),
 	}
 
 	s.RegisterHandler(api.OperateAuth, userHandler.Login)
@@ -124,7 +128,7 @@ func NewSocket(userHandler *handler.UserHandler, messageHandler *handler.Message
 	s.RegisterHandler(api.OperateGroupJoin, groupHandler.Join)
 	s.RegisterHandler(api.OperateGroupLeave, groupHandler.Leave)
 
-	eventHandler.RegisterEvents()
+	handler.NewEventHandler(s.collection, conf.Server.HeartbeatInterval).RegisterEvents()
 	return s
 }
 

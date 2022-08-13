@@ -49,6 +49,7 @@ type Message struct {
 type Server struct {
 	Protocol string //
 	Port int //
+	HeartbeatInterval time.Duration //
 }
 
 
@@ -60,6 +61,7 @@ func New() *Config {
 		Server: Server{
 			Protocol: "tcp",
 			Port:     8080,
+			HeartbeatInterval: time.Minute,
 		},
 		Cache: Cache{
 			Expired: time.Minute * 5,

@@ -10,6 +10,7 @@ type Server interface {
 	SetOnRequest(fn HandleFunc)
 	SetOnConnect(func(conn *Connection))
 	SetOnDisconnect(func(conn *Connection))
+	Use(middlewares ...HandleFunc)
 }
 
 func NewTCPServer(bind string, opts ...Option) *TcpServer {
