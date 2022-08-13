@@ -37,7 +37,7 @@ func (repo UserRepository) Save(ctx context.Context, item *entity.User) error {
 	return nil
 }
 
-func (repo UserRepository) Get(ctx context.Context, userId string) (*entity.User, error) {
+func (repo UserRepository) Find(ctx context.Context, userId string) (*entity.User, error) {
 	res, err := repo.redisConn.Get(ctx, repo.getUserCacheKey(userId)).Bytes()
 	if err != nil {
 		return nil, errors.Failure(err.Error())

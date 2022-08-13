@@ -28,7 +28,7 @@ func (s *Socket) Start(bind string) error {
 	tcpServer.SetOnConnect(s.onConnect)
 	tcpServer.SetOnDisconnect(s.onDisconnect)
 	tcpServer.SetOnRequest(s.onRequest)
-	tcpServer.Use(s.recover, s.decodePacket, s.validateUser)
+	tcpServer.Use(s.recover, s.unpack, s.validateUser)
 
 	return tcpServer.Start()
 }
@@ -58,7 +58,7 @@ func (s *Socket) onRequest(ctx *network.Context) {
 
 }
 
-func (s *Socket) decodePacket(ctx *network.Context) {
+func (s *Socket) unpack(ctx *network.Context) {
 	packet := api.NewPacket()
 	if err := packet.Decode(ctx.Request().Body()); err != nil {
 		helper.Failure(ctx, errors.InvalidParameter(err.Error()))

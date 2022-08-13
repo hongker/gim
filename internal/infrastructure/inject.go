@@ -26,3 +26,10 @@ func newGroupRepository(redisConn goredis.UniversalClient, conf *config.Config) 
 	delegate := persistence.NewGroupRepo(redisConn)
 	return cache.NewGroupRepo(delegate, conf)
 }
+
+
+func newUserRepository(redisConn goredis.UniversalClient, conf *config.Config) repository.UserRepository   {
+	delegate := persistence.NewUserRepository(redisConn)
+	return cache.NewUserRepo(delegate, conf)
+}
+
