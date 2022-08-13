@@ -50,6 +50,7 @@ type Server struct {
 	Protocol string //
 	Port int //
 	HeartbeatInterval time.Duration //
+	Store string
 }
 
 

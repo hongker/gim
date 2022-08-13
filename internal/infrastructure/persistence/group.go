@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type GroupRepo struct {
+type RedisGroupRepo struct {
 	redisConn redis.UniversalClient
 	expired time.Duration
 }
@@ -23,11 +23,11 @@ const(
 
 )
 
-func (repo GroupRepo) getCacheKey(groupId string) string {
+func (repo RedisGroupRepo) getCacheKey(groupId string) string {
 	return fmt.Sprintf("%s:%s", groupCachePrefix, groupId)
 }
 
-func (repo GroupRepo) Find(ctx context.Context, id string) (*entity.Group, error) {
+func (repo RedisGroupRepo) Find(ctx context.Context, id string) (*entity.Group, error) {
 	res, err := repo.redisConn.Get(ctx, repo.getCacheKey(id)).Bytes()
 	if err != nil {
 		return nil, errors.Failure(err.Error())
@@ -37,7 +37,7 @@ func (repo GroupRepo) Find(ctx context.Context, id string) (*entity.Group, error
 	return item, err
 }
 
-func (repo GroupRepo) Create(ctx context.Context, item *entity.Group) error {
+func (repo RedisGroupRepo) Create(ctx context.Context, item *entity.Group) error {
 	res, err := repo.redisConn.Incr(ctx, groupIdKey).Result()
 	if err != nil {
 		return errors.Failure(err.Error())
@@ -48,38 +48,50 @@ func (repo GroupRepo) Create(ctx context.Context, item *entity.Group) error {
 	return nil
 }
 
-func NewGroupRepo(redisConn redis.UniversalClient) repository.GroupRepo  {
-	return &GroupRepo{redisConn: redisConn, expired: time.Hour* 24 * 30}
+func NewRedisGroupRepo(redisConn redis.UniversalClient) repository.GroupRepo  {
+	return &RedisGroupRepo{redisConn: redisConn, expired: time.Hour* 24 * 30}
 }
 
-type GroupUserRepo struct {
+type RedisGroupUserRepo struct {
 	redisConn redis.UniversalClient
 	expired time.Duration
 }
 
-func (repo GroupUserRepo) getCacheKey(groupId, userId string) string {
-	return fmt.Sprintf("%s:%s:%s", groupUserCachePrefix, groupId, userId)
+func (repo RedisGroupUserRepo) getCacheKey(groupId string) string {
+	return fmt.Sprintf("%s:%s", groupUserCachePrefix, groupId)
 }
 
-func (repo GroupUserRepo) Create(ctx context.Context, item *entity.GroupUser) error {
-	err := repo.redisConn.Set(ctx,  repo.getCacheKey(item.GroupId, item.UserId), entity.Encode(item), repo.expired).Err()
+func (repo RedisGroupUserRepo) FindAll(ctx context.Context, groupId string) ([]string, error){
+	res, err := repo.redisConn.SMembers(ctx, repo.getCacheKey(groupId)).Result()
+	return res, err
+}
+
+func (repo RedisGroupUserRepo) Create(ctx context.Context, item *entity.GroupUser) error {
+	err := repo.redisConn.SAdd(ctx,  repo.getCacheKey(item.GroupId), item.UserId).Err()
 	return err
 }
 
-func (repo GroupUserRepo) Find(ctx context.Context, groupId string, userId string) (*entity.GroupUser, error) {
-	res, err := repo.redisConn.Get(ctx, repo.getCacheKey(groupId, userId)).Bytes()
+func (repo RedisGroupUserRepo) Find(ctx context.Context, groupId string, userId string) (*entity.GroupUser, error) {
+	res, err := repo.redisConn.SIsMember(ctx, repo.getCacheKey(groupId), userId).Result()
 	if err != nil {
 		return nil, errors.Failure(err.Error())
 	}
-	item := &entity.GroupUser{}
-	err = entity.Decode(res, item)
+
+	if !res {
+		return nil, errors.DataNotFound("user not found")
+	}
+	item := &entity.GroupUser{
+		GroupId:   groupId,
+		UserId:    userId,
+		CreatedAt: 0,
+	}
 	return item, err
 }
 
-func (repo GroupUserRepo) Delete(ctx context.Context, groupId string, userId string) error {
-	return repo.redisConn.Del(ctx, repo.getCacheKey(groupId, userId)).Err()
+func (repo RedisGroupUserRepo) Delete(ctx context.Context, groupId string, userId string) error {
+	return repo.redisConn.SRem(ctx, repo.getCacheKey(groupId), userId).Err()
 }
 
-func NewGroupUserRepo(redisConn redis.UniversalClient) repository.GroupUserRepo {
-	return &GroupUserRepo{redisConn: redisConn, expired: time.Hour* 24 * 30}
+func NewRedisGroupUserRepo(redisConn redis.UniversalClient) repository.GroupUserRepo {
+	return &RedisGroupUserRepo{redisConn: redisConn, expired: time.Hour* 24 * 30}
 }

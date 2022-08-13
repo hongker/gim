@@ -18,12 +18,12 @@ import (
 	"time"
 )
 
-func connect(name string, joinGroup bool, received bool) (net.Conn, error) {
+func connect(uid ,name string, joinGroup bool, received bool) (net.Conn, error) {
 	conn, err := net.Dial("tcp", "127.0.0.1:8080")
 	system.SecurePanic(err)
 	p := api.NewPacket()
 	p.Op = api.OperateAuth
-	err = p.Marshal(&dto.UserLoginRequest{Name: name})
+	err = p.Marshal(&dto.UserLoginRequest{UID: uid,Name: name})
 	system.SecurePanic(err)
 
 	if received {
@@ -63,7 +63,7 @@ func connect(name string, joinGroup bool, received bool) (net.Conn, error) {
 }
 
 func TestQueryMessage(t *testing.T) {
-	conn, err := connect("someUserA", true, true)
+	conn, err := connect("10001","someUserA", true, true)
 	system.SecurePanic(err)
 
 	for {
@@ -82,7 +82,7 @@ func TestQueryMessage(t *testing.T) {
 }
 
 func TestSendUserMessage(t *testing.T) {
-	conn, err := connect("someUser", false, true)
+	conn, err := connect("10002","someUser", false, true)
 	system.SecurePanic(err)
 
 	for {
@@ -107,7 +107,7 @@ func newGroupMessagePacket() *api.Packet {
 }
 
 func TestSendGroupMessage(t *testing.T) {
-	conn, err := connect("someUserB", true, true)
+	conn, err := connect("10003","someUserB", true, true)
 	system.SecurePanic(err)
 
 	for {
@@ -132,7 +132,7 @@ func BenchmarkSendMessage(b *testing.B) {
 				case <-ctx.Done():
 					return
 				default:
-					c, err := connect(uuid.NewV4().String(), true, false)
+					c, err := connect(fmt.Sprintf("%d", time.Now().UnixNano()),uuid.NewV4().String(), true, false)
 					if err == nil {
 						ch <- c
 					}

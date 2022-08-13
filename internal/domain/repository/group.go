@@ -14,4 +14,5 @@ type GroupUserRepo interface {
 	Create(ctx context.Context, item *entity.GroupUser) error
 	Find(ctx context.Context, groupId string, userId string) (*entity.GroupUser, error)
 	Delete(ctx context.Context, groupId string, userId string) error
+	FindAll(ctx context.Context, groupId string) ([]string, error)
 }

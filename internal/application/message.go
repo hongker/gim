@@ -97,7 +97,7 @@ func (app *MessageApp) validate(ctx context.Context, sender *dto.User, req *dto.
 	} else if req.Type == api.GroupSession {
 		_, err := app.groupRepo.Find(ctx, req.TargetId)
 		if err != nil {
-			return err
+			return errors.WithMessage(err, "find group")
 		}
 
 	}

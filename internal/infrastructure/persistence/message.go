@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-type MessageRepo struct {
+type RedisMessageRepo struct {
 	redisConn redis.UniversalClient
 	expired time.Duration
 }
@@ -21,14 +21,14 @@ var (
 	messageCachePrefix = "message"
 	sequencePrefix = "sequence"
 )
-func (repo MessageRepo) getCacheKey(sessionId string) string {
+func (repo RedisMessageRepo) getCacheKey(sessionId string) string {
 	return fmt.Sprintf("%s:%s", messageCachePrefix, sessionId)
 }
-func (repo MessageRepo) getSequenceCacheKey(sessionId string) string {
+func (repo RedisMessageRepo) getSequenceCacheKey(sessionId string) string {
 	return fmt.Sprintf("%s:%s", sequencePrefix, sessionId)
 }
 
-func (repo MessageRepo) Save(ctx context.Context, message *entity.Message) error {
+func (repo RedisMessageRepo) Save(ctx context.Context, message *entity.Message) error {
 	message.Id = uuid.NewV4().String()
 	err := repo.redisConn.ZAdd(ctx, repo.getCacheKey(message.SessionId), &redis.Z{
 		Score: float64(message.CreatedAt),
@@ -37,7 +37,7 @@ func (repo MessageRepo) Save(ctx context.Context, message *entity.Message) error
 	return err
 }
 
-func (repo MessageRepo) Query(ctx context.Context, query dto.MessageHistoryQuery) ([]entity.Message, error) {
+func (repo RedisMessageRepo) Query(ctx context.Context, query dto.MessageHistoryQuery) ([]entity.Message, error) {
 	items, err := repo.redisConn.ZRevRangeByScore(ctx, repo.getCacheKey(query.SessionId), &redis.ZRangeBy{
 		Min:    "-1",
 		Max:    strconv.FormatInt(query.Last, 10),
@@ -58,20 +58,20 @@ func (repo MessageRepo) Query(ctx context.Context, query dto.MessageHistoryQuery
 	return res, nil
 }
 
-func (repo MessageRepo) Count(ctx context.Context, sessionId string) int {
+func (repo RedisMessageRepo) Count(ctx context.Context, sessionId string) int {
 	count, _ := repo.redisConn.ZCard(ctx, repo.getCacheKey(sessionId)).Result()
 	return int(count)
 }
 
-func (repo MessageRepo) PopMin(ctx context.Context, sessionId string, n int) {
+func (repo RedisMessageRepo) PopMin(ctx context.Context, sessionId string, n int) {
 	repo.redisConn.ZPopMin(ctx, repo.getCacheKey(sessionId), int64(n))
 }
 
-func (repo MessageRepo) GenerateSequence(ctx context.Context, sessionId string) int64 {
+func (repo RedisMessageRepo) GenerateSequence(ctx context.Context, sessionId string) int64 {
 	res, _ := repo.redisConn.Incr(ctx, repo.getSequenceCacheKey(sessionId)).Result()
 	return res
 }
 
-func NewMessageRepo(redisConn redis.UniversalClient) repository.MessageRepo {
-	return &MessageRepo{redisConn: redisConn, expired: time.Hour* 24 * 30}
+func NewRedisMessageRepo(redisConn redis.UniversalClient) repository.MessageRepo {
+	return &RedisMessageRepo{redisConn: redisConn, expired: time.Hour* 24 * 30}
 }

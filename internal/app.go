@@ -16,6 +16,7 @@ var (
 
 	port = flag.Int("port", 8080, "server port")
 	maxLimit = flag.Int("max-limit", 1000, "max number of session history messages")
+	store = flag.String("store", infrastructure.MemoryStore, "storage of data")
 )
 
 var (
@@ -25,7 +26,8 @@ func Run()  {
 	flag.Parse()
 	container := app.Container()
 
-	infrastructure.Inject(container)
+	//infrastructure.Inject(container)
+	infrastructure.InjectStore(container, *store)
 	application.Inject(container)
 	presentation.Inject(container)
 
@@ -46,6 +48,7 @@ func serve(socket *presentation.Socket, conf *config.Config) error {
 
 	conf.Server.Port = *port
 	conf.Message.MaxStoreSize = *maxLimit
+
 
 	return socket.Start()
 

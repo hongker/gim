@@ -30,7 +30,8 @@ func (s *Socket) Start() error {
 	server.SetOnConnect(s.onConnect)
 	server.SetOnDisconnect(s.onDisconnect)
 	server.SetOnRequest(s.onRequest)
-	server.Use(s.recover, s.unpack, s.validateUser)
+	//server.Use(s.recover)
+	server.Use(s.unpack, s.validateUser)
 
 	return server.Start()
 }

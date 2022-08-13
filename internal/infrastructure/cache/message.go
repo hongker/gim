@@ -4,6 +4,7 @@ import (
 	"context"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
+	"gim/internal/domain/repository"
 	"gim/pkg/store"
 	uuid "github.com/satori/go.uuid"
 	"sync"
@@ -54,7 +55,7 @@ func (repo *MessageRepo) Query(ctx context.Context, query dto.MessageHistoryQuer
 	return res, nil
 }
 
-func (repo *MessageRepo) GenerateSequence(sessionId string) int64 {
+func (repo *MessageRepo) GenerateSequence(ctx context.Context,sessionId string) int64 {
 	repo.seqLock.Lock()
 	sequence := repo.sequences[sessionId]
 	sequence++
@@ -72,4 +73,11 @@ func (repo *MessageRepo) getCollection(sessionId string) (*store.SortedSet) {
 		repo.collections[sessionId] = collection
 	}
 	return collection
+}
+
+func NewMessageRepo(delegate repository.MessageRepo) repository.MessageRepo  {
+	return &MessageRepo{
+		collections: make(map[string]*store.SortedSet),
+		sequences:   make(map[string]int64),
+	}
 }

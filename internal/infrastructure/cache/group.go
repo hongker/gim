@@ -18,6 +18,10 @@ func (repo *GroupRepo) Find(ctx context.Context, id string) (*entity.Group, erro
 	if ok {
 		return item.(*entity.Group), nil
 	}
+
+	if repo.GroupRepo == nil {
+		return nil, errors.DataNotFound("group not found")
+	}
 	res, err := repo.GroupRepo.Find(ctx, id)
 	if err != nil {
 		return nil, errors.DataNotFound("group not found")
@@ -26,6 +30,15 @@ func (repo *GroupRepo) Find(ctx context.Context, id string) (*entity.Group, erro
 	repo.store.Set(id, res, cache.DefaultExpiration)
 	return res, nil
 
+}
+
+func (repo *GroupRepo) Create(ctx context.Context, item *entity.Group) (error)  {
+	if repo.GroupRepo != nil {
+		return repo.GroupRepo.Create(ctx, item)
+	}
+
+	repo.store.Set(item.Id, item, cache.DefaultExpiration)
+	return nil
 }
 
 

@@ -6,6 +6,7 @@ import (
 )
 
 type UserLoginRequest struct {
+	UID string `json:"uid"`
 	Name string `json:"name"`
 }
 
