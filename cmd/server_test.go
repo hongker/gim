@@ -81,6 +81,23 @@ func TestQueryMessage(t *testing.T) {
 
 }
 
+func TestGroupQueryMember(t *testing.T) {
+	conn, err := connect("10004","someUserC", true, true)
+	system.SecurePanic(err)
+
+	for {
+		p := api.NewPacket()
+		p.Op  =api.OperateGroupMember
+		p.Marshal(dto.GroupMemberQuery{
+			GroupId: "1",
+		})
+
+		conn.Write(p.Encode())
+		time.Sleep(time.Second * 30)
+	}
+
+}
+
 func TestSendUserMessage(t *testing.T) {
 	conn, err := connect("10002","someUser", false, true)
 	system.SecurePanic(err)

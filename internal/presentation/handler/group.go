@@ -45,6 +45,19 @@ func (handler *GroupHandler) Leave(ctx *network.Context) ( interface{},  error) 
 	return nil, nil
 }
 
+func (handler *GroupHandler) QueryMember(ctx *network.Context) ( interface{},  error)  {
+	req := &dto.GroupMemberQuery{}
+	if err := helper.Bind(ctx, req); err != nil {
+		return nil, errors.InvalidParameter(err.Error())
+	}
+
+	res, err := handler.groupApp.QueryMember(ctx, req.GroupId)
+	if err != nil {
+		return nil, errors.WithMessage(err, "query member")
+	}
+	return res, nil
+}
+
 func NewGroupHandler(groupApp *application.GroupApp, ) *GroupHandler {
 	return &GroupHandler{groupApp: groupApp, }
 }

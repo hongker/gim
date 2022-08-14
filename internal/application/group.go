@@ -13,6 +13,7 @@ import (
 type GroupApp struct {
 	groupRepo repository.GroupRepo
 	groupUserRepo repository.GroupUserRepo
+	userRepo repository.UserRepository
 }
 
 func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) error {
@@ -48,6 +49,27 @@ func (app *GroupApp) Join(ctx context.Context, user *dto.User, groupId string) e
 func (app *GroupApp) Leave(ctx context.Context, user *dto.User, groupId string) error {
 	return app.groupUserRepo.Delete(ctx, groupId ,user.Id)
 }
-func NewGroupApp(groupRepo repository.GroupRepo, groupUserRepo repository.GroupUserRepo) (*GroupApp)   {
-	return &GroupApp{groupRepo: groupRepo, groupUserRepo: groupUserRepo}
+
+func (app *GroupApp) QueryMember(ctx context.Context, groupId string) (*dto.GroupMemberResponse, error) {
+	memberIds, err := app.groupUserRepo.FindAll(ctx, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.GroupMemberResponse{Items: make([]dto.User, 0, len(memberIds))}
+	for _, id := range memberIds {
+		user, err := app.userRepo.Find(ctx, id)
+		if err != nil {
+			continue
+		}
+		res.Items = append(res.Items, dto.User{
+			Id:   user.Id,
+			Name: user.Name,
+		})
+	}
+
+	return res, nil
+}
+func NewGroupApp(groupRepo repository.GroupRepo, groupUserRepo repository.GroupUserRepo, userRepository repository.UserRepository) (*GroupApp)   {
+	return &GroupApp{groupRepo: groupRepo, groupUserRepo: groupUserRepo, userRepo: userRepository}
 }

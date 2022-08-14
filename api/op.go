@@ -17,6 +17,8 @@ const (
 	OperateGroupJoinReply = 402
 	OperateGroupLeave     = 403
 	OperateGroupLeaveReply = 404
+	OperateGroupMember = 405
+	OperateGroupMemberReply = 406
 
 	OperateMessagePush = 501
 )

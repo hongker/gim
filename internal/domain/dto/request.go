@@ -65,3 +65,11 @@ type GroupLeaveRequest struct {
 	GroupId string `json:"group_id"`
 }
 type GroupLeaveResponse struct{}
+
+type GroupMemberQuery struct {
+	GroupId string `json:"group_id"`
+}
+
+type GroupMemberResponse struct {
+	Items []User `json:"items"`
+}

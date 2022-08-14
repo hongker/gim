@@ -129,6 +129,7 @@ func NewSocket(conf *config.Config,
 	s.RegisterHandler(api.OperateMessageQuery, messageHandler.Query)
 	s.RegisterHandler(api.OperateGroupJoin, groupHandler.Join)
 	s.RegisterHandler(api.OperateGroupLeave, groupHandler.Leave)
+	s.RegisterHandler(api.OperateGroupMember, groupHandler.QueryMember)
 
 	handler.NewEventHandler(s.collection, conf.Server.HeartbeatInterval).RegisterEvents()
 	return s
