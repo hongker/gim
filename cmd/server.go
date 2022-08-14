@@ -18,32 +18,25 @@ func run()  {
 		Name:  "gim",
 		Version: internal.Version,
 		Usage: "simple and fast im service",
-		Commands: []*cli.Command{
-			{
-				Name:    "serve",
-				Usage:   "start server",
-				Action: func(ctx *cli.Context) error {
-					internal.NewApp().WithConfigFile(ctx.String("config")).
-						WithLimit(ctx.Int("limit")).
-						WithPort(ctx.Int("port")).
-						WithPushCount(ctx.Int("push-count")).
-						WithStorage(ctx.String("storage")).
-						WithDebug(ctx.Bool("debug")).
-						Run()
-					return nil
-				},
-				Flags: []cli.Flag{configFlag,portFlag,limitFlag,storageFlag,debugFlag,pushCountFlag,},
-			},
-		},
-		Action: func(ctx *cli.Context) error {
-			return nil
-		},
+		Flags: []cli.Flag{configFlag,portFlag,limitFlag,storageFlag,debugFlag,pushCountFlag,},
+		Action: action,
 
 	}
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func action(ctx *cli.Context) error {
+	internal.NewApp().WithConfigFile(ctx.String("config")).
+		WithLimit(ctx.Int("limit")).
+		WithPort(ctx.Int("port")).
+		WithPushCount(ctx.Int("push-count")).
+		WithStorage(ctx.String("storage")).
+		WithDebug(ctx.Bool("debug")).
+		Run()
+	return nil
 }
 
 var (

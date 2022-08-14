@@ -16,28 +16,32 @@ golang实现的基于内存的聊天服务
 ## 启动
 ```
 cd cmd
-go build server.go
+go build -o gim server.go
 ```
 
 - 启动服务   
 ```
->gim serve --help
+>gim --help
 NAME:
-   gim serve - start server
+   gim - simple and fast im service
 
 USAGE:
-   gim serve [command options] [arguments...]
+   gim [global options] command [command options] [arguments...]
 
-OPTIONS:
+VERSION:
+   1.0.0
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
    --config FILE, -c FILE     Load configuration from FILE
    --debug                    Set debug mode (default: false)
+   --help, -h                 show help (default: false)
    --limit value, -l value    Set max number of session history messages (default: 10000)
    --port value, -p value     Set tcp port (default: 8080)
    --push-count value         Set count of message push event (default: 5)
    --storage value, -s value  Set storage, like memory/redis (default: "memory")
+   --version, -v              print the version (default: false)
 ```
 
-- 查看版本号
-```
-./gim --version
-```
