@@ -19,6 +19,7 @@ func (repo *GroupRepo) Find(ctx context.Context, id string) (*entity.Group, erro
 		return item.(*entity.Group), nil
 	}
 
+
 	if repo.GroupRepo == nil {
 		return nil, errors.DataNotFound("group not found")
 	}
@@ -37,7 +38,8 @@ func (repo *GroupRepo) Create(ctx context.Context, item *entity.Group) (error)  
 		return repo.GroupRepo.Create(ctx, item)
 	}
 
-	repo.store.Set(item.Id, item, cache.DefaultExpiration)
+	// 使用内存的就不过期
+	repo.store.Set(item.Id, item, cache.NoExpiration)
 	return nil
 }
 

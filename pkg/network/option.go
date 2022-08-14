@@ -31,3 +31,10 @@ func WithContextPoolSize(size int) Option {
 		conf.ContextPoolSize = size
 	}
 }
+
+
+func WithPacketMaxLength(size int) Option {
+	return func(conf *Config) {
+		conf.DataMaxLength = size
+	}
+}

@@ -18,9 +18,8 @@ type Packet struct {
 
 // Decode 解析包体
 func (p *Packet) Decode(body []byte) (err error) {
-	length := binary.BigEndian.Int32(body[:PacketOffset])
 	p.Op = binary.BigEndian.Int32(body[PacketOffset:OperateOffset])
-	p.Data = body[OperateOffset:int(length)]
+	p.Data = body[OperateOffset:]
 	return
 }
 

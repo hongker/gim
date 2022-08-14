@@ -35,7 +35,7 @@ func (repo *UserRepo) Save(ctx context.Context, user *entity.User) ( error) {
 		return repo.UserRepository.Save(ctx, user)
 	}
 
-	repo.store.Set(user.Id, user, cache.DefaultExpiration)
+	repo.store.Set(user.Id, user, cache.NoExpiration)
 	return nil
 }
 

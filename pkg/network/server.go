@@ -112,7 +112,7 @@ func (s *TcpServer) handle(conn *net.TCPConn) {
 
 	// 初始化连接
 	connection := &Connection{instance: conn}
-	connection.init(s.conf.QueueSize, s.conf.DataLength)
+	connection.init(s.conf.QueueSize, s.conf.DataLength, s.conf.DataMaxLength)
 
 
 	// 开启连接事件回调

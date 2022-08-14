@@ -18,6 +18,7 @@ type Connection struct {
 	once *sync.Once
 	done chan struct{} // 关闭标识
 	packetDataLength int
+	packetMaxLength int
 }
 
 // ID return unique id of connection
@@ -52,12 +53,13 @@ func (conn *Connection) Close() {
 // =====================private function======================================
 
 // init initialize connection param
-func (conn *Connection) init(sendQueueSize int, packetDataLength int) {
+func (conn *Connection) init(sendQueueSize int, packetDataLength, packetMaxLength int) {
 	conn.id = uuid.NewV4().String()
 	conn.sendQueue = make(chan []byte, sendQueueSize)
 	conn.once = new(sync.Once)
 	conn.done = make(chan struct{})
 	conn.packetDataLength = packetDataLength
+	conn.packetMaxLength = packetMaxLength
 
 	// 分发响应数据
 	go conn.dispatchResponse()
@@ -100,13 +102,17 @@ func (conn *Connection) handleRequest(engine *Engine) {
 		case <-conn.done: // 退出
 			return
 		default:
-			b := bytes.Get(512)
+			b := bytes.Get(conn.packetMaxLength)
 			_, err := conn.instance.Read(b[:conn.packetDataLength])
 			if err != nil {
 				log.Println("read error: ", err)
 				return
 			}
 			length := int(binary.BigEndian.Int32(b[:conn.packetDataLength]))
+			if length > conn.packetMaxLength {
+				log.Println("packet length is overflow")
+				return
+			}
 			_, err = conn.instance.Read(b[conn.packetDataLength:length])
 			if err != nil {
 				log.Println("read error: ", err)
