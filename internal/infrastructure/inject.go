@@ -21,7 +21,6 @@ func newRedis(conf *config.Config) (redis.UniversalClient, error) {
 }
 
 func InjectStore(container *dig.Container, store string)  {
-	_ = container.Provide(config.New)
 	_ = container.Provide(cache.NewFactory)
 
 	if store == MemoryStore { // 默认使用内存缓存

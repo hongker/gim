@@ -26,6 +26,7 @@ func run()  {
 					internal.NewApp().WithConfigFile(ctx.String("config")).
 						WithLimit(ctx.Int("limit")).
 						WithPort(ctx.Int("port")).
+						WithPushCount(ctx.Int("push-count")).
 						WithStorage(ctx.String("storage")).
 						WithDebug(ctx.Bool("debug")).
 						Run()
@@ -60,6 +61,11 @@ func run()  {
 						Name:    "debug",
 						Value: false,
 						Usage:   "Set debug mode",
+					},
+					&cli.IntFlag{
+						Name:    "push-count",
+						Value: 5,
+						Usage:   "Set count of message push event",
 					},
 
 				},

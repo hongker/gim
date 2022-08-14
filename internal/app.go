@@ -7,6 +7,7 @@ import (
 	"gim/internal/presentation"
 	"gim/pkg/app"
 	"gim/pkg/system"
+	"go.uber.org/dig"
 	"log"
 	"time"
 )
@@ -29,7 +30,7 @@ func displayMemoryUsage()  {
 
 type App struct {
 	configFile, storage string
-	port, limit int
+	port, limit, pushCount int
 	debug bool
 }
 
@@ -54,11 +55,17 @@ func (a *App) WithLimit(limit int) *App {
 	return a
 }
 
+func (a *App) WithPushCount(count int) *App {
+	a.pushCount = count
+	return a
+}
+
 func (a *App) Run() {
 	if a.debug {
 		displayMemoryUsage()
 	}
 	container := app.Container()
+	system.SecurePanic(a.loadConfig(container))
 
 	infrastructure.InjectStore(container, a.storage)
 	application.Inject(container)
@@ -72,14 +79,24 @@ func (a *App) Run() {
 	})
 }
 
-func (a *App) serve(socket *presentation.Socket, conf *config.Config) error {
+func (a *App) loadConfig(container *dig.Container) error {
+	conf := config.New()
+	if a.configFile != "" {
+
+	}
 	if err := conf.LoadFile(a.configFile); err != nil {
 		return err
 	}
 
 	conf.Server.Port = a.port
 	conf.Message.MaxStoreSize = a.limit
+	conf.Message.PushCount = a.pushCount
+	return container.Provide(func() *config.Config{
+		return conf
+	})
+}
 
+func (a *App) serve(socket *presentation.Socket) error {
 	return socket.Start()
 
 }
@@ -91,5 +108,6 @@ func NewApp() *App {
 		port:       8080,
 		limit:      10000,
 		debug:      false,
+		pushCount: 10,
 	}
 }

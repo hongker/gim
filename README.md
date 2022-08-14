@@ -33,8 +33,8 @@ OPTIONS:
    --debug                    Set debug mode (default: false)
    --limit value, -l value    Set max number of session history messages (default: 10000)
    --port value, -p value     Set tcp port (default: 8080)
+   --push-count value         Set count of message push event (default: 5)
    --storage value, -s value  Set storage (default: "memory")
-
 ```
 
 - 查看版本号
