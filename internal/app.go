@@ -29,17 +29,18 @@ func displayMemoryUsage()  {
 
 
 type App struct {
-	configFile, storage string
-	port, limit, pushCount int
-	debug bool
+	conf *config.Config
+	configFile string
 }
 
 func (a *App) WithDebug(debug bool) *App  {
-	a.debug = debug
+	if debug {
+		displayMemoryUsage()
+	}
 	return a
 }
 func (a *App) WithStorage(storage string) *App {
-	a.storage = storage
+	a.conf.Server.Store = storage
 	return a
 }
 func (a *App) WithConfigFile(configFile string) *App {
@@ -47,27 +48,24 @@ func (a *App) WithConfigFile(configFile string) *App {
 	return a
 }
 func (a *App) WithPort(port int) *App {
-	a.port = port
+	a.conf.Server.Port = port
 	return a
 }
 func (a *App) WithLimit(limit int) *App {
-	a.limit = limit
+	a.conf.Message.MaxStoreSize = limit
 	return a
 }
 
 func (a *App) WithPushCount(count int) *App {
-	a.pushCount = count
+	a.conf.Message.PushCount = count
 	return a
 }
 
 func (a *App) Run() {
-	if a.debug {
-		displayMemoryUsage()
-	}
 	container := app.Container()
 	system.SecurePanic(a.loadConfig(container))
 
-	infrastructure.InjectStore(container, a.storage)
+	infrastructure.InjectStore(container, a.conf.Server.Store)
 	application.Inject(container)
 	presentation.Inject(container)
 
@@ -80,19 +78,14 @@ func (a *App) Run() {
 }
 
 func (a *App) loadConfig(container *dig.Container) error {
-	conf := config.New()
 	if a.configFile != "" {
-
+		if err := a.conf.LoadFile(a.configFile); err != nil {
+			return err
+		}
 	}
-	if err := conf.LoadFile(a.configFile); err != nil {
-		return err
-	}
 
-	conf.Server.Port = a.port
-	conf.Message.MaxStoreSize = a.limit
-	conf.Message.PushCount = a.pushCount
 	return container.Provide(func() *config.Config{
-		return conf
+		return a.conf
 	})
 }
 
@@ -104,10 +97,6 @@ func (a *App) serve(socket *presentation.Socket) error {
 func NewApp() *App {
 	return &App{
 		configFile: "",
-		storage:    infrastructure.MemoryStore,
-		port:       8080,
-		limit:      10000,
-		debug:      false,
-		pushCount: 10,
+		conf: config.New(),
 	}
 }
