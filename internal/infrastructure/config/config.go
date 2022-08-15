@@ -8,10 +8,10 @@ import (
 )
 
 type Config struct {
-	viper *viper.Viper
+	viper   *viper.Viper
 	Server  Server
-	Cache Cache
-	Redis redis.Config
+	Cache   Cache
+	Redis   redis.Config
 	Message Message
 }
 
@@ -35,24 +35,23 @@ func (c *Config) Addr() string {
 	return fmt.Sprintf(":%d", c.Server.Port)
 }
 
-func (c *Config) WithOptions(options ...Option)  {
+func (c *Config) WithOptions(options ...Option) {
 	for _, setter := range options {
 		setter(c)
 	}
 }
 
 type Message struct {
-	PushCount int // 每次推送的消息条数
+	PushCount    int // 每次推送的消息条数
 	MaxStoreSize int // 每个会话存储的最大消息条数
 }
 
 type Server struct {
-	Protocol string //
-	Port int //
+	Protocol          string        //
+	Port              int           //
 	HeartbeatInterval time.Duration //
-	Store string
+	Store             string
 }
-
 
 type Option func(config *Config)
 
@@ -60,8 +59,8 @@ func New() *Config {
 	return &Config{
 		viper: viper.New(),
 		Server: Server{
-			Protocol: "tcp",
-			Port:     8080,
+			Protocol:          "tcp",
+			Port:              8080,
 			HeartbeatInterval: time.Minute,
 		},
 		Cache: Cache{
@@ -78,9 +77,8 @@ func New() *Config {
 			Cluster:     nil,
 		},
 		Message: Message{
-			PushCount: 10,
+			PushCount:    10,
 			MaxStoreSize: 10000,
 		},
 	}
 }
-

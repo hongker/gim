@@ -1,42 +1,82 @@
 package main
 
 import (
+	"gim/cmd/options"
 	"gim/internal"
 	"gim/internal/infrastructure"
+	"gim/internal/infrastructure/config"
+	"gim/pkg/system"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 )
 
 func main() {
-	run()
+	cmd := NewServerCommand()
+	err := cmd.Run(os.Args)
+	if err != nil {
+		log.Fatal("failed to run server command: ", err)
+	}
 }
 
-
-func run()  {
+func NewServerCommand() *cli.App {
 	app := &cli.App{
-		Name:  "gim",
+		Name:    "gim",
 		Version: internal.Version,
-		Usage: "simple and fast im service",
-		Flags: []cli.Flag{configFlag,portFlag,limitFlag,storageFlag,debugFlag,pushCountFlag,},
-		Action: action,
+		Usage:   "simple and fast im service",
+		Flags:   []cli.Flag{configFlag, portFlag, limitFlag, storageFlag, debugFlag, pushCountFlag},
+		Action:  action,
+	}
+	return app
+}
+func action(ctx *cli.Context) error {
+	s := options.NewServerRunOptions()
 
+	completedOptions, err := Complete(s, ctx)
+	if err != nil {
+		return err
 	}
 
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+	if err = run(completedOptions); err != nil {
+		return err
 	}
+
+	system.Shutdown(func() {
+		log.Println("server shutdown")
+	})
+	return nil
 }
 
-func action(ctx *cli.Context) error {
-	internal.NewApp().WithConfigFile(ctx.String("config")).
-		WithLimit(ctx.Int("limit")).
-		WithPort(ctx.Int("port")).
-		WithPushCount(ctx.Int("push-count")).
-		WithStorage(ctx.String("storage")).
-		WithDebug(ctx.Bool("debug")).
-		Run()
+func run(completedOptions completedServerRunOptions) error {
+	conf := createServerConfig(completedOptions)
+	server := internal.NewServer(conf).WithDebug(completedOptions.Debug)
+	return server.Run()
+}
+
+func createServerConfig(completedOptions completedServerRunOptions) *config.Config {
+	conf := config.New()
+	completedOptions.ApplyTo(conf)
+	return conf
+}
+
+type completedServerRunOptions struct {
+	*options.ServerRunOptions
+}
+
+func (options completedServerRunOptions) Validate() []error {
 	return nil
+}
+
+func Complete(s *options.ServerRunOptions, ctx *cli.Context) (completedServerRunOptions, error) {
+	opts := completedServerRunOptions{}
+	opts.ServerRunOptions = s
+	opts.Debug = ctx.Bool("debug")
+	opts.Port = ctx.Int("port")
+	opts.Protocol = ctx.String("protocol")
+	opts.MessageMaxStoreSize = ctx.Int("max-store-size")
+	opts.MessagePushCount = ctx.Int("push-count")
+	opts.MessageStorage = ctx.String("storage")
+	return opts, nil
 }
 
 var (
@@ -48,29 +88,29 @@ var (
 	portFlag = &cli.IntFlag{
 		Name:    "port",
 		Aliases: []string{"p"},
-		Value: 8080,
+		Value:   8080,
 		Usage:   "Set tcp port",
 	}
 	limitFlag = &cli.IntFlag{
 		Name:    "limit",
 		Aliases: []string{"l"},
-		Value: 10000,
+		Value:   10000,
 		Usage:   "Set max number of session history messages",
 	}
 	storageFlag = &cli.StringFlag{
 		Name:    "storage",
 		Aliases: []string{"s"},
-		Value: infrastructure.MemoryStore,
+		Value:   infrastructure.MemoryStore,
 		Usage:   "Set storage, like memory/redis",
 	}
 	debugFlag = &cli.BoolFlag{
-		Name:    "debug",
+		Name:  "debug",
 		Value: false,
-		Usage:   "Set debug mode",
+		Usage: "Set debug mode",
 	}
 	pushCountFlag = &cli.IntFlag{
-		Name:    "push-count",
+		Name:  "push-count",
 		Value: 5,
-		Usage:   "Set count of message push event",
+		Usage: "Set count of message push event",
 	}
 )
