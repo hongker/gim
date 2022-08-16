@@ -1,4 +1,4 @@
-package presentation
+package socket
 
 import (
 	"gim/api"
@@ -11,6 +11,7 @@ import (
 	"gim/pkg/errors"
 	"gim/pkg/network"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -98,4 +99,36 @@ func (s *Socket) registerEvents(expired time.Duration) {
 	event.Listen(event.JoinGroup, h.JoinGroup)
 	event.Listen(event.LeaveGroup, h.LeaveGroup)
 	event.Listen(event.Push, h.Push)
+}
+
+var socketInstance struct {
+	once   sync.Once
+	socket *Socket
+}
+
+func Initialize(conf *config.Config,
+	userHandler *handler.UserHandler,
+	messageHandler *handler.MessageHandler,
+	groupHandler *handler.GroupHandler) {
+	socketInstance.once.Do(func() {
+		s := &Socket{
+			addr:     conf.Addr(),
+			handlers: make(map[int32]Handler, 16),
+		}
+
+		s.RegisterHandler(api.OperateAuth, userHandler.Login)
+		s.RegisterHandler(api.OperateHeartbeat, userHandler.Heartbeat)
+		s.RegisterHandler(api.OperateMessageSend, messageHandler.Send)
+		s.RegisterHandler(api.OperateMessageQuery, messageHandler.Query)
+		s.RegisterHandler(api.OperateGroupJoin, groupHandler.Join)
+		s.RegisterHandler(api.OperateGroupLeave, groupHandler.Leave)
+		s.RegisterHandler(api.OperateGroupMember, groupHandler.QueryMember)
+
+		s.registerEvents(conf.Server.HeartbeatInterval)
+		socketInstance.socket = s
+	})
+}
+
+func Start() error {
+	return socketInstance.socket.Start()
 }

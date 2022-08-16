@@ -5,6 +5,7 @@ import (
 	"gim/internal/infrastructure"
 	"gim/internal/infrastructure/config"
 	"gim/internal/presentation"
+	"gim/internal/presentation/socket"
 	"gim/pkg/app"
 	"gim/pkg/system"
 )
@@ -35,14 +36,10 @@ func (s *Server) Run() error {
 	application.Inject(container)
 	presentation.Inject(container)
 
-	if err := container.Invoke(s.serve); err != nil {
+	if err := container.Invoke(socket.Initialize); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (s *Server) serve(socket *presentation.Socket) error {
 	return socket.Start()
 }
 
