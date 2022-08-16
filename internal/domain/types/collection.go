@@ -5,16 +5,24 @@ import (
 	"gim/internal/domain/dto"
 	"gim/pkg/network"
 	"sync"
+	"time"
 )
 
 type Collection struct {
 	bucket *Bucket
 }
 
+func (app *Collection) Add(conn *network.Connection) {
+	app.bucket.AddChannel(NewChannel(conn))
+}
+
 // RegisterConn register user connection
 func (app *Collection) RegisterConn(uid string, conn *network.Connection) {
-	channel := NewChannel(uid, conn)
-	app.bucket.AddChannel(channel)
+	channel := app.bucket.GetChannel(conn.ID())
+	if channel == nil {
+		return
+	}
+	channel.SetKey(uid)
 }
 
 // RemoveConn remove connection from bucket
@@ -27,9 +35,21 @@ func (app *Collection) RemoveConn(conn *network.Connection) {
 }
 
 // CheckConnExist checks if the connection is already exist
-func (app *Collection) CheckConnExist(conn *network.Connection) bool {
+func (app *Collection) IsRegistered(conn *network.Connection) bool {
 	channel := app.bucket.GetChannel(conn.ID())
-	return channel != nil
+	if channel == nil {
+		return false
+	}
+	return channel.Key() == ""
+}
+
+func (app *Collection) Refresh(conn *network.Connection, expired time.Duration) {
+	channel := app.bucket.GetChannel(conn.ID())
+	if channel == nil {
+		return
+	}
+	channel.ResetTimer(expired)
+
 }
 
 // GetUser return the user of connection

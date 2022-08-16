@@ -18,12 +18,12 @@ import (
 	"time"
 )
 
-func connect(uid ,name string, joinGroup bool, received bool) (net.Conn, error) {
+func connect(uid, name string, joinGroup bool, received bool) (net.Conn, error) {
 	conn, err := net.Dial("tcp", "127.0.0.1:8080")
 	system.SecurePanic(err)
 	p := api.NewPacket()
 	p.Op = api.OperateAuth
-	err = p.Marshal(&dto.UserLoginRequest{UID: uid,Name: name})
+	err = p.Marshal(&dto.UserLoginRequest{UID: uid, Name: name})
 	system.SecurePanic(err)
 
 	if received {
@@ -45,10 +45,19 @@ func connect(uid ,name string, joinGroup bool, received bool) (net.Conn, error) 
 				}
 				resp := api.NewPacket()
 				system.SecurePanic(resp.Decode(scanner.Bytes()))
-				fmt.Println(resp.Op, string(resp.Data))
+				log.Println(resp.Op, string(resp.Data))
 			}
 		}()
 	}
+
+	go func() {
+		for {
+			time.Sleep(time.Second * time.Duration(rand.Intn(30)+30))
+			heartbeatPacket := api.BuildPacket(api.OperateHeartbeat, dto.UserHeartbeatRequest{})
+			_, err = conn.Write(heartbeatPacket.Encode())
+		}
+
+	}()
 
 	_, err = conn.Write(p.Encode())
 	system.SecurePanic(err)
@@ -63,12 +72,12 @@ func connect(uid ,name string, joinGroup bool, received bool) (net.Conn, error) 
 }
 
 func TestQueryMessage(t *testing.T) {
-	conn, err := connect("10001","someUserA", true, true)
+	conn, err := connect("10001", "someUserA", true, true)
 	system.SecurePanic(err)
 
 	for {
 		p := api.NewPacket()
-		p.Op  =api.OperateMessageQuery
+		p.Op = api.OperateMessageQuery
 		p.Marshal(dto.MessageQueryRequest{
 			SessionId: "group:1",
 			Limit:     3,
@@ -82,24 +91,24 @@ func TestQueryMessage(t *testing.T) {
 }
 
 func TestGroupQueryMember(t *testing.T) {
-	conn, err := connect("10004","someUserC", true, true)
+	conn, err := connect("10004", "someUserC", true, true)
 	system.SecurePanic(err)
 
 	for {
 		p := api.NewPacket()
-		p.Op  =api.OperateGroupMember
+		p.Op = api.OperateGroupMember
 		p.Marshal(dto.GroupMemberQuery{
 			GroupId: "1",
 		})
 
 		conn.Write(p.Encode())
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Second * 10)
 	}
 
 }
 
 func TestSendUserMessage(t *testing.T) {
-	conn, err := connect("10002","someUser", false, true)
+	conn, err := connect("10002", "someUser", false, true)
 	system.SecurePanic(err)
 
 	for {
@@ -112,19 +121,19 @@ func TestSendUserMessage(t *testing.T) {
 
 func newGroupMessagePacket() *api.Packet {
 	p := api.NewPacket()
-	p.Op  =api.OperateMessageSend
+	p.Op = api.OperateMessageSend
 	p.Marshal(dto.MessageSendRequest{
 		Type:        api.GroupSession,
 		Content:     "testRoom",
 		ContentType: api.TextMessage,
-		RequestId: uuid.NewV4().String(),
-		TargetId:   "1",
+		RequestId:   uuid.NewV4().String(),
+		TargetId:    "1",
 	})
 	return p
 }
 
 func TestSendGroupMessage(t *testing.T) {
-	conn, err := connect("10003","someUserB", true, true)
+	conn, err := connect("10003", "someUserB", true, true)
 	system.SecurePanic(err)
 
 	for {
@@ -149,7 +158,7 @@ func BenchmarkSendMessage(b *testing.B) {
 				case <-ctx.Done():
 					return
 				default:
-					c, err := connect(fmt.Sprintf("%d", time.Now().UnixNano()),uuid.NewV4().String(), true, false)
+					c, err := connect(fmt.Sprintf("%d", time.Now().UnixNano()), uuid.NewV4().String(), true, false)
 					if err == nil {
 						ch <- c
 					}

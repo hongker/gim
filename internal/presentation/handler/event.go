@@ -31,11 +31,16 @@ func (h *EventHandler) Connect(params ...interface{}) {
 	}
 	conn := params[0].(*network.Connection)
 	// 如果用户未按时登录，通过定时任务关闭连接，释放资源
-	time.AfterFunc(h.expired, func() {
-		if !h.collection.CheckConnExist(conn) {
-			conn.Close()
-		}
-	})
+	h.collection.Add(conn)
+	h.collection.Refresh(conn, h.expired)
+}
+
+func (h *EventHandler) Heartbeat(params ...interface{}) {
+	if len(params) < 1 {
+		return
+	}
+	conn := params[0].(*network.Connection)
+	h.collection.Refresh(conn, h.expired)
 }
 
 func (h *EventHandler) Login(params ...interface{}) {

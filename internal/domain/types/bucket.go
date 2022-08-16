@@ -4,7 +4,8 @@ import "sync"
 
 // Bucket 存储channel和rooms
 type Bucket struct {
-	rmu      sync.RWMutex
+	rmu sync.RWMutex
+
 	channels map[string]*Channel // 对应私聊,key为uid
 	rooms    map[string]*Room    // 对应群聊,key为groupId
 }

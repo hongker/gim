@@ -7,13 +7,14 @@ import (
 	"gim/internal/presentation/helper"
 	"gim/pkg/errors"
 	"gim/pkg/network"
+	"time"
 )
 
 type UserHandler struct {
 	userApp *application.UserApp
 }
 
-func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error)  {
+func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error) {
 	req := &dto.UserLoginRequest{}
 	if err := helper.Bind(ctx, req); err != nil {
 		return nil, errors.InvalidParameter(err.Error())
@@ -29,7 +30,18 @@ func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error)  {
 	return resp, nil
 }
 
-func NewUserHandler(userApp *application.UserApp,) *UserHandler {
+func (handler *UserHandler) Heartbeat(ctx *network.Context) (interface{}, error) {
+	req := &dto.UserHeartbeatRequest{}
+	if err := helper.Bind(ctx, req); err != nil {
+		return nil, errors.InvalidParameter(err.Error())
+	}
+
+	event.Trigger(event.Heartbeat, ctx.Connection())
+	resp := &dto.UserHeartbeatResponse{Time: time.Now().UnixNano()}
+	return resp, nil
+}
+
+func NewUserHandler(userApp *application.UserApp) *UserHandler {
 	return &UserHandler{
 		userApp: userApp,
 	}

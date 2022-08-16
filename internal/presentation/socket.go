@@ -78,6 +78,7 @@ func NewSocket(conf *config.Config,
 	}
 
 	s.RegisterHandler(api.OperateAuth, userHandler.Login)
+	s.RegisterHandler(api.OperateHeartbeat, userHandler.Heartbeat)
 	s.RegisterHandler(api.OperateMessageSend, messageHandler.Send)
 	s.RegisterHandler(api.OperateMessageQuery, messageHandler.Query)
 	s.RegisterHandler(api.OperateGroupJoin, groupHandler.Join)
@@ -91,6 +92,7 @@ func NewSocket(conf *config.Config,
 func (s *Socket) registerEvents(expired time.Duration) {
 	h := handler.NewEventHandler(types.GetCollection(), expired)
 	event.Listen(event.Connect, h.Connect)
+	event.Listen(event.Heartbeat, h.Heartbeat)
 	event.Listen(event.Login, h.Login)
 	event.Listen(event.Disconnect, h.Disconnect)
 	event.Listen(event.JoinGroup, h.JoinGroup)

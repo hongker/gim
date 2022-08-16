@@ -5,13 +5,14 @@ import (
 	"gim/pkg/network"
 )
 
-const(
-	Connect = "Connect"
-	Login = "Login"
+const (
+	Connect    = "Connect"
+	Login      = "Login"
+	Heartbeat  = "Heartbeat"
 	Disconnect = "Disconnect"
-	JoinGroup = "JoinGroup"
+	JoinGroup  = "JoinGroup"
 	LeaveGroup = "LeaveGroup"
-	Push = "Push"
+	Push       = "Push"
 )
 
 type ConnectEvent struct {
@@ -19,7 +20,7 @@ type ConnectEvent struct {
 }
 
 type LoginEvent struct {
-	UserId string
+	UserId     string
 	Connection *network.Connection
 }
 
@@ -28,15 +29,15 @@ type DisconnectEvent struct {
 }
 
 type JoinGroupEvent struct {
-	GroupId string
+	GroupId    string
 	Connection *network.Connection
 }
-type LeaveGroupEvent struct{
-	GroupId string
+type LeaveGroupEvent struct {
+	GroupId    string
 	Connection *network.Connection
 }
-type PushMessageEvent struct{
-	SessionType string
-	TargetId string
+type PushMessageEvent struct {
+	SessionType  string
+	TargetId     string
 	BatchMessage dto.BatchMessage
 }
