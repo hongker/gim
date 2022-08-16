@@ -15,15 +15,49 @@ import (
 	"time"
 )
 
-type Handler func(ctx *network.Context)
+type HandlerFunction func(ctx *network.Context) (interface{}, error)
+
+type NotFoundHandlerFunction func(ctx *network.Context)
+type RecoverHandlerFunction func(ctx *network.Context)
+type SuccessHandlerFunction func(ctx *network.Context, response interface{})
+type ServiceErrorHandleFunction func(ctx *network.Context, err error)
 
 type Socket struct {
-	addr     string
-	handlers map[int32]Handler
+	handlers               map[int32]HandlerFunction
+	addr                   string
+	doNotRecover           bool
+	notFoundHandlerFunc    NotFoundHandlerFunction
+	successHandlerFunc     SuccessHandlerFunction
+	serviceErrorHandleFunc ServiceErrorHandleFunction
+	recoverHandleFunc      RecoverHandlerFunction
 }
 
-func (s *Socket) RegisterHandler(operate int32, handler func(ctx *network.Context) (interface{}, error)) {
-	s.handlers[operate] = s.wrapHandler(handler)
+func (s *Socket) NotFoundHandlerFunc(handler NotFoundHandlerFunction) {
+	if handler == nil {
+		return
+	}
+	s.notFoundHandlerFunc = handler
+}
+
+func (s *Socket) RecoverHandler(handler RecoverHandlerFunction) {
+	if handler == nil {
+		return
+	}
+	s.recoverHandleFunc = handler
+}
+
+func (s *Socket) SuccessHandler(handler SuccessHandlerFunction) {
+	if handler == nil {
+		return
+	}
+	s.successHandlerFunc = handler
+}
+
+func (s *Socket) ServiceErrorHandler(handler ServiceErrorHandleFunction) {
+	if handler == nil {
+		return
+	}
+	s.serviceErrorHandleFunc = handler
 }
 
 func (s *Socket) Start() error {
@@ -32,9 +66,20 @@ func (s *Socket) Start() error {
 	server.SetOnDisconnect(s.onDisconnect)
 	server.SetOnRequest(s.onRequest)
 
-	server.Use(filter.Recover, filter.Unpack, filter.Auth)
+	if !s.doNotRecover {
+		server.Use(func(ctx *network.Context) {
+			s.recoverHandleFunc(ctx)
+		})
+	}
+	server.Use(filter.Unpack, filter.Auth)
 
 	return server.Start()
+}
+
+//--------------------private methods------------------------
+
+func (s *Socket) registerHandler(operate int32, handler HandlerFunction) {
+	s.handlers[operate] = handler
 }
 
 func (s *Socket) onConnect(conn *network.Connection) {
@@ -51,43 +96,17 @@ func (s *Socket) onRequest(ctx *network.Context) {
 	packet := helper.GetContextPacket(ctx)
 	processor, ok := s.handlers[packet.Op]
 	if !ok {
-		helper.Failure(ctx, errors.InvalidParameter("invalid operate"))
+		s.notFoundHandlerFunc(ctx)
 		return
 	}
 
-	processor(ctx)
-
-}
-
-func (s *Socket) wrapHandler(fn func(ctx *network.Context) (interface{}, error)) Handler {
-	return func(ctx *network.Context) {
-		if response, err := fn(ctx); err != nil {
-			helper.Failure(ctx, err)
-		} else {
-			helper.Success(ctx, response)
-		}
-	}
-}
-
-func NewSocket(conf *config.Config,
-	userHandler *handler.UserHandler,
-	messageHandler *handler.MessageHandler,
-	groupHandler *handler.GroupHandler) *Socket {
-	s := &Socket{
-		addr:     conf.Addr(),
-		handlers: make(map[int32]Handler, 16),
+	response, err := processor(ctx)
+	if err != nil {
+		s.serviceErrorHandleFunc(ctx, err)
+	} else {
+		s.successHandlerFunc(ctx, response)
 	}
 
-	s.RegisterHandler(api.OperateAuth, userHandler.Login)
-	s.RegisterHandler(api.OperateHeartbeat, userHandler.Heartbeat)
-	s.RegisterHandler(api.OperateMessageSend, messageHandler.Send)
-	s.RegisterHandler(api.OperateMessageQuery, messageHandler.Query)
-	s.RegisterHandler(api.OperateGroupJoin, groupHandler.Join)
-	s.RegisterHandler(api.OperateGroupLeave, groupHandler.Leave)
-	s.RegisterHandler(api.OperateGroupMember, groupHandler.QueryMember)
-
-	s.registerEvents(conf.Server.HeartbeatInterval)
-	return s
 }
 
 func (s *Socket) registerEvents(expired time.Duration) {
@@ -101,6 +120,22 @@ func (s *Socket) registerEvents(expired time.Duration) {
 	event.Listen(event.Push, h.Push)
 }
 
+func buildSocket(conf *config.Config) *Socket {
+	s := &Socket{
+		addr:                   conf.Addr(),
+		handlers:               make(map[int32]HandlerFunction, 16),
+		serviceErrorHandleFunc: helper.Failure,
+		successHandlerFunc:     helper.Success,
+		notFoundHandlerFunc: func(ctx *network.Context) {
+			helper.Failure(ctx, errors.InvalidParameter("invalid operate"))
+		},
+		recoverHandleFunc: filter.Recover,
+		doNotRecover:      conf.Debug,
+	}
+
+	return s
+}
+
 var socketInstance struct {
 	once   sync.Once
 	socket *Socket
@@ -111,24 +146,21 @@ func Initialize(conf *config.Config,
 	messageHandler *handler.MessageHandler,
 	groupHandler *handler.GroupHandler) {
 	socketInstance.once.Do(func() {
-		s := &Socket{
-			addr:     conf.Addr(),
-			handlers: make(map[int32]Handler, 16),
-		}
+		s := buildSocket(conf)
 
-		s.RegisterHandler(api.OperateAuth, userHandler.Login)
-		s.RegisterHandler(api.OperateHeartbeat, userHandler.Heartbeat)
-		s.RegisterHandler(api.OperateMessageSend, messageHandler.Send)
-		s.RegisterHandler(api.OperateMessageQuery, messageHandler.Query)
-		s.RegisterHandler(api.OperateGroupJoin, groupHandler.Join)
-		s.RegisterHandler(api.OperateGroupLeave, groupHandler.Leave)
-		s.RegisterHandler(api.OperateGroupMember, groupHandler.QueryMember)
+		s.registerHandler(api.OperateAuth, userHandler.Login)
+		s.registerHandler(api.OperateHeartbeat, userHandler.Heartbeat)
+		s.registerHandler(api.OperateMessageSend, messageHandler.Send)
+		s.registerHandler(api.OperateMessageQuery, messageHandler.Query)
+		s.registerHandler(api.OperateGroupJoin, groupHandler.Join)
+		s.registerHandler(api.OperateGroupLeave, groupHandler.Leave)
+		s.registerHandler(api.OperateGroupMember, groupHandler.QueryMember)
 
 		s.registerEvents(conf.Server.HeartbeatInterval)
 		socketInstance.socket = s
 	})
 }
 
-func Start() error {
-	return socketInstance.socket.Start()
+func Get() *Socket {
+	return socketInstance.socket
 }

@@ -26,5 +26,5 @@ func Run(conf *config.Config) error {
 		return err
 	}
 
-	return socket.Start()
+	return socket.Get().Start()
 }
