@@ -3,6 +3,7 @@ package main
 import (
 	"gim/internal/infrastructure"
 	"github.com/urfave/cli/v2"
+	"time"
 )
 
 var (
@@ -38,5 +39,10 @@ var (
 		Name:  "push-count",
 		Value: 5,
 		Usage: "Set count of message push event",
+	}
+	heartbeatFlag = &cli.DurationFlag{
+		Name:  "heartbeat",
+		Value: time.Minute,
+		Usage: "Set connection heartbeat interval",
 	}
 )

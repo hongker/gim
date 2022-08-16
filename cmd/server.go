@@ -23,7 +23,7 @@ func NewServerCommand() *cli.App {
 		Name:    "gim",
 		Version: internal.Version,
 		Usage:   "simple and fast im service",
-		Flags:   []cli.Flag{configFlag, portFlag, limitFlag, storageFlag, debugFlag, pushCountFlag},
+		Flags:   []cli.Flag{configFlag, portFlag, limitFlag, storageFlag, debugFlag, pushCountFlag, heartbeatFlag},
 		Action: func(ctx *cli.Context) error {
 			s := options.NewServerRunOptions()
 
@@ -74,5 +74,6 @@ func Complete(s *options.ServerRunOptions, ctx *cli.Context) (*completedServerRu
 	opts.MessageMaxStoreSize = ctx.Int("max-store-size")
 	opts.MessagePushCount = ctx.Int("push-count")
 	opts.MessageStorage = ctx.String("storage")
+	opts.HeartbeatInterval = ctx.Duration("heartbeat")
 	return opts, nil
 }

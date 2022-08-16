@@ -3,6 +3,7 @@ package options
 import (
 	"gim/internal/infrastructure"
 	"gim/internal/infrastructure/config"
+	"time"
 )
 
 type ServerRunOptions struct {
@@ -12,6 +13,7 @@ type ServerRunOptions struct {
 	MessageMaxStoreSize int
 	MessagePushCount    int
 	MessageStorage      string
+	HeartbeatInterval   time.Duration
 }
 
 func NewServerRunOptions() *ServerRunOptions {
@@ -22,6 +24,7 @@ func NewServerRunOptions() *ServerRunOptions {
 		MessageMaxStoreSize: 1000,
 		MessagePushCount:    5,
 		MessageStorage:      infrastructure.MemoryStore,
+		HeartbeatInterval:   time.Minute,
 	}
 	return s
 }
@@ -32,4 +35,5 @@ func (s ServerRunOptions) ApplyTo(conf *config.Config) {
 	conf.Server.Store = s.MessageStorage
 	conf.Message.PushCount = s.MessagePushCount
 	conf.Message.MaxStoreSize = s.MessageMaxStoreSize
+	conf.Server.HeartbeatInterval = s.HeartbeatInterval
 }
