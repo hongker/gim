@@ -3,28 +3,18 @@ package handler
 import (
 	"gim/api"
 	"gim/internal/domain/dto"
-	"gim/internal/domain/event"
 	"gim/internal/domain/types"
 	"gim/pkg/network"
 	"time"
 )
 
 type EventHandler struct {
-	expired time.Duration
+	expired    time.Duration
 	collection *types.Collection
 }
 
-func (h *EventHandler) RegisterEvents()  {
-	event.Listen(event.Connect, h.Connect)
-	event.Listen(event.Login, h.Login)
-	event.Listen(event.Disconnect, h.Disconnect)
-	event.Listen(event.JoinGroup, h.JoinGroup)
-	event.Listen(event.LeaveGroup, h.LeaveGroup)
-	event.Listen(event.Push, h.Push)
-}
-
-func (h *EventHandler) Push(params ...interface{})   {
-	if len(params) <= 1 {
+func (h *EventHandler) Push(params ...interface{}) {
+	if len(params) < 3 {
 		return
 	}
 
@@ -36,7 +26,7 @@ func (h *EventHandler) Push(params ...interface{})   {
 }
 
 func (h *EventHandler) Connect(params ...interface{}) {
-	if len(params) <= 1 {
+	if len(params) < 1 {
 		return
 	}
 	conn := params[0].(*network.Connection)
@@ -45,12 +35,11 @@ func (h *EventHandler) Connect(params ...interface{}) {
 		if !h.collection.CheckConnExist(conn) {
 			conn.Close()
 		}
-
 	})
 }
 
 func (h *EventHandler) Login(params ...interface{}) {
-	if len(params) <= 1 {
+	if len(params) < 2 {
 		return
 	}
 	uid := params[0].(string)
@@ -65,7 +54,7 @@ func (h *EventHandler) Disconnect(params ...interface{}) {
 	h.collection.RemoveConn(conn)
 }
 func (h *EventHandler) JoinGroup(params ...interface{}) {
-	if len(params) <= 1 {
+	if len(params) < 2 {
 		return
 	}
 	roomId := params[0].(string)
@@ -74,7 +63,7 @@ func (h *EventHandler) JoinGroup(params ...interface{}) {
 
 }
 func (h *EventHandler) LeaveGroup(params ...interface{}) {
-	if len(params) <= 1 {
+	if len(params) < 2 {
 		return
 	}
 	roomId := params[0].(string)
@@ -83,6 +72,5 @@ func (h *EventHandler) LeaveGroup(params ...interface{}) {
 }
 
 func NewEventHandler(collection *types.Collection, expired time.Duration) *EventHandler {
-	h :=  &EventHandler{collection: collection, expired: expired}
-	return h
+	return &EventHandler{collection: collection, expired: expired}
 }

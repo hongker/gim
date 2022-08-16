@@ -4,6 +4,7 @@ import (
 	"gim/api"
 	"gim/internal/domain/dto"
 	"gim/pkg/network"
+	"sync"
 )
 
 type Collection struct {
@@ -15,8 +16,9 @@ func (app *Collection) RegisterConn(uid string, conn *network.Connection) {
 	channel := NewChannel(uid, conn)
 	app.bucket.AddChannel(channel)
 }
+
 // RemoveConn remove connection from bucket
-func (app *Collection) RemoveConn(conn *network.Connection)   {
+func (app *Collection) RemoveConn(conn *network.Connection) {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return
@@ -41,9 +43,9 @@ func (app *Collection) GetUser(conn *network.Connection) *dto.User {
 
 // Push push message to session target
 func (app *Collection) Push(sessionType string, targetId string, msg []byte) {
-	if sessionType== api.UserSession {
+	if sessionType == api.UserSession {
 		app.pushUser(targetId, msg)
-	}else {
+	} else {
 		app.pushRoom(targetId, msg)
 	}
 }
@@ -63,21 +65,23 @@ func (app *Collection) pushRoom(rid string, msg []byte) {
 	}
 	room.Push(msg)
 }
+
 // Broadcast push message to everyone
 func (app *Collection) Broadcast(msg []byte) {
 	app.bucket.Push(msg)
 }
 
 // JoinRoom
-func (app *Collection) JoinRoom(roomId string, conn *network.Connection, ) {
+func (app *Collection) JoinRoom(roomId string, conn *network.Connection) {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return
 	}
 	app.bucket.PutRoom(roomId, channel)
 }
+
 // LeaveRoom
-func (app *Collection) LeaveRoom(roomId string, conn *network.Connection, ) {
+func (app *Collection) LeaveRoom(roomId string, conn *network.Connection) {
 	channel := app.bucket.GetChannel(conn.ID())
 	if channel == nil {
 		return
@@ -90,10 +94,25 @@ func (app *Collection) LeaveRoom(roomId string, conn *network.Connection, ) {
 	room.Remove(channel)
 }
 
+// collectionInstance the singleton instance of collection
+var collectionInstance struct {
+	once       sync.Once
+	lock       sync.Mutex
+	collection *Collection
+}
 
-func NewCollection() *Collection {
-	app := &Collection{
-		bucket: NewBucket(),
+// Initialize the bucket set.  This can only be done once per binary, subsequent calls are ignored.
+func Initialize(bucket *Bucket) {
+	collectionInstance.once.Do(func() {
+		collectionInstance.collection = &Collection{bucket: bucket}
+	})
+}
+
+func GetCollection() *Collection {
+	collectionInstance.lock.Lock()
+	defer collectionInstance.lock.Unlock()
+	if collectionInstance.collection == nil {
+		Initialize(NewBucket())
 	}
-	return app
+	return collectionInstance.collection
 }
