@@ -47,8 +47,7 @@ func NewServerCommand() *cli.App {
 
 func run(completedOptions *completedServerRunOptions) error {
 	conf := createServerConfig(completedOptions)
-	server := internal.NewServer(conf).WithDebug(completedOptions.Debug)
-	return server.Run()
+	return internal.Run(conf)
 }
 
 func createServerConfig(completedOptions *completedServerRunOptions) *config.Config {

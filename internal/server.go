@@ -10,29 +10,15 @@ import (
 	"gim/pkg/system"
 )
 
-type Server struct {
-	conf  *config.Config
-	debug bool
-}
-
-func (s *Server) WithDebug(debug bool) *Server {
-	s.debug = debug
-	return s
-}
-
-func (s *Server) Run() error {
-	if s.debug {
+func Run(conf *config.Config) error {
+	if conf.Debug {
 		go system.ShowMemoryUsage()
 	}
+	config.Initialize(conf)
 
 	container := app.Container()
-	if err := container.Provide(func() *config.Config {
-		return s.conf
-	}); err != nil {
-		return err
-	}
 
-	infrastructure.InjectStore(container, s.conf.Server.Store)
+	infrastructure.Inject(container)
 	application.Inject(container)
 	presentation.Inject(container)
 
@@ -41,8 +27,4 @@ func (s *Server) Run() error {
 	}
 
 	return socket.Start()
-}
-
-func NewServer(conf *config.Config) *Server {
-	return &Server{conf: conf}
 }

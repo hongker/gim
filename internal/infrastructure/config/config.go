@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"gim/pkg/redis"
 	"github.com/spf13/viper"
+	"sync"
 	"time"
 )
 
 type Config struct {
 	viper   *viper.Viper
+	Debug   bool
 	Server  Server
 	Cache   Cache
 	Redis   redis.Config
@@ -58,27 +60,20 @@ type Option func(config *Config)
 func New() *Config {
 	return &Config{
 		viper: viper.New(),
-		Server: Server{
-			Protocol:          "tcp",
-			Port:              8080,
-			HeartbeatInterval: time.Minute,
-		},
-		Cache: Cache{
-			Expired: time.Minute * 5,
-			Cleanup: time.Minute * 10,
-		},
-		Redis: redis.Config{
-			Host:        "127.0.0.1",
-			Port:        6379,
-			Auth:        "",
-			PoolSize:    10,
-			MaxRetries:  3,
-			IdleTimeout: time.Second * 10,
-			Cluster:     nil,
-		},
-		Message: Message{
-			PushCount:    10,
-			MaxStoreSize: 10000,
-		},
 	}
+}
+
+var configInstance struct {
+	once sync.Once
+	conf *Config
+}
+
+func Initialize(config *Config) {
+	configInstance.once.Do(func() {
+		configInstance.conf = config
+	})
+}
+
+func Get() *Config {
+	return configInstance.conf
 }
