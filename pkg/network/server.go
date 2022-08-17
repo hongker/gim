@@ -1,6 +1,7 @@
 package network
 
 import (
+	"gim/pkg/compressor"
 	"log"
 	"net"
 )
@@ -20,8 +21,8 @@ func NewTCPServer(bind string, opts ...Option) *TcpServer {
 		setter(conf)
 	}
 	return &TcpServer{
-		engine:   newEngine(conf.ContextPoolSize),
-		conf:     conf,
+		engine: newEngine(conf.ContextPoolSize),
+		conf:   conf,
 	}
 }
 
@@ -111,9 +112,8 @@ func (s *TcpServer) handle(conn *net.TCPConn) {
 	}
 
 	// 初始化连接
-	connection := &Connection{instance: conn}
+	connection := wantsCompressConnection(conn, s.conf.ContentEncoding)
 	connection.init(s.conf.QueueSize, s.conf.DataLength, s.conf.DataMaxLength)
-
 
 	// 开启连接事件回调
 	s.OnConnect(connection)
@@ -123,4 +123,13 @@ func (s *TcpServer) handle(conn *net.TCPConn) {
 
 	// 关闭连接事件回调
 	s.OnDisconnect(connection)
+}
+
+func wantsCompressConnection(conn net.Conn, contentEncoding string) *Connection {
+	instance := conn
+	c, err := compressor.NewCompressingResponseWriter(conn, contentEncoding)
+	if err == nil {
+		instance = &CompressorNetConn{Conn: conn, compressorWriter: c}
+	}
+	return &Connection{instance: instance}
 }

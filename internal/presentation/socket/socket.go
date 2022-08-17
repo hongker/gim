@@ -30,6 +30,7 @@ type Socket struct {
 	successHandlerFunc     SuccessHandlerFunction
 	serviceErrorHandleFunc ServiceErrorHandleFunction
 	recoverHandleFunc      RecoverHandlerFunction
+	contentEncodingEnabled bool
 }
 
 func (s *Socket) NotFoundHandlerFunc(handler NotFoundHandlerFunction) {
@@ -129,8 +130,9 @@ func buildSocket(conf *config.Config) *Socket {
 		notFoundHandlerFunc: func(ctx *network.Context) {
 			helper.Failure(ctx, errors.InvalidParameter("invalid operate"))
 		},
-		recoverHandleFunc: filter.Recover,
-		doNotRecover:      conf.Debug,
+		recoverHandleFunc:      filter.Recover,
+		doNotRecover:           conf.Debug,
+		contentEncodingEnabled: false,
 	}
 
 	return s

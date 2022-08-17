@@ -4,10 +4,20 @@ import (
 	"gim/pkg/binary"
 	"gim/pkg/bytes"
 	uuid "github.com/satori/go.uuid"
+	"io"
 	"log"
 	"net"
 	"sync"
 )
+
+type CompressorNetConn struct {
+	net.Conn
+	compressorWriter io.Writer
+}
+
+func (c *CompressorNetConn) Write(p []byte) (int, error) {
+	return c.compressorWriter.Write(p)
+}
 
 type Connection struct {
 	instance net.Conn
@@ -15,10 +25,10 @@ type Connection struct {
 
 	sendQueue chan []byte
 
-	once *sync.Once
-	done chan struct{} // 关闭标识
+	once             *sync.Once
+	done             chan struct{} // 关闭标识
 	packetDataLength int
-	packetMaxLength int
+	packetMaxLength  int
 }
 
 // ID return unique id of connection
@@ -136,4 +146,3 @@ func (conn *Connection) handleRequest(engine *Engine) {
 	}
 
 }
-

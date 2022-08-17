@@ -6,21 +6,28 @@ import (
 	"gim/pkg/network"
 )
 
-func SetContextPacket(ctx *network.Context, packet *api.Packet)  {
+func SetContextPacket(ctx *network.Context, packet *api.Packet) {
 	ctx.WithValue("packet", packet)
 }
 
-func GetContextPacket(ctx *network.Context) *api.Packet  {
+func GetContextPacket(ctx *network.Context) *api.Packet {
 	return ctx.Value("packet").(*api.Packet)
 }
 
-func Bind(ctx *network.Context, container interface{}) error  {
+func BuildResponsePacket(ctx *network.Context, data interface{}) *api.Packet {
+	packet := GetContextPacket(ctx)
+	packet.Op++
+	packet.Marshal(data)
+	return packet
+}
+
+func Bind(ctx *network.Context, container interface{}) error {
 	return GetContextPacket(ctx).Bind(container)
 }
 
-func SetContextUser(ctx *network.Context, user *dto.User)  {
-	ctx.WithValue( "user", user)
+func SetContextUser(ctx *network.Context, user *dto.User) {
+	ctx.WithValue("user", user)
 }
-func GetContextUser(ctx *network.Context) *dto.User  {
+func GetContextUser(ctx *network.Context) *dto.User {
 	return ctx.Value("user").(*dto.User)
 }
