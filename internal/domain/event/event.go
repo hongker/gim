@@ -19,6 +19,14 @@ type ConnectEvent struct {
 	Connection *network.Connection
 }
 
+func ConnectHandler(ev *ConnectEvent) {
+
+}
+
+type HeartbeatEvent struct {
+	Connection *network.Connection
+}
+
 type LoginEvent struct {
 	UserId     string
 	Connection *network.Connection

@@ -2,9 +2,8 @@ package handler
 
 import (
 	"gim/api"
-	"gim/internal/domain/dto"
+	"gim/internal/domain/event"
 	"gim/internal/domain/types"
-	"gim/pkg/network"
 	"time"
 )
 
@@ -13,67 +12,35 @@ type EventHandler struct {
 	collection *types.Collection
 }
 
-func (h *EventHandler) Push(params ...interface{}) {
-	if len(params) < 3 {
-		return
-	}
-
-	sessionType := params[0].(string)
-	targetId := params[1].(string)
-	batchMessages := params[2].(*dto.BatchMessage)
-	packet := api.BuildPacket(api.OperateMessagePush, batchMessages)
-	h.collection.Push(sessionType, targetId, packet.Encode())
+func (h *EventHandler) Push(ev *event.PushMessageEvent) {
+	packet := api.BuildPacket(api.OperateMessagePush, ev.BatchMessage)
+	h.collection.Push(ev.SessionType, ev.TargetId, packet.Encode())
 }
 
-func (h *EventHandler) Connect(params ...interface{}) {
-	if len(params) < 1 {
-		return
-	}
-	conn := params[0].(*network.Connection)
+func (h *EventHandler) Connect(ev *event.ConnectEvent) {
 	// 如果用户未按时登录，通过定时任务关闭连接，释放资源
-	h.collection.Add(conn)
-	h.collection.Refresh(conn, h.expired)
+	h.collection.Add(ev.Connection)
+	h.collection.Refresh(ev.Connection, h.expired)
 }
 
-func (h *EventHandler) Heartbeat(params ...interface{}) {
-	if len(params) < 1 {
-		return
-	}
-	conn := params[0].(*network.Connection)
-	h.collection.Refresh(conn, h.expired)
+func (h *EventHandler) Heartbeat(ev *event.HeartbeatEvent) {
+	h.collection.Refresh(ev.Connection, h.expired)
 }
 
-func (h *EventHandler) Login(params ...interface{}) {
-	if len(params) < 2 {
-		return
-	}
-	uid := params[0].(string)
-	conn := params[1].(*network.Connection)
-	h.collection.RegisterConn(uid, conn)
+func (h *EventHandler) Login(ev *event.LoginEvent) {
+	h.collection.RegisterConn(ev.UserId, ev.Connection)
 }
-func (h *EventHandler) Disconnect(params ...interface{}) {
-	if len(params) < 1 {
-		return
-	}
-	conn := params[0].(*network.Connection)
-	h.collection.RemoveConn(conn)
+func (h *EventHandler) Disconnect(ev *event.DisconnectEvent) {
+	h.collection.RemoveConn(ev.Connection)
 }
-func (h *EventHandler) JoinGroup(params ...interface{}) {
-	if len(params) < 2 {
-		return
-	}
-	roomId := params[0].(string)
-	conn := params[1].(*network.Connection)
-	h.collection.JoinRoom(roomId, conn)
+func (h *EventHandler) JoinGroup(ev *event.JoinGroupEvent) {
+
+	h.collection.JoinRoom(ev.GroupId, ev.Connection)
 
 }
-func (h *EventHandler) LeaveGroup(params ...interface{}) {
-	if len(params) < 2 {
-		return
-	}
-	roomId := params[0].(string)
-	conn := params[1].(*network.Connection)
-	h.collection.LeaveRoom(roomId, conn)
+func (h *EventHandler) LeaveGroup(ev *event.LeaveGroupEvent) {
+
+	h.collection.LeaveRoom(ev.GroupId, ev.Connection)
 }
 
 func NewEventHandler(collection *types.Collection, expired time.Duration) *EventHandler {

@@ -25,7 +25,7 @@ func (handler *UserHandler) Login(ctx *network.Context) (interface{}, error) {
 		return nil, errors.WithMessage(err, "login")
 	}
 
-	event.Trigger(event.Login, resp.UID, ctx.Connection())
+	event.Trigger(event.Login, &event.LoginEvent{resp.UID, ctx.Connection()})
 
 	return resp, nil
 }
@@ -36,7 +36,7 @@ func (handler *UserHandler) Heartbeat(ctx *network.Context) (interface{}, error)
 		return nil, errors.InvalidParameter(err.Error())
 	}
 
-	event.Trigger(event.Heartbeat, ctx.Connection())
+	event.Trigger(event.Heartbeat, &event.HeartbeatEvent{ctx.Connection()})
 	resp := &dto.UserHeartbeatResponse{Time: time.Now().UnixNano()}
 	return resp, nil
 }

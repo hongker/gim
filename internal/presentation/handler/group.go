@@ -25,12 +25,12 @@ func (handler *GroupHandler) Join(ctx *network.Context) (interface{}, error) {
 		return nil, errors.WithMessage(err, "join group")
 	}
 
-	event.Trigger(event.JoinGroup, req.GroupId, ctx.Connection())
+	event.Trigger(event.JoinGroup, &event.JoinGroupEvent{req.GroupId, ctx.Connection()})
 
 	return nil, nil
 }
 
-func (handler *GroupHandler) Leave(ctx *network.Context) ( interface{},  error)  {
+func (handler *GroupHandler) Leave(ctx *network.Context) (interface{}, error) {
 	req := &dto.GroupLeaveRequest{}
 	if err := helper.Bind(ctx, req); err != nil {
 		return nil, errors.InvalidParameter(err.Error())
@@ -41,11 +41,11 @@ func (handler *GroupHandler) Leave(ctx *network.Context) ( interface{},  error) 
 	if err != nil {
 		return nil, errors.WithMessage(err, "leave group")
 	}
-	event.Trigger(event.LeaveGroup, req.GroupId, ctx.Connection())
+	event.Trigger(event.LeaveGroup, &event.LeaveGroupEvent{req.GroupId, ctx.Connection()})
 	return nil, nil
 }
 
-func (handler *GroupHandler) QueryMember(ctx *network.Context) ( interface{},  error)  {
+func (handler *GroupHandler) QueryMember(ctx *network.Context) (interface{}, error) {
 	req := &dto.GroupMemberQuery{}
 	if err := helper.Bind(ctx, req); err != nil {
 		return nil, errors.InvalidParameter(err.Error())
@@ -58,6 +58,6 @@ func (handler *GroupHandler) QueryMember(ctx *network.Context) ( interface{},  e
 	return res, nil
 }
 
-func NewGroupHandler(groupApp *application.GroupApp, ) *GroupHandler {
-	return &GroupHandler{groupApp: groupApp, }
+func NewGroupHandler(groupApp *application.GroupApp) *GroupHandler {
+	return &GroupHandler{groupApp: groupApp}
 }

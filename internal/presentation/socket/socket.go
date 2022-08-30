@@ -85,12 +85,12 @@ func (s *Socket) registerHandler(operate int32, handler HandlerFunction) {
 
 func (s *Socket) onConnect(conn *network.Connection) {
 	log.Println("connect:", conn.IP())
-	event.Trigger(event.Connect, conn)
+	event.Trigger(event.Connect, &event.ConnectEvent{conn})
 }
 
 func (s *Socket) onDisconnect(conn *network.Connection) {
 	log.Println("disconnect:", conn.IP())
-	event.Trigger(event.Disconnect, conn)
+	event.Trigger(event.Disconnect, &event.DisconnectEvent{conn})
 }
 
 func (s *Socket) onRequest(ctx *network.Context) {
@@ -112,13 +112,13 @@ func (s *Socket) onRequest(ctx *network.Context) {
 
 func (s *Socket) registerEvents(expired time.Duration) {
 	h := handler.NewEventHandler(types.GetCollection(), expired)
-	event.Listen(event.Connect, h.Connect)
-	event.Listen(event.Heartbeat, h.Heartbeat)
-	event.Listen(event.Login, h.Login)
-	event.Listen(event.Disconnect, h.Disconnect)
-	event.Listen(event.JoinGroup, h.JoinGroup)
-	event.Listen(event.LeaveGroup, h.LeaveGroup)
-	event.Listen(event.Push, h.Push)
+	event.NewEvent[*event.ConnectEvent](event.Connect).Bind(h.Connect)
+	event.NewEvent[*event.HeartbeatEvent](event.Heartbeat).Bind(h.Heartbeat)
+	event.NewEvent[*event.DisconnectEvent](event.Disconnect).Bind(h.Disconnect)
+	event.NewEvent[*event.JoinGroupEvent](event.JoinGroup).Bind(h.JoinGroup)
+	event.NewEvent[*event.LeaveGroupEvent](event.LeaveGroup).Bind(h.LeaveGroup)
+	event.NewEvent[*event.PushMessageEvent](event.Push).Bind(h.Push)
+	event.NewEvent[*event.LoginEvent](event.Login).Bind(h.Login)
 }
 
 func buildSocket(conf *config.Config) *Socket {

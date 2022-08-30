@@ -15,13 +15,12 @@ import (
 )
 
 type MessageApp struct {
-	repo repository.MessageRepo
-	groupRepo repository.GroupRepo
-	rmu sync.RWMutex
-	queues map[string]*queue.Queue
-	queueCap int
+	repo       repository.MessageRepo
+	groupRepo  repository.GroupRepo
+	rmu        sync.RWMutex
+	queues     map[string]*queue.Queue
+	queueCap   int
 	messageCap int
-
 }
 
 func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queue {
@@ -36,13 +35,13 @@ func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queu
 	}
 	q := queue.NewQueue(app.queueCap, limit)
 	app.queues[targetId] = q
-	go q.Poll(time.Second , func(items []interface{}) {
-		batchMessages := &dto.BatchMessage{Count: len(items),Items: make([]dto.Message, len(items))}
+	go q.Poll(time.Second, func(items []interface{}) {
+		batchMessages := dto.BatchMessage{Count: len(items), Items: make([]dto.Message, len(items))}
 		for i, item := range items {
 			batchMessages.Items[i] = item.(dto.Message)
 		}
 
-		event.Trigger(event.Push, sessionType, targetId, batchMessages)
+		event.Trigger(event.Push, &event.PushMessageEvent{sessionType, targetId, batchMessages})
 	})
 	return q
 }
@@ -50,7 +49,7 @@ func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queu
 func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) (err error) {
 	var group *entity.Group
 	if req.Type == api.UserSession {
-		if sender.Id ==req.TargetId {
+		if sender.Id == req.TargetId {
 			return errors.InvalidParameter("sender same as target")
 		}
 	} else if req.Type == api.GroupSession {
@@ -67,14 +66,14 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 		Content:     req.Content,
 		ContentType: req.ContentType,
 		CreatedAt:   time.Now().UnixNano(),
-		RequestId: req.RequestId,
+		RequestId:   req.RequestId,
 		Sequence:    app.repo.GenerateSequence(ctx, sessionId),
 		SessionId:   sessionId,
 		FromUser:    &entity.User{Id: sender.Id, Name: sender.Name},
-		Group: group,
+		Group:       group,
 	}
 	if err := app.repo.Save(ctx, item); err != nil {
-		return  err
+		return err
 	}
 
 	// 超过容量后删除早期数据
@@ -83,13 +82,13 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 		app.repo.PopMin(ctx, item.SessionId, diff)
 	}
 	res := dto.Message{
-		Id: item.Id,
-		RequestId: item.RequestId,
-		Session: item.Session(),
-		Content:   item.Content,
+		Id:          item.Id,
+		RequestId:   item.RequestId,
+		Session:     item.Session(),
+		Content:     item.Content,
 		ContentType: item.ContentType,
-		CreatedAt: item.CreatedAt,
-		Sequence: item.Sequence,
+		CreatedAt:   item.CreatedAt,
+		Sequence:    item.Sequence,
 		FromUser: dto.User{
 			Id: item.FromUser.Id,
 		},
@@ -97,11 +96,10 @@ func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.Mess
 
 	app.getQueue(item.SessionType, req.TargetId).Offer(res)
 
-	return  nil
+	return nil
 }
 
-
-func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
+func (app *MessageApp) Query(ctx context.Context, req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
 	items, err := app.repo.Query(ctx, dto.MessageHistoryQuery{
 		SessionId: req.SessionId,
 		Limit:     req.Limit,
@@ -114,14 +112,14 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 	res := &dto.MessageQueryResponse{Items: make([]dto.Message, 0, len(items))}
 	for _, item := range items {
 		res.Items = append(res.Items, dto.Message{
-			Id: item.Id,
-			RequestId: item.RequestId,
-			Session: dto.Session{Id: item.SessionId, Type: item.SessionType},
-			Content:   item.Content,
+			Id:          item.Id,
+			RequestId:   item.RequestId,
+			Session:     dto.Session{Id: item.SessionId, Type: item.SessionType},
+			Content:     item.Content,
 			ContentType: item.ContentType,
-			CreatedAt: item.CreatedAt,
-			Sequence: item.Sequence,
-			FromUser: dto.User{Id: item.FromUser.Id},
+			CreatedAt:   item.CreatedAt,
+			Sequence:    item.Sequence,
+			FromUser:    dto.User{Id: item.FromUser.Id},
 		})
 	}
 
@@ -130,10 +128,10 @@ func (app *MessageApp) Query(ctx context.Context,req *dto.MessageQueryRequest) (
 
 func NewMessageApp(repo repository.MessageRepo, groupRepo repository.GroupRepo, config *config.Config) *MessageApp {
 	app := &MessageApp{
-		repo: repo,
-		groupRepo: groupRepo,
-		queues: map[string]*queue.Queue{},
-		queueCap: config.Message.PushCount,
+		repo:       repo,
+		groupRepo:  groupRepo,
+		queues:     map[string]*queue.Queue{},
+		queueCap:   config.Message.PushCount,
 		messageCap: config.Message.MaxStoreSize,
 	}
 	return app
