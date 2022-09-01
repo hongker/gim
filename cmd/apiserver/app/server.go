@@ -1,22 +1,13 @@
-package main
+package app
 
 import (
-	"gim/cmd/options"
+	"gim/cmd/apiserver/app/options"
 	"gim/internal"
 	"gim/internal/infrastructure/config"
 	"gim/pkg/system"
 	"github.com/urfave/cli/v2"
 	"log"
-	"os"
 )
-
-func main() {
-	cmd := NewServerCommand()
-	err := cmd.Run(os.Args)
-	if err != nil {
-		log.Fatal("failed to run server command: ", err)
-	}
-}
 
 func NewServerCommand() *cli.App {
 	app := &cli.App{
