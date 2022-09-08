@@ -4,6 +4,7 @@ import (
 	"gim/cmd/apiserver/app/options"
 	"gim/internal"
 	"gim/internal/infrastructure/config"
+	"gim/pkg/runtime/signal"
 	"gim/pkg/system"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -43,8 +44,13 @@ func NewServerCommand() *cli.App {
 }
 
 func run(completedOptions *completedServerRunOptions) error {
+	stopCh := signal.SetupSignalHandler()
+
 	conf := createServerConfig(completedOptions)
-	return internal.Run(conf)
+	server := createServer(conf)
+	go server.Run(stopCh)
+
+	return nil
 }
 
 func createServerConfig(completedOptions *completedServerRunOptions) *config.Config {
@@ -53,10 +59,10 @@ func createServerConfig(completedOptions *completedServerRunOptions) *config.Con
 	return conf
 }
 
-type completedServerRunOptions struct {
-	*options.ServerRunOptions
+func createServer(config *config.Config) *internal.Server {
+	return &internal.Server{}
 }
 
-func (options completedServerRunOptions) Validate() []error {
-	return nil
+type completedServerRunOptions struct {
+	*options.ServerRunOptions
 }

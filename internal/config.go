@@ -1,6 +1,14 @@
 package internal
 
 type Config struct {
+	generic GenericServerConfig
+	message MessageConfig
+}
+
+type GenericServerConfig struct {
+}
+
+type MessageConfig struct {
 }
 
 func (c *Config) Complete() *CompleteConfig {
