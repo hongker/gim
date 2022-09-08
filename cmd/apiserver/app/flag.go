@@ -1,6 +1,7 @@
 package app
 
 import (
+	"gim/cmd/apiserver/app/options"
 	"gim/internal/infrastructure"
 	"github.com/urfave/cli/v2"
 	"time"
@@ -46,3 +47,21 @@ var (
 		Usage: "Set connection heartbeat interval",
 	}
 )
+
+func appFlags() []cli.Flag {
+	return []cli.Flag{configFlag, portFlag, limitFlag, storageFlag, debugFlag, pushCountFlag, heartbeatFlag}
+}
+
+// ParseFlagAndCompleteOptions parses the command line arguments and returns *completedServerRunOptions
+func ParseFlagAndCompleteOptions(s *options.ServerRunOptions, ctx *cli.Context) (*completedServerRunOptions, error) {
+	opts := &completedServerRunOptions{}
+	opts.ServerRunOptions = s
+	opts.Debug = ctx.Bool("debug")
+	opts.Port = ctx.Int("port")
+	opts.Protocol = ctx.String("protocol")
+	opts.MessageMaxStoreSize = ctx.Int("max-store-size")
+	opts.MessagePushCount = ctx.Int("push-count")
+	opts.MessageStorage = ctx.String("storage")
+	opts.HeartbeatInterval = ctx.Duration("heartbeat")
+	return opts, nil
+}

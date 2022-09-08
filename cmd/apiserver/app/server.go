@@ -9,16 +9,22 @@ import (
 	"log"
 )
 
+var (
+	appName = "gim"
+)
+
 func NewServerCommand() *cli.App {
 	app := &cli.App{
-		Name:    "gim",
+		Name:    appName,
 		Version: internal.Version,
 		Usage:   "simple and fast im service",
-		Flags:   []cli.Flag{configFlag, portFlag, limitFlag, storageFlag, debugFlag, pushCountFlag, heartbeatFlag},
+		Flags:   appFlags(),
 		Action: func(ctx *cli.Context) error {
+			// new options
 			s := options.NewServerRunOptions()
 
-			completedOptions, err := Complete(s, ctx)
+			// parse command line arguments
+			completedOptions, err := ParseFlagAndCompleteOptions(s, ctx)
 			if err != nil {
 				return err
 			}
@@ -53,17 +59,4 @@ type completedServerRunOptions struct {
 
 func (options completedServerRunOptions) Validate() []error {
 	return nil
-}
-
-func Complete(s *options.ServerRunOptions, ctx *cli.Context) (*completedServerRunOptions, error) {
-	opts := &completedServerRunOptions{}
-	opts.ServerRunOptions = s
-	opts.Debug = ctx.Bool("debug")
-	opts.Port = ctx.Int("port")
-	opts.Protocol = ctx.String("protocol")
-	opts.MessageMaxStoreSize = ctx.Int("max-store-size")
-	opts.MessagePushCount = ctx.Int("push-count")
-	opts.MessageStorage = ctx.String("storage")
-	opts.HeartbeatInterval = ctx.Duration("heartbeat")
-	return opts, nil
 }
