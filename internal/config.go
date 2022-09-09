@@ -5,6 +5,10 @@ type Config struct {
 	message MessageConfig
 }
 
+func New() *Config {
+	return &Config{}
+}
+
 type GenericServerConfig struct {
 }
 

@@ -3,7 +3,6 @@ package app
 import (
 	"gim/cmd/apiserver/app/options"
 	"gim/internal"
-	"gim/internal/infrastructure/config"
 	"gim/pkg/runtime/signal"
 	"gim/pkg/system"
 	"github.com/urfave/cli/v2"
@@ -53,14 +52,13 @@ func run(completedOptions *completedServerRunOptions) error {
 	return nil
 }
 
-func createServerConfig(completedOptions *completedServerRunOptions) *config.Config {
-	conf := config.New()
-	completedOptions.ApplyTo(conf)
+func createServerConfig(completedOptions *completedServerRunOptions) *internal.Config {
+	conf := internal.New()
 	return conf
 }
 
-func createServer(config *config.Config) *internal.Server {
-	return &internal.Server{}
+func createServer(config *internal.Config) *internal.Server {
+	return config.Complete().New()
 }
 
 type completedServerRunOptions struct {

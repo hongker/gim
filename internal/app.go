@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"gim/internal/extension"
-	"gim/internal/generic"
+	"gim/internal/server/extension"
+	"gim/internal/server/generic"
 	"log"
 )
 
@@ -16,7 +16,7 @@ func (s *Server) Run(stopCh <-chan struct{}) {
 
 	defer s.Stop()
 	s.run(stopCh)
-
+	<-stopCh
 }
 
 func (s *Server) Stop() {
@@ -26,4 +26,5 @@ func (s *Server) Stop() {
 func (s *Server) run(stopCh <-chan struct{}) {
 	go s.genericServer.Run(stopCh)
 	go s.extensionServer.Run(stopCh)
+
 }
