@@ -1,30 +1,28 @@
 package internal
 
 import (
-	"gim/internal/server/extension"
-	"gim/internal/server/generic"
+	"github.com/ebar-go/ego"
 	"log"
 )
 
 type Server struct {
-	genericServer   *generic.Server
-	extensionServer *extension.Server
+	engine *ego.NamedEngine
+}
+
+func NewServer() *Server {
+	return &Server{
+		engine: ego.New(),
+	}
 }
 
 func (s *Server) Run(stopCh <-chan struct{}) {
+	defer s.Stop()
 	log.Println("server started")
 
-	defer s.Stop()
-	s.run(stopCh)
+	s.engine.Run()
 	<-stopCh
 }
 
 func (s *Server) Stop() {
 	log.Println("server stopped")
-}
-
-func (s *Server) run(stopCh <-chan struct{}) {
-	go s.genericServer.Run(stopCh)
-	go s.extensionServer.Run(stopCh)
-
 }
