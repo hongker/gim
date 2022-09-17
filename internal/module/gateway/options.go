@@ -1,6 +1,9 @@
 package gateway
 
-import "time"
+import (
+	"github.com/ebar-go/ego"
+	"time"
+)
 
 type Options struct {
 	ServerProtocol    string
@@ -14,4 +17,11 @@ func NewOptions() *Options {
 		ServerAddress:     ":8080",
 		HeartbeatInterval: time.Minute,
 	}
+}
+
+func (o *Options) BuildInstance() *Instance {
+	c := &Config{
+		HttpServerAddress: o.ServerAddress,
+	}
+	return &Instance{config: c, engine: ego.New()}
 }

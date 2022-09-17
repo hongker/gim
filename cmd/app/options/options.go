@@ -48,8 +48,8 @@ func (o ServerRunOptions) ApplyTo(conf *config.Config) {
 
 }
 
-func (o ServerRunOptions) Complete() *completedServerRunOptions {
-	return &completedServerRunOptions{}
+func (o *ServerRunOptions) Complete() *completedServerRunOptions {
+	return &completedServerRunOptions{ServerRunOptions: o}
 }
 
 type completedServerRunOptions struct {
@@ -61,5 +61,5 @@ func (o completedServerRunOptions) Validate() error {
 }
 
 func (o *completedServerRunOptions) NewServer() *internal.Server {
-	return internal.NewServer()
+	return internal.NewServer(o.GatewayOptions.BuildInstance())
 }

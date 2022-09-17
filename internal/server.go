@@ -1,25 +1,24 @@
 package internal
 
 import (
-	"github.com/ebar-go/ego"
+	"gim/internal/module/gateway"
 	"log"
 )
 
+// Server
 type Server struct {
-	engine *ego.NamedEngine
+	gatewayInstance *gateway.Instance
 }
 
-func NewServer() *Server {
-	return &Server{
-		engine: ego.New(),
-	}
+func NewServer(gatewayInstance *gateway.Instance) *Server {
+	return &Server{gatewayInstance: gatewayInstance}
 }
 
 func (s *Server) Run(stopCh <-chan struct{}) {
 	defer s.Stop()
 	log.Println("server started")
 
-	s.engine.Run()
+	s.gatewayInstance.Start()
 	<-stopCh
 }
 
