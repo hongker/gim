@@ -2,12 +2,16 @@ package internal
 
 import (
 	"gim/internal/module/gateway"
+	"gim/internal/module/job"
+	"gim/internal/module/message"
 	"log"
 )
 
 // Server
 type Server struct {
 	gatewayInstance *gateway.Instance
+	messageInstance *message.Instance
+	jobInstance     *job.Instance
 }
 
 func NewServer(gatewayInstance *gateway.Instance) *Server {

@@ -2,12 +2,10 @@ package options
 
 import (
 	"gim/internal"
-	"gim/internal/infrastructure"
 	"gim/internal/infrastructure/config"
 	"gim/internal/module/gateway"
 	"gim/internal/module/message"
 	"github.com/urfave/cli/v2"
-	"time"
 )
 
 // ServerRunOptions run a server.
@@ -24,11 +22,11 @@ const (
 func (ServerRunOptions) Flags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{Name: flagGatewayServerAddress, Aliases: []string{"address"}, Value: ":8080", Usage: "Set server bind address"},
-		&cli.IntFlag{Name: "message", Aliases: []string{"l"}, Value: 10000, Usage: "Set max number of session history messages"},
-		&cli.IntFlag{Name: "push-count", Value: 5, Usage: "Set count of message push event"},
-		&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
-		&cli.StringFlag{Name: "storage", Aliases: []string{"s"}, Value: infrastructure.MemoryStore, Usage: "Set storage, like memory/redis"},
-		&cli.DurationFlag{Name: "heartbeat", Value: time.Minute, Usage: "Set connection heartbeat interval"},
+		//&cli.IntFlag{Name: "message", Aliases: []string{"l"}, Value: 10000, Usage: "Set max number of session history messages"},
+		//&cli.IntFlag{Name: "push-count", Value: 5, Usage: "Set count of message push event"},
+		//&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
+		//&cli.StringFlag{Name: "storage", Aliases: []string{"s"}, Value: infrastructure.MemoryStore, Usage: "Set storage, like memory/redis"},
+		//&cli.DurationFlag{Name: "heartbeat", Value: time.Minute, Usage: "Set connection heartbeat interval"},
 	}
 }
 
