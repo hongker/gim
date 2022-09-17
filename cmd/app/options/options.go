@@ -33,7 +33,7 @@ func (ServerRunOptions) Flags() []cli.Flag {
 }
 
 func (o *ServerRunOptions) ParseArgsFromContext(ctx *cli.Context) {
-	o.GatewayOptions.ServerAddress = ctx.String(flagGatewayServerAddress)
+	o.GatewayOptions.HttpServerAddress = ctx.String(flagGatewayServerAddress)
 }
 
 func NewServerRunOptions() *ServerRunOptions {

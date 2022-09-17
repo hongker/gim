@@ -6,22 +6,26 @@ import (
 )
 
 type Options struct {
-	ServerProtocol    string
-	ServerAddress     string
+	HttpServerAddress string
+	GrpcServerAddress string
+	SockServerAddress string
 	HeartbeatInterval time.Duration
 }
 
 func NewOptions() *Options {
 	return &Options{
-		ServerProtocol:    "tcp",
-		ServerAddress:     ":8080",
+		HttpServerAddress: ":8080",
+		GrpcServerAddress: ":8081",
+		SockServerAddress: ":8082",
 		HeartbeatInterval: time.Minute,
 	}
 }
 
 func (o *Options) BuildInstance() *Instance {
 	c := &Config{
-		HttpServerAddress: o.ServerAddress,
+		HttpServerAddress: o.HttpServerAddress,
+		GrpcServerAddress: o.GrpcServerAddress,
+		SockServerAddress: o.SockServerAddress,
 	}
 	return &Instance{config: c, engine: ego.New()}
 }
