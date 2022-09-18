@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"gim/internal/module/gateway/routes"
+	"gim/internal/module/gateway/route"
 	"github.com/ebar-go/ego"
 	"github.com/ebar-go/ego/server/grpc"
 	"github.com/ebar-go/ego/server/http"
@@ -22,7 +22,7 @@ func (instance *Instance) Start() {
 func (instance *Instance) prepare() {
 	// new http server
 	httpServer := http.NewServer(instance.config.HttpServerAddress).
-		RegisterRouteLoader(routes.Loader)
+		RegisterRouteLoader(route.Loader)
 
 	// new grpc server
 	grpcServer := grpc.NewServer(instance.config.GrpcServerAddress)
