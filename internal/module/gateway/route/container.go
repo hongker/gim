@@ -6,11 +6,6 @@ import (
 	"sync"
 )
 
-var (
-	// Loader is alias for container.install.
-	Loader = Container().install
-)
-
 type container struct {
 	handlers []handler.Handler
 }
@@ -44,4 +39,10 @@ func Container() *container {
 		containerInstance.container = buildContainer()
 	})
 	return containerInstance.container
+}
+
+func Loader(router *gin.Engine) {
+	router.Use(recoverMiddleware())
+
+	Container().install(router)
 }

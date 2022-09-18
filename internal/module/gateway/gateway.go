@@ -27,6 +27,11 @@ func (instance *Instance) initHttpServer() {
 
 	// new http server
 	httpServer := http.NewServer(instance.config.HttpServerAddress).
+		EnableCorsMiddleware().
+		EnableTraceMiddleware("trace").
+		//EnableReleaseMode().
+		EnablePprofHandler().
+		EnableAvailableHealthCheck().
 		RegisterRouteLoader(route.Loader)
 
 	instance.engine.WithServer(httpServer)

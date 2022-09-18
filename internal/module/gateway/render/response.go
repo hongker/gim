@@ -1,23 +1,44 @@
 package render
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/ebar-go/ego/errors"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
+// Success output success response.
 func Success(ctx *gin.Context, data interface{}) {
-
+	ctx.JSON(http.StatusOK, Response{
+		Code: 0,
+		Msg:  "success",
+		Data: data,
+	})
 }
 
-func Error(err error) {
-
+// Error output error response.
+func Error(ctx *gin.Context, err error) {
+	se := errors.Convert(err)
+	ctx.JSON(http.StatusOK, Response{
+		Code: se.Code(),
+		Msg:  se.Message(),
+	})
+	ctx.Abort()
 }
 
-// Abort it will abort when err is not nil,
-func Abort(ctx *gin.Context, err error) {
+// Abort it will abort when err is not nil.
+func Abort(err error) {
 	if err == nil {
 		return
 	}
-	Panic(err)
+	abortPanic(err)
 }
 
-func Panic(err error) {
+func abortPanic(err error) {
+	panic(err)
+}
 
+type Response struct {
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
 }

@@ -28,10 +28,10 @@ func (h *UserHandler) Install(route *gin.Engine) {
 func (h *UserHandler) login(ctx *gin.Context) {
 	req := &dto.UserLoginRequest{}
 	err := render.SerializeRequestFromContext(ctx, req)
-	render.Abort(ctx, err)
+	render.Abort(err)
 
 	response, err := h.userApp.Login(ctx, req)
-	render.Abort(ctx, err)
+	render.Abort(err)
 
 	render.Success(ctx, response)
 }

@@ -1,16 +1,19 @@
 package render
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
-func ReadRequestBody(ctx *gin.Context) {
-
+// RequestBodyFromContext returns the request body from the context.
+func RequestBodyFromContext(ctx *gin.Context) (p []byte, err error) {
+	return ctx.GetRawData()
 }
 
-func RequestBodyFromContext(ctx *gin.Context) []byte {
-	return nil
-}
-
+// SerializeRequestFromContext
 func SerializeRequestFromContext(ctx *gin.Context, container interface{}) error {
-	body := RequestBodyFromContext(ctx)
+	body, err := RequestBodyFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	return serializer().Decode(body, container)
 }
