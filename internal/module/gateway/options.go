@@ -10,6 +10,8 @@ type Options struct {
 	GrpcServerAddress string
 	SockServerAddress string
 	HeartbeatInterval time.Duration
+	EnablePprof       bool
+	TraceHeader       string
 }
 
 func NewOptions() *Options {
@@ -18,6 +20,8 @@ func NewOptions() *Options {
 		GrpcServerAddress: ":8081",
 		SockServerAddress: ":8082",
 		HeartbeatInterval: time.Minute,
+		EnablePprof:       false,
+		TraceHeader:       "trace",
 	}
 }
 
@@ -26,6 +30,8 @@ func (o *Options) BuildInstance() *Instance {
 		HttpServerAddress: o.HttpServerAddress,
 		GrpcServerAddress: o.GrpcServerAddress,
 		SockServerAddress: o.SockServerAddress,
+		EnablePprof:       o.EnablePprof,
+		TraceHeader:       o.TraceHeader,
 	}
 	return &Instance{config: c, engine: ego.New()}
 }

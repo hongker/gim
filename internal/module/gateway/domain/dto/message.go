@@ -19,3 +19,6 @@ type MessageQueryRequest struct {
 type MessageQueryResponse struct {
 	Items []types.Message `json:"items"`
 }
+
+type MessageSendRequest struct{}
+type MessageSendResponse struct{}

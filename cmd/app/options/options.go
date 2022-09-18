@@ -16,12 +16,16 @@ type ServerRunOptions struct {
 
 const (
 	flagGatewayServerAddress = "gateway-server-address"
+	flagGatewayPprofEnabled  = "gateway-pprof-enabled" //
+	flagGatewayTraceHeader   = "gateway-trace-header"
 )
 
 // Flags returns the command-line flags.
 func (ServerRunOptions) Flags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{Name: flagGatewayServerAddress, Aliases: []string{"address"}, Value: ":8080", Usage: "Set server bind address"},
+		&cli.StringFlag{Name: flagGatewayTraceHeader, Aliases: []string{"trace-header"}, Value: "trace", Usage: "Set trace header"},
+		&cli.BoolFlag{Name: flagGatewayPprofEnabled, Aliases: []string{"pprof-enabled"}, Value: false, Usage: "Set pprof switch"},
 		//&cli.IntFlag{Name: "message", Aliases: []string{"l"}, Value: 10000, Usage: "Set max number of session history messages"},
 		//&cli.IntFlag{Name: "push-count", Value: 5, Usage: "Set count of message push event"},
 		//&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
@@ -32,6 +36,9 @@ func (ServerRunOptions) Flags() []cli.Flag {
 
 func (o *ServerRunOptions) ParseArgsFromContext(ctx *cli.Context) {
 	o.GatewayOptions.HttpServerAddress = ctx.String(flagGatewayServerAddress)
+	o.GatewayOptions.TraceHeader = ctx.String(flagGatewayTraceHeader)
+	o.GatewayOptions.EnablePprof = ctx.Bool(flagGatewayPprofEnabled)
+
 }
 
 func NewServerRunOptions() *ServerRunOptions {

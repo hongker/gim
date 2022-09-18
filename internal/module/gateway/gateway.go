@@ -22,16 +22,23 @@ func (instance *Instance) Start() {
 // initHttpServer initialize http server.
 func (instance *Instance) initHttpServer() {
 	// register handlers
-	route.Container().RegisterHandler(handler.NewUserHandler())
+	route.Container().RegisterHandler(
+		handler.NewUserHandler(),
+		handler.NewMessageHandler(),
+		handler.NewChatRoomHandler(),
+	)
 
 	// new http server
 	httpServer := http.NewServer(instance.config.HttpServerAddress).
 		EnableCorsMiddleware().
-		EnableTraceMiddleware("trace").
+		EnableTraceMiddleware(instance.config.TraceHeader).
 		//EnableReleaseMode().
-		EnablePprofHandler().
-		EnableAvailableHealthCheck().
-		RegisterRouteLoader(route.Loader)
+		EnableAvailableHealthCheck()
+
+	if instance.config.EnablePprof {
+		httpServer.EnablePprofHandler()
+	}
+	httpServer.RegisterRouteLoader(route.Loader)
 
 	instance.engine.WithServer(httpServer)
 }
