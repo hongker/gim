@@ -1,0 +1,40 @@
+package types
+
+import "time"
+
+type MessageCategory string
+
+const (
+	MessageText    MessageCategory = "text"
+	MessagePicture MessageCategory = "picture"
+)
+
+const (
+	MessageStatusNormal = iota + 1
+)
+
+type Message struct {
+	Id        string          `json:"id"`
+	Category  MessageCategory `json:"category"`
+	Content   string          `json:"content"`
+	Sequence  int64           `json:"sequence"`
+	Status    int             `json:"status"`
+	CreatedAt int64           `json:"created_at"`
+}
+
+func NewMessage(category MessageCategory, content string) *Message {
+	return &Message{
+		Category:  category,
+		Content:   content,
+		Status:    MessageStatusNormal,
+		CreatedAt: time.Now().UnixMilli(),
+	}
+}
+
+func NewTextMessage(content string) *Message {
+	return NewMessage(MessageText, content)
+}
+
+func NewPictureMessage(content string) *Message {
+	return NewMessage(MessagePicture, content)
+}
