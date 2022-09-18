@@ -20,3 +20,14 @@ func TestUserHandler_login(t *testing.T) {
 	log.Println(string(resp.Bytes()))
 
 }
+
+func TestUserHandler_loginSuccess(t *testing.T) {
+	req := dto.UserLoginRequest{Name: "test"}
+	buf, err := json.Marshal(req)
+	assert.Nil(t, err)
+
+	resp, err := component.Provider().Curl().Post("http://localhost:8080/user/login", bytes.NewReader(buf))
+	assert.Nil(t, err)
+	log.Println(string(resp.Bytes()))
+
+}

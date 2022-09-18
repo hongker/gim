@@ -7,7 +7,7 @@ import (
 )
 
 // Success output success response.
-func Success(ctx *gin.Context, data interface{}) {
+func Success(ctx *gin.Context, data any) {
 	ctx.JSON(http.StatusOK, Response{
 		Code: 0,
 		Msg:  "success",
@@ -38,7 +38,7 @@ func abortPanic(err error) {
 }
 
 type Response struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Data any    `json:"data"`
 }

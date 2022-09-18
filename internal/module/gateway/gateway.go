@@ -4,7 +4,6 @@ import (
 	"gim/internal/module/gateway/handler"
 	"gim/internal/module/gateway/route"
 	"github.com/ebar-go/ego"
-	"github.com/ebar-go/ego/server/grpc"
 	"github.com/ebar-go/ego/server/http"
 	"github.com/ebar-go/ego/server/ws"
 )
@@ -37,14 +36,15 @@ func (instance *Instance) initHttpServer() {
 	instance.engine.WithServer(httpServer)
 }
 
-func (instance *Instance) prepare() {
-	instance.initHttpServer()
-
-	// new grpc server
-	grpcServer := grpc.NewServer(instance.config.GrpcServerAddress)
-
+func (instance *Instance) initSockServer() {
 	// new socket server
 	sockServer := ws.NewServer(instance.config.SockServerAddress)
 
-	instance.engine.WithServer(grpcServer, sockServer)
+	instance.engine.WithServer(sockServer)
+}
+
+func (instance *Instance) prepare() {
+	instance.initHttpServer()
+
+	instance.initSockServer()
 }
