@@ -8,20 +8,12 @@ import (
 
 // Success output success response.
 func Success(ctx *gin.Context, data any) {
-	ctx.JSON(http.StatusOK, Response{
-		Code: 0,
-		Msg:  "",
-		Data: data,
-	})
+	ctx.JSON(http.StatusOK, SuccessResponse(data))
 }
 
 // Error output error response.
 func Error(ctx *gin.Context, err error) {
-	se := errors.Convert(err)
-	ctx.JSON(http.StatusOK, Response{
-		Code: se.Code(),
-		Msg:  se.Message(),
-	})
+	ctx.JSON(http.StatusOK, ErrorResponse(err))
 	ctx.Abort()
 }
 
@@ -49,5 +41,13 @@ func ErrorResponse(err error) Response {
 		Code: se.Code(),
 		Msg:  se.Message(),
 		Data: nil,
+	}
+}
+
+func SuccessResponse(data any) Response {
+	return Response{
+		Code: 0,
+		Msg:  "",
+		Data: data,
 	}
 }
