@@ -3,6 +3,7 @@ package gateway
 import (
 	"gim/internal/module/gateway/handler"
 	"gim/internal/module/gateway/route"
+	"gim/internal/module/gateway/socket"
 	"github.com/ebar-go/ego"
 	"github.com/ebar-go/ego/server/http"
 	"github.com/ebar-go/ego/server/ws"
@@ -16,7 +17,7 @@ type Instance struct {
 func (instance *Instance) Start() {
 	instance.prepare()
 
-	instance.engine.Run()
+	instance.engine.NonBlockingRun()
 }
 
 // initHttpServer initialize http server.
@@ -44,8 +45,12 @@ func (instance *Instance) initHttpServer() {
 }
 
 func (instance *Instance) initSockServer() {
+	callback := socket.NewCallback()
 	// new socket server
-	sockServer := ws.NewServer(instance.config.SockServerAddress)
+	sockServer := ws.NewServer(instance.config.SockServerAddress).
+		OnConnect(callback.OnConnect).
+		OnDisconnect(callback.OnDisconnect).
+		OnMessage(callback.OnMessage)
 
 	instance.engine.WithServer(sockServer)
 }

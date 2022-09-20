@@ -1,7 +1,9 @@
 package render
 
 import (
+	"encoding/json"
 	"github.com/ebar-go/ego/errors"
+	"github.com/ebar-go/ego/server/ws"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -10,7 +12,7 @@ import (
 func Success(ctx *gin.Context, data any) {
 	ctx.JSON(http.StatusOK, Response{
 		Code: 0,
-		Msg:  "success",
+		Msg:  "",
 		Data: data,
 	})
 }
@@ -42,3 +44,14 @@ type Response struct {
 	Msg  string `json:"msg"`
 	Data any    `json:"data"`
 }
+
+func SocketSuccess(ctx *ws.Context, data any) {
+	response := Response{
+		Code: 0,
+		Msg:  "",
+		Data: data,
+	}
+	b, _ := json.Marshal(response)
+	ctx.Output(b)
+}
+func SocketAbort(err error) {}
