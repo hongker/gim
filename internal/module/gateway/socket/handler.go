@@ -5,6 +5,7 @@ import (
 	"gim/internal/module/gateway/domain/dto"
 	"gim/internal/module/gateway/render"
 	"github.com/ebar-go/ego/server/ws"
+	"time"
 )
 
 type Event func(ctx *ws.Context, proto *Proto)
@@ -38,9 +39,11 @@ func Action[Request any, Response any](fn func(context.Context, *Request) (*Resp
 }
 
 func LoginEvent(ctx context.Context, req *dto.SocketLoginRequest) (resp *dto.SocketLoginResponse, err error) {
+	resp = &dto.SocketLoginResponse{}
 	return
 }
 
 func HeartbeatEvent(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
+	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 	return
 }

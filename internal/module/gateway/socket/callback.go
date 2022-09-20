@@ -28,6 +28,7 @@ func (c *Callback) OnDisconnect(conn ws.Conn) {
 	component.Provider().Logger().Infof("Disconnect: %s", conn.IP())
 }
 func (c *Callback) OnMessage(ctx *ws.Context) {
+	component.Provider().Logger().Infof("OnMessage: %s", string(ctx.Body()))
 	defer c.handleCrash(ctx)
 
 	proto, err := c.codec.Decode(ctx.Body())

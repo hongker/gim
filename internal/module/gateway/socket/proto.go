@@ -5,13 +5,16 @@ import "encoding/json"
 type OperateType int
 
 const (
-	LoginOperate     OperateType = 101
-	HeartbeatOperate OperateType = 102
+	LoginOperate      OperateType = 101
+	LoginOperateReply OperateType = 102
+
+	HeartbeatOperate      OperateType = 103
+	HeartbeatOperateReply OperateType = 104
 )
 
 type Proto struct {
-	Operate OperateType `json:"operate"`
-	Body    []byte      `json:"body"`
+	Operate OperateType `json:"op"`
+	Body    string      `json:"body"`
 	Seq     int         `json:"seq"`
 }
 
@@ -25,12 +28,17 @@ func (p *Proto) Bind(container any) error {
 			return err
 		}
 	}
-	return json.Unmarshal(p.Body, container)
+	return json.Unmarshal([]byte(p.Body), container)
 }
 
 func (p *Proto) Marshal(container interface{}) (err error) {
-	p.Body, err = json.Marshal(container)
+	b, err := json.Marshal(container)
+	if err != nil {
+		return err
+	}
+	p.Body = string(b)
 	p.Seq++
+	p.Operate++
 	return
 }
 
