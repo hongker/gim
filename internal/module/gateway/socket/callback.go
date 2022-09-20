@@ -37,6 +37,7 @@ func (c *Callback) OnMessage(ctx *ws.Context) {
 
 	err = handler(ctx, proto)
 	if err != nil {
+		ctx.Output(c.codec.Encode(proto))
 		return
 	}
 	ctx.Output(c.codec.Encode(proto))
