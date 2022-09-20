@@ -1,9 +1,7 @@
 package render
 
 import (
-	"encoding/json"
 	"github.com/ebar-go/ego/errors"
-	"github.com/ebar-go/ego/server/ws"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -45,13 +43,11 @@ type Response struct {
 	Data any    `json:"data"`
 }
 
-func SocketSuccess(ctx *ws.Context, data any) {
-	response := Response{
-		Code: 0,
-		Msg:  "",
-		Data: data,
+func ErrorResponse(err error) Response {
+	se := errors.Convert(err)
+	return Response{
+		Code: se.Code(),
+		Msg:  se.Message(),
+		Data: nil,
 	}
-	b, _ := json.Marshal(response)
-	ctx.Output(b)
 }
-func SocketAbort(err error) {}

@@ -2,6 +2,7 @@ package socket
 
 import (
 	"gim/internal/module/gateway/domain/dto"
+	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/server/ws"
 )
@@ -20,8 +21,12 @@ func NewCallback() *Callback {
 	return c
 }
 
-func (c *Callback) OnConnect(conn ws.Conn)    {}
-func (c *Callback) OnDisconnect(conn ws.Conn) {}
+func (c *Callback) OnConnect(conn ws.Conn) {
+	component.Provider().Logger().Infof("Connect: %s", conn.IP())
+}
+func (c *Callback) OnDisconnect(conn ws.Conn) {
+	component.Provider().Logger().Infof("Disconnect: %s", conn.IP())
+}
 func (c *Callback) OnMessage(ctx *ws.Context) {
 	defer c.handleCrash(ctx)
 
@@ -35,11 +40,7 @@ func (c *Callback) OnMessage(ctx *ws.Context) {
 		return
 	}
 
-	err = handler(ctx, proto)
-	if err != nil {
-		ctx.Output(c.codec.Encode(proto))
-		return
-	}
+	handler(ctx, proto)
 	ctx.Output(c.codec.Encode(proto))
 }
 
@@ -62,7 +63,6 @@ func (c *Callback) prepare() {
 }
 
 func (c *Callback) initHandler() {
-	c.events[ConnectOperate] = Action[dto.ConnectRequest, dto.ConnectResponse](ConnectEvent)
-	c.events[DisconnectOperate] = Action[dto.DisconnectRequest, dto.DisconnectResponse](DisconnectEvent)
-	c.events[HeartbeatOperate] = Action[dto.HeartbeatRequest, dto.HeartbeatResponse](HeartbeatEvent)
+	c.events[LoginOperate] = Action[dto.SocketLoginRequest, dto.SocketLoginResponse](LoginEvent)
+	c.events[HeartbeatOperate] = Action[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](HeartbeatEvent)
 }

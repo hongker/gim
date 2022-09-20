@@ -5,9 +5,8 @@ import "encoding/json"
 type OperateType int
 
 const (
-	ConnectOperate    OperateType = 100
-	DisconnectOperate OperateType = 101
-	HeartbeatOperate  OperateType = 102
+	LoginOperate     OperateType = 101
+	HeartbeatOperate OperateType = 102
 )
 
 type Proto struct {
