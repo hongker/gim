@@ -17,7 +17,7 @@ func Action[Request any, Response any](fn func(context.Context, *Request) (*Resp
 		err := render.SerializeRequestFromContext(ctx, req)
 		render.Abort(err)
 
-		response, err := fn(ctx, req)
+		response, err := fn(NewValidatedContext(ctx), req)
 		render.Abort(err)
 
 		render.Success(ctx, response)

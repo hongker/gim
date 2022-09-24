@@ -1,6 +1,7 @@
 package http
 
 import (
+	"gim/internal/module/gateway/domain/types"
 	"github.com/gin-gonic/gin"
 	"sync"
 )
@@ -48,7 +49,7 @@ func RouteLoader(router *gin.Engine) {
 		NewChatRoomHandler(),
 	)
 
-	router.Use(recoverMiddleware())
+	router.Use(recoverMiddleware(), checkToken(types.DefaultAuthenticator()))
 
 	Container().install(router)
 }

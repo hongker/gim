@@ -1,6 +1,8 @@
 package http
 
 import (
+	"context"
+	"gim/internal/module/gateway/domain/types"
 	"gim/internal/module/gateway/render"
 	"github.com/ebar-go/ego/errors"
 	"github.com/gin-gonic/gin"
@@ -24,4 +26,36 @@ func recoverMiddleware() gin.HandlerFunc {
 		}()
 		ctx.Next()
 	}
+}
+
+const (
+	TokenParam       = "token"
+	CurrentUserParam = "currentUser"
+)
+
+func checkToken(auth types.Authenticator) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token := ctx.Query(TokenParam)
+		if len(token) == 0 {
+			render.Abort(errors.Unauthorized("invalid token"))
+		}
+
+		uid, err := auth.Authenticate(ctx, token)
+		render.Abort(errors.WithMessage(err, "authenticate"))
+
+		ctx.Set(CurrentUserParam, uid)
+		ctx.Next()
+	}
+}
+
+func NewValidatedContext(ctx *gin.Context) context.Context {
+	return NewUserContext(ctx, ctx.GetString(CurrentUserParam))
+}
+
+func NewUserContext(ctx context.Context, uid string) context.Context {
+	return context.WithValue(ctx, CurrentUserParam, uid)
+}
+
+func UserFromContext(ctx context.Context) string {
+	return ctx.Value(CurrentUserParam).(string)
 }
