@@ -3,6 +3,9 @@ package application
 import (
 	"context"
 	"gim/internal/module/gateway/domain/dto"
+	"gim/internal/module/gateway/domain/entity"
+	"gim/internal/module/gateway/domain/repository"
+	"gim/internal/module/gateway/domain/types"
 	"github.com/ebar-go/ego/errors"
 )
 
@@ -11,15 +14,32 @@ type UserApplication interface {
 }
 
 func NewUserApplication() UserApplication {
-	return &userApplication{}
+	return &userApplication{
+		repo: repository.NewUserRepository(),
+		auth: types.DefaultAuthenticator(),
+	}
 }
 
-type userApplication struct{}
+type userApplication struct {
+	repo repository.UserRepository
+	auth types.Authenticator
+}
 
-func (userApplication) Login(ctx context.Context, req *dto.UserLoginRequest) (*dto.UserLoginResponse, error) {
-	if req.Name == "" {
-		return nil, errors.InvalidParam("invalid name")
+func (app userApplication) Login(ctx context.Context, req *dto.UserLoginRequest) (*dto.UserLoginResponse, error) {
+	user := &entity.User{Id: req.ID, Name: req.Name}
+	if err := app.repo.Save(ctx, user); err != nil {
+		return nil, errors.WithMessage(err, "save user")
 	}
 
-	return nil, nil
+	token, err := app.auth.GenerateToken(ctx, user.Id)
+	if err != nil {
+		return nil, errors.WithMessage(err, "generate token")
+	}
+
+	resp := &dto.UserLoginResponse{Token: token}
+	return resp, nil
+}
+
+func (app userApplication) Authenticate(ctx context.Context) {
+
 }

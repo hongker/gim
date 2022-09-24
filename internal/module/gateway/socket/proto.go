@@ -23,10 +23,8 @@ func (p *Proto) OperateType() OperateType {
 }
 
 func (p *Proto) Bind(container any) error {
-	if validator, ok := container.(Validatable); ok {
-		if err := validator.Validate(); err != nil {
-			return err
-		}
+	if p.Body == "" {
+		return nil
 	}
 	return json.Unmarshal([]byte(p.Body), container)
 }
@@ -40,8 +38,4 @@ func (p *Proto) Marshal(container interface{}) (err error) {
 	p.Seq++
 	p.Operate++
 	return
-}
-
-type Validatable interface {
-	Validate() error
 }

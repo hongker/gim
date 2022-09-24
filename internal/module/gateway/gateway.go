@@ -7,6 +7,7 @@ import (
 	"github.com/ebar-go/ego"
 	"github.com/ebar-go/ego/server/http"
 	"github.com/ebar-go/ego/server/ws"
+	"github.com/ebar-go/ego/utils/runtime"
 )
 
 type Instance struct {
@@ -15,6 +16,7 @@ type Instance struct {
 }
 
 func (instance *Instance) Start() {
+	runtime.SetReallyCrash(false)
 	instance.prepare()
 
 	instance.engine.NonBlockingRun()

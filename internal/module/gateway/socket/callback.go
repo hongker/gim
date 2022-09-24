@@ -1,10 +1,11 @@
 package socket
 
 import (
+	"gim/internal/module/gateway/application"
 	"gim/internal/module/gateway/domain/dto"
 	"github.com/ebar-go/ego/component"
-	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/server/ws"
+	"github.com/ebar-go/ego/utils/runtime"
 )
 
 type Callback struct {
@@ -28,8 +29,8 @@ func (c *Callback) OnDisconnect(conn ws.Conn) {
 	component.Provider().Logger().Infof("Disconnect: %s", conn.IP())
 }
 func (c *Callback) OnMessage(ctx *ws.Context) {
+	defer runtime.HandleCrash()
 	component.Provider().Logger().Infof("OnMessage: %s", string(ctx.Body()))
-	defer c.handleCrash(ctx)
 
 	proto, err := c.codec.Decode(ctx.Body())
 	if err != nil {
@@ -45,16 +46,6 @@ func (c *Callback) OnMessage(ctx *ws.Context) {
 	ctx.Output(c.codec.Encode(proto))
 }
 
-func (c *Callback) handleCrash(ctx *ws.Context) {
-	if err := recover(); err != nil {
-		switch err.(type) {
-		case errors.Error:
-		default:
-
-		}
-	}
-}
-
 func (c *Callback) matchEvents(proto *Proto) Event {
 	return c.events[proto.OperateType()]
 }
@@ -64,6 +55,9 @@ func (c *Callback) prepare() {
 }
 
 func (c *Callback) initHandler() {
-	c.events[LoginOperate] = Action[dto.SocketLoginRequest, dto.SocketLoginResponse](LoginEvent)
-	c.events[HeartbeatOperate] = Action[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](HeartbeatEvent)
+	em := &EventManager{
+		userApp: application.NewUserApplication(),
+	}
+	c.events[LoginOperate] = Action[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
+	c.events[HeartbeatOperate] = Action[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
 }

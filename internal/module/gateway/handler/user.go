@@ -21,10 +21,9 @@ func NewUserHandler() *UserHandler {
 
 func (h *UserHandler) Install(route *gin.Engine) {
 	g := route.Group(h.groupName)
-	g.POST("login", Action(h.login))
+	g.GET("", Action(h.find))
 }
 
-// login represents user login request.
-func (h *UserHandler) login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
-	return h.userApp.Login(ctx, req)
+func (h *UserHandler) find(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
+	return
 }
