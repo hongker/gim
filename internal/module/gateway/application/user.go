@@ -12,6 +12,7 @@ import (
 type UserApplication interface {
 	Login(ctx context.Context, req *dto.UserLoginRequest) (*dto.UserLoginResponse, error)
 	Logout(ctx context.Context, req *dto.UserLogoutRequest) (*dto.UserLogoutResponse, error)
+	Find(ctx context.Context, req *dto.UserFindRequest) (*dto.UserFindResponse, error)
 }
 
 func NewUserApplication() UserApplication {
@@ -47,4 +48,13 @@ func (app userApplication) Logout(ctx context.Context, req *dto.UserLogoutReques
 
 func (app userApplication) Authenticate(ctx context.Context) {
 
+}
+
+func (app userApplication) Find(ctx context.Context, req *dto.UserFindRequest) (*dto.UserFindResponse, error) {
+	user, err := app.repo.Find(ctx, req.ID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "find user")
+	}
+	resp := &dto.UserFindResponse{Name: user.Name}
+	return resp, nil
 }

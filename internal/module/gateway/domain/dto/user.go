@@ -22,5 +22,9 @@ type UserLoginResponse struct {
 	Token string `json:"token"`
 }
 
-type UserFindRequest struct{}
-type UserFindResponse struct{}
+type UserFindRequest struct {
+	ID string `json:"id"`
+}
+type UserFindResponse struct {
+	Name string `json:"name"`
+}

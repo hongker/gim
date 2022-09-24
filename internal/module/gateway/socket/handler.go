@@ -57,3 +57,7 @@ func (em EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRe
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 	return
 }
+
+func (em EventManager) FindUser(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
+	return em.userApp.Find(ctx, req)
+}

@@ -25,5 +25,5 @@ func (h *UserHandler) Install(route *gin.Engine) {
 }
 
 func (h *UserHandler) find(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
-	return
+	return h.userApp.Find(ctx, req)
 }
