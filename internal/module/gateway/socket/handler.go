@@ -8,6 +8,7 @@ import (
 	"gim/internal/module/gateway/render"
 	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/server/ws"
+	"github.com/ebar-go/ego/utils/runtime"
 	"time"
 )
 
@@ -33,32 +34,27 @@ func NewValidatedContext(ctx *ws.Context) (context.Context, error) {
 }
 func Action[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) Event {
 	return func(ctx *ws.Context, proto *Proto) {
-		var err error
-		defer func() {
-			if err != nil {
-				_ = proto.Marshal(render.ErrorResponse(err))
-			}
-		}()
 		req := new(Request)
-		if err = proto.Bind(req); err != nil {
-			return
-		}
+		err := runtime.Call(func() error {
+			return proto.Bind(req)
+		}, func() error {
+			return dto.Validate(req)
+		}, func() error {
+			validatedCtx, err := NewValidatedContext(ctx)
+			if proto.Operate != LoginOperate && err != nil {
+				return err
+			}
 
-		if err = dto.Validate(req); err != nil {
-			return
-		}
+			resp, err := fn(validatedCtx, req)
+			if err != nil {
+				return err
+			}
+			return proto.Marshal(render.SuccessResponse(resp))
+		})
 
-		validatedCtx, err := NewValidatedContext(ctx)
-		if proto.Operate != LoginOperate && err != nil {
-			return
-		}
-
-		resp, err := fn(validatedCtx, req)
-		if err != nil {
-			return
-		}
-		err = proto.Marshal(render.SuccessResponse(resp))
-
+		runtime.HandlerError(err, func(err error) {
+			_ = proto.Marshal(render.ErrorResponse(err))
+		})
 		return
 
 	}

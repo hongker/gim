@@ -23,14 +23,14 @@ func NewCallback() *Callback {
 }
 
 func (c *Callback) OnConnect(conn ws.Conn) {
-	component.Provider().Logger().Infof("Connect: %s", conn.IP())
+	component.Provider().Logger().Infof("[%s] Connected, IP: %s", conn.ID(), conn.IP())
 }
 func (c *Callback) OnDisconnect(conn ws.Conn) {
-	component.Provider().Logger().Infof("Disconnect: %s", conn.IP())
+	component.Provider().Logger().Infof("[%s] Disconnected", conn.ID())
 }
 func (c *Callback) OnMessage(ctx *ws.Context) {
 	defer runtime.HandleCrash()
-	component.Provider().Logger().Infof("OnMessage: %s", string(ctx.Body()))
+	component.Provider().Logger().Infof("[%s] OnMessage: %s", ctx.Conn().ID(), string(ctx.Body()))
 
 	proto, err := c.codec.Decode(ctx.Body())
 	if err != nil {
@@ -43,7 +43,10 @@ func (c *Callback) OnMessage(ctx *ws.Context) {
 	}
 
 	handler(ctx, proto)
-	ctx.Output(c.codec.Encode(proto))
+
+	response := c.codec.Encode(proto)
+	component.Provider().Logger().Infof("[%s] Response: %s", ctx.Conn().ID(), string(response))
+	ctx.Output(response)
 }
 
 func (c *Callback) matchEvents(proto *Proto) Event {
