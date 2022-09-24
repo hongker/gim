@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"gim/internal/module/gateway/domain/types"
+	"gim/internal/module/gateway/domain/types/auth"
 	"gim/internal/module/gateway/render"
 	"github.com/ebar-go/ego/errors"
 	"github.com/gin-gonic/gin"
@@ -49,13 +50,5 @@ func checkToken(auth types.Authenticator) gin.HandlerFunc {
 }
 
 func NewValidatedContext(ctx *gin.Context) context.Context {
-	return NewUserContext(ctx, ctx.GetString(CurrentUserParam))
-}
-
-func NewUserContext(ctx context.Context, uid string) context.Context {
-	return context.WithValue(ctx, CurrentUserParam, uid)
-}
-
-func UserFromContext(ctx context.Context) string {
-	return ctx.Value(CurrentUserParam).(string)
+	return auth.NewUserContext(ctx, ctx.GetString(CurrentUserParam))
 }
