@@ -1,4 +1,4 @@
-package route
+package http
 
 import (
 	"gim/internal/module/gateway/render"

@@ -1,7 +1,6 @@
-package route
+package http
 
 import (
-	"gim/internal/module/gateway/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -20,7 +19,7 @@ func TestContainer(t *testing.T) {
 func TestContainer_RegisterHandler(t *testing.T) {
 	type mockHandler struct {
 		mock.Mock
-		handler.Handler
+		Handler
 	}
 
 	h := new(mockHandler)

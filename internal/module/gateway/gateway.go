@@ -1,12 +1,9 @@
 package gateway
 
 import (
-	"gim/internal/module/gateway/handler"
-	"gim/internal/module/gateway/route"
+	"gim/internal/module/gateway/http"
 	"gim/internal/module/gateway/socket"
 	"github.com/ebar-go/ego"
-	"github.com/ebar-go/ego/server/http"
-	"github.com/ebar-go/ego/server/ws"
 	"github.com/ebar-go/ego/utils/runtime"
 )
 
@@ -24,15 +21,8 @@ func (instance *Instance) Start() {
 
 // initHttpServer initialize http server.
 func (instance *Instance) initHttpServer() {
-	// register handlers
-	route.Container().RegisterHandler(
-		handler.NewUserHandler(),
-		handler.NewMessageHandler(),
-		handler.NewChatRoomHandler(),
-	)
-
 	// new http server
-	httpServer := http.NewServer(instance.config.HttpServerAddress).
+	httpServer := ego.NewHTTPServer(instance.config.HttpServerAddress).
 		EnableCorsMiddleware().
 		EnableTraceMiddleware(instance.config.TraceHeader).
 		//EnableReleaseMode().
@@ -41,7 +31,8 @@ func (instance *Instance) initHttpServer() {
 	if instance.config.EnablePprof {
 		httpServer.EnablePprofHandler()
 	}
-	httpServer.RegisterRouteLoader(route.Loader)
+
+	httpServer.RegisterRouteLoader(http.RouteLoader)
 
 	instance.engine.WithServer(httpServer)
 }
@@ -49,7 +40,7 @@ func (instance *Instance) initHttpServer() {
 func (instance *Instance) initSockServer() {
 	callback := socket.NewCallback()
 	// new socket server
-	sockServer := ws.NewServer(instance.config.SockServerAddress).
+	sockServer := ego.NewWebsocketServer(instance.config.SockServerAddress).
 		OnConnect(callback.OnConnect).
 		OnDisconnect(callback.OnDisconnect).
 		OnMessage(callback.OnMessage)
