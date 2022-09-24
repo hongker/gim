@@ -15,6 +15,9 @@ func (req UserLoginRequest) Validate() error {
 	return nil
 }
 
+type UserLogoutRequest struct{}
+type UserLogoutResponse struct{}
+
 type UserLoginResponse struct {
 	Token string `json:"token"`
 }

@@ -8,8 +8,11 @@ const (
 	LoginOperate      OperateType = 101
 	LoginOperateReply OperateType = 102
 
-	HeartbeatOperate      OperateType = 103
-	HeartbeatOperateReply OperateType = 104
+	LogoutOperate      OperateType = 103
+	LogoutOperateReply OperateType = 104
+
+	HeartbeatOperate      OperateType = 105
+	HeartbeatOperateReply OperateType = 106
 )
 
 type Proto struct {

@@ -11,6 +11,7 @@ import (
 
 type UserApplication interface {
 	Login(ctx context.Context, req *dto.UserLoginRequest) (*dto.UserLoginResponse, error)
+	Logout(ctx context.Context, req *dto.UserLogoutRequest) (*dto.UserLogoutResponse, error)
 }
 
 func NewUserApplication() UserApplication {
@@ -38,6 +39,10 @@ func (app userApplication) Login(ctx context.Context, req *dto.UserLoginRequest)
 
 	resp := &dto.UserLoginResponse{Token: token}
 	return resp, nil
+}
+
+func (app userApplication) Logout(ctx context.Context, req *dto.UserLogoutRequest) (*dto.UserLogoutResponse, error) {
+	return nil, nil
 }
 
 func (app userApplication) Authenticate(ctx context.Context) {

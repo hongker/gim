@@ -48,6 +48,11 @@ func (em EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (re
 	return
 }
 
+func (em EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
+	resp, err = em.userApp.Logout(ctx, req)
+	return
+}
+
 func (em EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 	return
