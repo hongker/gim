@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"gim/internal/domain/dto"
 	"strings"
 )
 
@@ -19,6 +20,14 @@ func SessionId(category SessionCategory, targetId string) string {
 type Session struct {
 	Id    string `json:"id"`
 	Title string `json:"title"`
+}
+
+func (s Session) Transform() dto.Session {
+	return dto.Session{
+		Id:    s.Id,
+		Title: s.Title,
+		Type:  string(s.Category()),
+	}
 }
 
 func (s Session) Category() SessionCategory {
@@ -40,6 +49,11 @@ func NewChatroomSession(roomId string, title string) *Session {
 	return NewSession(SessionId(SessionChatroom, roomId), title)
 }
 
-func NewPrivateSession(userId string, title string) *Session {
-	return NewSession(SessionId(SessionPrivate, userId), title)
+func NewPrivateSession(senderId, receiverId string, title string) *Session {
+	userIds := []string{senderId, receiverId}
+	//if receiverId > senderId {
+	//	userIds[1], userIds[0] = senderId, receiverId
+	//}
+	targetId := strings.Join(userIds, ":")
+	return NewSession(SessionId(SessionPrivate, targetId), title)
 }
