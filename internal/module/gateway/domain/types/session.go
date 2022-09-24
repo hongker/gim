@@ -41,6 +41,10 @@ func (s Session) IsPrivate() bool {
 	return s.Category() == SessionPrivate
 }
 
+func (s Session) GetPrivateUid() string {
+	return strings.Split(s.Id, ":")[1]
+}
+
 func NewSession(id string, title string) *Session {
 	return &Session{id, title}
 }

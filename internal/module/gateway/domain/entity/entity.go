@@ -15,6 +15,7 @@ type Message struct {
 }
 
 type SessionMessage struct {
+	Uid       string `json:"uid"`
 	SessionId string `json:"session_id"`
 	MessageId string `json:"message_id"`
 }

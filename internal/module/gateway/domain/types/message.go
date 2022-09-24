@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type MessageCategory string
 
@@ -20,6 +23,10 @@ type Message struct {
 	Sequence  int64           `json:"sequence"`
 	Status    int             `json:"status"`
 	CreatedAt int64           `json:"created_at"`
+}
+
+func (msg *Message) Encode() ([]byte, error) {
+	return json.Marshal(msg)
 }
 
 func NewMessage(category MessageCategory, content string) *Message {

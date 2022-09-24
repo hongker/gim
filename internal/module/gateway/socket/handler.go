@@ -13,11 +13,18 @@ import (
 )
 
 const (
-	LoginUserParam = "currentUser"
+	LoginUserParam  = "currentUser"
+	ConnectionParam = "connection"
 )
 
 type Event func(ctx *ws.Context, proto *Proto)
 
+func ConnectionFromContext(ctx context.Context) ws.Conn {
+	return ctx.Value(ConnectionParam).(ws.Conn)
+}
+func NewConnectionContext(ctx context.Context, conn ws.Conn) context.Context {
+	return context.WithValue(ctx, ConnectionParam, conn)
+}
 func SetContextProperty(ctx context.Context, key string, value any) {
 	wc, ok := ctx.(*ws.Context)
 	if !ok {
@@ -28,9 +35,9 @@ func SetContextProperty(ctx context.Context, key string, value any) {
 func NewValidatedContext(ctx *ws.Context) (context.Context, error) {
 	uid := ctx.Conn().Property().GetString(LoginUserParam)
 	if uid == "" {
-		return ctx, errors.Unauthorized("login required")
+		return NewConnectionContext(ctx, ctx.Conn()), errors.Unauthorized("login required")
 	}
-	return auth.NewUserContext(ctx, uid), nil
+	return NewConnectionContext(auth.NewUserContext(ctx, uid), ctx.Conn()), nil
 }
 func Action[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) Event {
 	return func(ctx *ws.Context, proto *Proto) {
@@ -61,12 +68,14 @@ func Action[Request any, Response any](fn func(context.Context, *Request) (*Resp
 }
 
 type EventManager struct {
-	userApp application.UserApplication
+	userApp  application.UserApplication
+	cometApp application.CometApplication
 }
 
 func (em EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
 	resp, err = em.userApp.Login(ctx, req)
 	SetContextProperty(ctx, LoginUserParam, req.ID)
+	em.cometApp.SetUserConnection(req.ID, ConnectionFromContext(ctx))
 	return
 }
 

@@ -59,7 +59,20 @@ func (app messageApplication) SendUserSessionMessage(ctx context.Context, sender
 }
 
 func (app messageApplication) deliverySessionMessage(session *types.Session, msg *types.Message) {
+	if session.IsPrivate() {
+		uid := session.GetPrivateUid()
+		conn, err := GetCometApplication().GetUserConnection(uid)
+		if err != nil {
+			return
+		}
+		bytes, err := msg.Encode()
+		if err != nil {
+			return
+		}
+		_ = conn.Push(bytes)
+	} else if session.IsChatroom() {
 
+	}
 }
 
 func NewMessageApplication() MessageApplication {
