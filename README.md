@@ -69,9 +69,13 @@ wscat.cmd -c ws://127.0.0.1:8082
 # heartbeat
 {"op":105}
 
-# send message
+# send private message
 {"op":201,"body":"{\"content\":\"test\",\"type\":\"private\",\"category\":\"text\",\"target_id\":\"1002\"}"}
 
 # join chatroom
 {"op":301,"body":"{\"id\":\"9999\"}"}
+
+# send chatroom message
+{"op":201,"body":"{\"content\":\"test\",\"type\":\"chatroom\",\"category\":\"text\",\"target_id\":\"9999\"}"}
+
 ```

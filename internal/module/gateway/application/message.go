@@ -16,9 +16,10 @@ type MessageApplication interface {
 }
 
 type messageApplication struct {
-	userRepo    repository.UserRepository
-	sessionRepo repository.SessionRepository
-	msgRepo     repository.MessageRepository
+	userRepo     repository.UserRepository
+	sessionRepo  repository.SessionRepository
+	msgRepo      repository.MessageRepository
+	chatroomRepo repository.ChatroomRepository
 }
 
 func (app messageApplication) Send(ctx context.Context, uid string, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
@@ -27,11 +28,16 @@ func (app messageApplication) Send(ctx context.Context, uid string, req *dto.Mes
 		return nil, errors.WithMessage(err, "find sender")
 	}
 
-	err = app.SendUserSessionMessage(ctx, sender, req)
+	if req.Type == string(types.SessionPrivate) {
+		err = app.sendPrivate(ctx, sender, req)
+	} else {
+		err = app.sendChatroom(ctx, sender, req)
+	}
+
 	return
 }
 
-func (app messageApplication) SendUserSessionMessage(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
+func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
 	// find receiver info
 	receiver, err := app.userRepo.Find(ctx, req.TargetId)
 	if err != nil {
@@ -60,32 +66,62 @@ func (app messageApplication) SendUserSessionMessage(ctx context.Context, sender
 	return
 }
 
+func (app messageApplication) sendChatroom(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
+	chatroom, err := app.chatroomRepo.Find(ctx, req.TargetId)
+	if err != nil {
+		return
+	}
+
+	// save source message
+	msg := types.NewTextMessage(req.Content)
+	msg.SenderId = sender.Id
+	err = app.msgRepo.Save(ctx, msg)
+	if err != nil {
+		return errors.WithMessage(err, "save message")
+	}
+
+	chatroomSession := types.NewChatroomSession(chatroom.Id, chatroom.Name)
+	go app.deliverySessionMessage(chatroomSession, msg)
+	return app.sessionRepo.SaveMessage(ctx, chatroomSession, msg)
+
+}
+
+func (app messageApplication) pushUid(uid string, msg *types.Message) error {
+	conn, err := GetCometApplication().GetUserConnection(uid)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := msg.Encode()
+	if err != nil {
+		return err
+	}
+	return conn.Push(bytes)
+
+}
 func (app messageApplication) deliverySessionMessage(session *types.Session, msg *types.Message) {
+	var err error
 	if session.IsPrivate() {
 		uid := session.GetPrivateUid()
-		conn, err := GetCometApplication().GetUserConnection(uid)
-
-		runtime.HandlerError(runtime.Call(func() error {
-			return err
-		}, func() error {
-			bytes, err := msg.Encode()
-			if err != nil {
-				return err
-			}
-			return conn.Push(bytes)
-		}), func(err error) {
-			component.Provider().Logger().Errorf("deliverySessionMessage: %v", err)
-		})
+		err = app.pushUid(uid, msg)
 
 	} else if session.IsChatroom() {
-
+		members, lastErr := app.chatroomRepo.GetMember(context.Background(), session.GetChatroomId())
+		for _, member := range members {
+			_ = app.pushUid(member, msg)
+		}
+		err = lastErr
 	}
+	runtime.HandlerError(err, func(err error) {
+		component.Provider().Logger().Errorf("deliverySessionMessage: %v", err)
+	})
 }
 
 func NewMessageApplication() MessageApplication {
 	return &messageApplication{
-		userRepo:    repository.NewUserRepository(),
-		msgRepo:     repository.NewMessageRepository(),
-		sessionRepo: repository.NewSessionRepository(),
+		userRepo:     repository.NewUserRepository(),
+		msgRepo:      repository.NewMessageRepository(),
+		sessionRepo:  repository.NewSessionRepository(),
+		chatroomRepo: repository.NewChatroomRepository(),
 	}
 }

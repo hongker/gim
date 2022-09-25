@@ -44,6 +44,9 @@ func (s Session) IsPrivate() bool {
 func (s Session) GetPrivateUid() string {
 	return strings.Split(s.Id, ":")[1]
 }
+func (s Session) GetChatroomId() string {
+	return strings.Split(s.Id, ":")[1]
+}
 
 func NewSession(id string, title string) *Session {
 	return &Session{id, title}
