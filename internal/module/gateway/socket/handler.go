@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	LoginUserParam  = "currentUser"
+	UidParam        = "uid"
 	ConnectionParam = "connection"
 )
 
@@ -25,19 +25,14 @@ func ConnectionFromContext(ctx context.Context) ws.Conn {
 func NewConnectionContext(ctx context.Context, conn ws.Conn) context.Context {
 	return context.WithValue(ctx, ConnectionParam, conn)
 }
-func SetContextProperty(ctx context.Context, key string, value any) {
-	wc, ok := ctx.(*ws.Context)
-	if !ok {
-		return
-	}
-	wc.Conn().Property().Set(key, value)
-}
+
 func NewValidatedContext(ctx *ws.Context) (context.Context, error) {
-	uid := ctx.Conn().Property().GetString(LoginUserParam)
+	uid := ctx.Conn().Property().GetString(UidParam)
+	connCtx := NewConnectionContext(ctx, ctx.Conn())
 	if uid == "" {
-		return NewConnectionContext(ctx, ctx.Conn()), errors.Unauthorized("login required")
+		return connCtx, errors.Unauthorized("login required")
 	}
-	return NewConnectionContext(auth.NewUserContext(ctx, uid), ctx.Conn()), nil
+	return auth.NewUserContext(connCtx, uid), nil
 }
 func Action[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) Event {
 	return func(ctx *ws.Context, proto *Proto) {
@@ -68,14 +63,28 @@ func Action[Request any, Response any](fn func(context.Context, *Request) (*Resp
 }
 
 type EventManager struct {
-	userApp  application.UserApplication
-	cometApp application.CometApplication
+	userApp    application.UserApplication
+	cometApp   application.CometApplication
+	messageApp application.MessageApplication
+}
+
+func NewEventManager() *EventManager {
+	return &EventManager{
+		userApp:    application.NewUserApplication(),
+		cometApp:   application.GetCometApplication(),
+		messageApp: application.NewMessageApplication(),
+	}
 }
 
 func (em EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
 	resp, err = em.userApp.Login(ctx, req)
-	SetContextProperty(ctx, LoginUserParam, req.ID)
-	em.cometApp.SetUserConnection(req.ID, ConnectionFromContext(ctx))
+	if err != nil {
+		return
+	}
+
+	conn := ConnectionFromContext(ctx)
+	conn.Property().Set(UidParam, req.ID)
+	em.cometApp.SetUserConnection(req.ID, conn)
 	return
 }
 
@@ -91,4 +100,9 @@ func (em EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRe
 
 func (em EventManager) FindUser(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
 	return em.userApp.Find(ctx, req)
+}
+
+func (em EventManager) SendMessage(ctx context.Context, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
+	uid := auth.UserFromContext(ctx)
+	return em.messageApp.Send(ctx, uid, req)
 }

@@ -13,6 +13,9 @@ const (
 
 	HeartbeatOperate      OperateType = 105
 	HeartbeatOperateReply OperateType = 106
+
+	MessageSendOperate      OperateType = 201
+	MessageSendOperateReply OperateType = 202
 )
 
 type Proto struct {

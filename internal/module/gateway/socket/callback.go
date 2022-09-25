@@ -1,7 +1,6 @@
 package socket
 
 import (
-	"gim/internal/module/gateway/application"
 	"gim/internal/module/gateway/domain/dto"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/server/ws"
@@ -58,9 +57,7 @@ func (c *Callback) prepare() {
 }
 
 func (c *Callback) initHandler() {
-	em := &EventManager{
-		userApp: application.NewUserApplication(),
-	}
+	em := NewEventManager()
 	c.events[LoginOperate] = Action[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
 	c.events[LogoutOperate] = Action[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
 	c.events[HeartbeatOperate] = Action[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
