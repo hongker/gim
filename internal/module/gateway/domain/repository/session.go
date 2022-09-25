@@ -38,5 +38,5 @@ func (repo *sessionRepo) QueryMessage(ctx context.Context, session *types.Sessio
 }
 
 func NewSessionRepository() SessionRepository {
-	return &sessionRepo{}
+	return &sessionRepo{items: map[string][]string{}}
 }
