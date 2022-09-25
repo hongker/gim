@@ -21,10 +21,10 @@ type MessageQueryResponse struct {
 }
 
 type MessageSendRequest struct {
-	Type        string `json:"type"`
-	TargetId    string `json:"target_id"`
-	Content     string `json:"content"`
-	ContentType string `json:"content_type"`
-	RequestId   string `json:"request_id"`
+	Type      string `json:"type"`
+	TargetId  string `json:"target_id"`
+	Content   string `json:"content"`
+	Category  string `json:"category"`
+	RequestId string `json:"request_id"`
 }
 type MessageSendResponse struct{}

@@ -45,6 +45,14 @@ GLOBAL OPTIONS:
    --version, -v              print the version (default: false)
 ```
 
+## 选项设计
+```
+--message-protocol: 消息协议(json,proto)
+--enable-message-sequence: 是否开启消息sequence
+--message-push-count: 每次推送消息条数
+--message-push-duration: 每次推送时间间隔
+--message-push-concurrency-limit: 消息推送并发上限
+```
 ## 模块设计
 ```
 
@@ -55,4 +63,5 @@ GLOBAL OPTIONS:
 wscat.cmd -c ws://127.0.0.1:8082
 {"op":101,"body":"{\"id\":\"1001\"}"}
 {"op":103}
+{"op":201,"body":"{\"content\":\"test\",\"type\":\"private\",\"category\":\"text\",\"target_id\":\"1002\"}"}
 ```

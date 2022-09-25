@@ -6,6 +6,7 @@ import (
 	"gim/internal/module/gateway/domain/entity"
 	"gim/internal/module/gateway/domain/repository"
 	"gim/internal/module/gateway/domain/types"
+	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/utils/runtime"
 )
@@ -39,6 +40,7 @@ func (app messageApplication) SendUserSessionMessage(ctx context.Context, sender
 
 	// save source message
 	msg := types.NewTextMessage(req.Content)
+	msg.SenderId = sender.Id
 	err = app.msgRepo.Save(ctx, msg)
 	if err != nil {
 		return errors.WithMessage(err, "save message")
@@ -62,14 +64,19 @@ func (app messageApplication) deliverySessionMessage(session *types.Session, msg
 	if session.IsPrivate() {
 		uid := session.GetPrivateUid()
 		conn, err := GetCometApplication().GetUserConnection(uid)
-		if err != nil {
-			return
-		}
-		bytes, err := msg.Encode()
-		if err != nil {
-			return
-		}
-		_ = conn.Push(bytes)
+
+		runtime.HandlerError(runtime.Call(func() error {
+			return err
+		}, func() error {
+			bytes, err := msg.Encode()
+			if err != nil {
+				return err
+			}
+			return conn.Push(bytes)
+		}), func(err error) {
+			component.Provider().Logger().Errorf("deliverySessionMessage: %v", err)
+		})
+
 	} else if session.IsChatroom() {
 
 	}

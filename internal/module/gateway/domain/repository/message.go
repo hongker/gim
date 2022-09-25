@@ -30,12 +30,12 @@ func (repo *messageRepo) Save(ctx context.Context, msg *types.Message) error {
 	defer repo.mu.Unlock()
 	msg.Id = uuid.NewV4().String()
 	repo.messages[msg.Id] = &entity.Message{
-		Id:          msg.Id,
-		SenderId:    msg.SenderId,
-		Content:     msg.Content,
-		ContentType: msg.ContentType,
-		Status:      msg.Status,
-		CreatedAt:   msg.CreatedAt,
+		Id:        msg.Id,
+		SenderId:  msg.SenderId,
+		Content:   msg.Content,
+		Category:  string(msg.Category),
+		Status:    msg.Status,
+		CreatedAt: msg.CreatedAt,
 	}
 	return nil
 }

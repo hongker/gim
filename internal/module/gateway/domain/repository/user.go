@@ -35,6 +35,14 @@ func (repo *UserRepo) Find(ctx context.Context, id string) (*entity.User, error)
 	return &entity.User{Id: id, Name: name}, nil
 }
 
+var userRepositoryOnce = struct {
+	once     sync.Once
+	instance UserRepository
+}{}
+
 func NewUserRepository() UserRepository {
-	return &UserRepo{}
+	userRepositoryOnce.once.Do(func() {
+		userRepositoryOnce.instance = &UserRepo{items: make(map[string]string)}
+	})
+	return userRepositoryOnce.instance
 }
