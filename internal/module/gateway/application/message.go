@@ -76,5 +76,8 @@ func (app messageApplication) deliverySessionMessage(session *types.Session, msg
 }
 
 func NewMessageApplication() MessageApplication {
-	return &messageApplication{}
+	return &messageApplication{
+		userRepo: repository.NewUserRepository(),
+		msgRepo:  repository.NewMessageRepository(),
+	}
 }

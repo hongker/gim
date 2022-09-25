@@ -17,12 +17,14 @@ const (
 )
 
 type Message struct {
-	Id        string          `json:"id"`
-	Category  MessageCategory `json:"category"`
-	Content   string          `json:"content"`
-	Sequence  int64           `json:"sequence"`
-	Status    int             `json:"status"`
-	CreatedAt int64           `json:"created_at"`
+	Id          string          `json:"id"`
+	SenderId    string          `json:"sender_id"`
+	Category    MessageCategory `json:"category"`
+	Content     string          `json:"content"`
+	ContentType string          `json:"content_type"`
+	Sequence    int64           `json:"sequence"`
+	Status      int             `json:"status"`
+	CreatedAt   int64           `json:"created_at"`
 }
 
 func (msg *Message) Encode() ([]byte, error) {
