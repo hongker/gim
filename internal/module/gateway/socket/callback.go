@@ -62,5 +62,6 @@ func (c *Callback) initHandler() {
 	c.events[LogoutOperate] = Action[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
 	c.events[HeartbeatOperate] = Action[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
 	c.events[MessageSendOperate] = Action[dto.MessageSendRequest, dto.MessageSendResponse](em.SendMessage)
+	c.events[ChatroomJoinOperate] = Action[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
 
 }

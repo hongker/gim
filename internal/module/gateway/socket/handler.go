@@ -63,16 +63,18 @@ func Action[Request any, Response any](fn func(context.Context, *Request) (*Resp
 }
 
 type EventManager struct {
-	userApp    application.UserApplication
-	cometApp   application.CometApplication
-	messageApp application.MessageApplication
+	userApp     application.UserApplication
+	cometApp    application.CometApplication
+	messageApp  application.MessageApplication
+	chatroomApp application.ChatroomApplication
 }
 
 func NewEventManager() *EventManager {
 	return &EventManager{
-		userApp:    application.NewUserApplication(),
-		cometApp:   application.GetCometApplication(),
-		messageApp: application.NewMessageApplication(),
+		userApp:     application.NewUserApplication(),
+		cometApp:    application.GetCometApplication(),
+		messageApp:  application.NewMessageApplication(),
+		chatroomApp: application.NewChatroomApplication(),
 	}
 }
 
@@ -105,4 +107,9 @@ func (em EventManager) FindUser(ctx context.Context, req *dto.UserFindRequest) (
 func (em EventManager) SendMessage(ctx context.Context, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
 	uid := auth.UserFromContext(ctx)
 	return em.messageApp.Send(ctx, uid, req)
+}
+
+func (em EventManager) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
+	uid := auth.UserFromContext(ctx)
+	return em.chatroomApp.Join(ctx, uid, req)
 }

@@ -60,8 +60,18 @@ GLOBAL OPTIONS:
 
 ## 连接测试
 ```
+# connect
 wscat.cmd -c ws://127.0.0.1:8082
+
+# login
 {"op":101,"body":"{\"id\":\"1001\"}"}
-{"op":103}
+
+# heartbeat
+{"op":105}
+
+# send message
 {"op":201,"body":"{\"content\":\"test\",\"type\":\"private\",\"category\":\"text\",\"target_id\":\"1002\"}"}
+
+# join chatroom
+{"op":301,"body":"{\"id\":\"9999\"}"}
 ```

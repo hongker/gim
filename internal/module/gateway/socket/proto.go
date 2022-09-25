@@ -16,6 +16,9 @@ const (
 
 	MessageSendOperate      OperateType = 201
 	MessageSendOperateReply OperateType = 202
+
+	ChatroomJoinOperate      OperateType = 301
+	ChatroomJoinOperateReply OperateType = 302
 )
 
 type Proto struct {
