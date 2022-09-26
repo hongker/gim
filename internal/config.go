@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"gim/internal/controllers/api"
-	"gim/internal/controllers/gateway"
-	"gim/internal/controllers/job"
+	"gim/internal/controller/api"
+	"gim/internal/controller/gateway"
+	"gim/internal/controller/job"
 )
 
 type Config struct {

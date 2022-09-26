@@ -1,4 +1,4 @@
-package controllers
+package controller
 
 // Controller represents module.
 type Controller interface {

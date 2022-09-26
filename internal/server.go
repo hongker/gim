@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"gim/internal/controllers"
+	"gim/internal/controller"
 	"gim/pkg/runtime/signal"
 	"gim/pkg/watcher"
 	"github.com/ebar-go/ego/component"
@@ -15,9 +15,9 @@ type Server struct {
 	once   sync.Once
 	config *Config
 
-	gatewayController controllers.Controller
-	apiController     controllers.Controller
-	jobController     controllers.Controller
+	gatewayController controller.Controller
+	apiController     controller.Controller
+	jobController     controller.Controller
 }
 
 // Run runs the server
@@ -40,9 +40,9 @@ func (srv *Server) run(stopCh <-chan struct{}) {
 	stopChs := make([]chan struct{}, 0)
 
 	stopChs = append(stopChs,
-		controllers.NewDaemonController(srv.gatewayController).NonBlockingRun(),
-		controllers.NewDaemonController(srv.apiController).NonBlockingRun(),
-		controllers.NewDaemonController(srv.jobController).NonBlockingRun(),
+		controller.NewDaemonController(srv.gatewayController).NonBlockingRun(),
+		controller.NewDaemonController(srv.apiController).NonBlockingRun(),
+		controller.NewDaemonController(srv.jobController).NonBlockingRun(),
 	)
 
 	watch := watcher.NewChanWatcher(stopChs...)
