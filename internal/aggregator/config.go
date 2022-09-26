@@ -2,25 +2,19 @@ package aggregator
 
 import (
 	"gim/internal/controllers/api"
-	"gim/internal/controllers/socket"
+	"gim/internal/controllers/gateway"
 )
 
 type Config struct {
-	apiControllerConfig *api.Config
+	ApiControllerConfig *api.Config
 
-	gatewayControllerConfig *socket.Config
+	GatewayControllerConfig *gateway.Config
 }
 
 func NewConfig() *Config {
 	return &Config{
-		apiControllerConfig: &api.Config{
-			Address:         ":8080",
-			TraceHeader:     "trace",
-			EnableProfiling: false,
-		},
-		gatewayControllerConfig: &socket.Config{
-			Address: ":8081",
-		},
+		ApiControllerConfig:     &api.Config{},
+		GatewayControllerConfig: &gateway.Config{},
 	}
 }
 func (c *Config) New() *Aggregator {

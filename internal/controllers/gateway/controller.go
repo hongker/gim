@@ -1,4 +1,4 @@
-package socket
+package gateway
 
 import (
 	"github.com/ebar-go/ego"
@@ -19,6 +19,7 @@ type Controller struct {
 func (c *Controller) Run(stopCh <-chan struct{}, worker int) {
 	c.once.Do(c.initialize)
 	c.run(stopCh)
+
 }
 
 func (c *Controller) WithName(name string) *Controller {
@@ -38,11 +39,15 @@ func (c *Controller) run(stopCh <-chan struct{}) {
 	component.Provider().Logger().Infof("controller running: [%s]", c.name)
 	c.engine.NonBlockingRun()
 	<-stopCh
+	c.shutdown()
+}
+func (c *Controller) shutdown() {
+	component.Provider().Logger().Infof("controller shutdown: [%s]", c.name)
 }
 
 func NewController(config *Config) *Controller {
 	return &Controller{
-		name:     "default",
+		name:     "gateway",
 		config:   config,
 		engine:   ego.New(),
 		callback: NewCallback(),

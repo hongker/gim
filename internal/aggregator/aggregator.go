@@ -3,8 +3,8 @@ package aggregator
 import (
 	"gim/internal/controllers"
 	"gim/internal/controllers/api"
+	"gim/internal/controllers/gateway"
 	"gim/internal/controllers/job"
-	"gim/internal/controllers/socket"
 	"gim/pkg/runtime/signal"
 	"gim/pkg/watcher"
 	"github.com/ebar-go/ego/component"
@@ -30,9 +30,9 @@ func (agg *Aggregator) Run() {
 // initialize init controllers.
 func (agg *Aggregator) initialize() {
 	agg.controllers = append(agg.controllers,
-		api.NewController().WithName("api"),
-		socket.NewController(agg.config.gatewayControllerConfig).WithName("gateway"),
-		job.NewController().WithName("job"),
+		api.NewController(),
+		gateway.NewController(agg.config.GatewayControllerConfig),
+		job.NewController(),
 	)
 }
 
@@ -55,5 +55,5 @@ func (agg *Aggregator) run(stopCh <-chan struct{}) {
 // shutdown stops the aggregator.
 func (agg *Aggregator) shutdown() {
 	agg.watcher.Stop()
-	component.Provider().Logger().Info("shutdown success")
+	component.Provider().Logger().Info("aggregator shutdown completed")
 }
