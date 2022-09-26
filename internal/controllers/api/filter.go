@@ -4,7 +4,6 @@ import (
 	"context"
 	"gim/internal/domain/types"
 	"gim/internal/domain/types/auth"
-	"gim/internal/infrastructure/render"
 	"github.com/ebar-go/ego/errors"
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +20,7 @@ func recoverMiddleware() gin.HandlerFunc {
 				default:
 					err = errors.Unknown("system error")
 				}
-				render.Error(ctx, err)
+				Error(ctx, err)
 
 			}
 		}()
@@ -38,11 +37,11 @@ func checkToken(auth types.Authenticator) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := ctx.Query(TokenParam)
 		if len(token) == 0 {
-			render.Abort(errors.Unauthorized("invalid token"))
+			Abort(errors.Unauthorized("invalid token"))
 		}
 
 		uid, err := auth.Authenticate(ctx, token)
-		render.Abort(errors.WithMessage(err, "authenticate"))
+		Abort(errors.WithMessage(err, "authenticate"))
 
 		ctx.Set(CurrentUserParam, uid)
 		ctx.Next()

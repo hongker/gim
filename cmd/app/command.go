@@ -35,8 +35,7 @@ func run(opts *options.ServerRunOptions) error {
 	}
 
 	// run server with signal.
-	server := completedOptions.NewServer()
-	server.Run()
+	completedOptions.NewServer().Run()
 
 	return nil
 }

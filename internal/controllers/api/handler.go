@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"gim/internal/infrastructure/render"
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,16 +9,30 @@ type Handler interface {
 	Install(router *gin.Engine)
 }
 
-// Action returns the formatted handler use by generics params.
-func Action[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) gin.HandlerFunc {
+// generic returns the formatted handler use by generics params.
+func generic[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		req := new(Request)
-		err := render.SerializeRequestFromContext(ctx, req)
-		render.Abort(err)
+		err := SerializeRequestFromContext(ctx, req)
+		Abort(err)
 
 		response, err := fn(NewValidatedContext(ctx), req)
-		render.Abort(err)
+		Abort(err)
 
-		render.Success(ctx, response)
+		Success(ctx, response)
 	}
+}
+
+// RequestBodyFromContext returns the request body from the context.
+func RequestBodyFromContext(ctx *gin.Context) (p []byte, err error) {
+	return ctx.GetRawData()
+}
+
+// SerializeRequestFromContext
+func SerializeRequestFromContext(ctx *gin.Context, container interface{}) error {
+	body, err := RequestBodyFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	return serializer().Decode(body, container)
 }

@@ -1,7 +1,8 @@
 package options
 
 import (
-	"gim/internal/aggregator"
+	"gim/internal"
+	"github.com/ebar-go/ego/errors"
 	"github.com/urfave/cli/v2"
 	"runtime"
 	"time"
@@ -26,7 +27,7 @@ const (
 )
 
 // Flags returns the command-line flags.
-func (ServerRunOptions) Flags() []cli.Flag {
+func (o *ServerRunOptions) Flags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{Name: flagGatewayAddress, Aliases: []string{"ws"}, Value: ":8080", Usage: "Set websocket server bind address"},
 		&cli.StringFlag{Name: flagTraceHeader, Aliases: []string{"trace"}, Value: "trace", Usage: "Set trace header"},
@@ -60,11 +61,14 @@ type completedServerRunOptions struct {
 	*ServerRunOptions
 }
 
-func (o completedServerRunOptions) Validate() error {
+func (o *completedServerRunOptions) Validate() error {
+	if o.workerNumber <= 0 {
+		return errors.InvalidParam("worker number must be greater than zero")
+	}
 	return nil
 }
 
-func (o completedServerRunOptions) applyTo(config *aggregator.Config) {
+func (o *completedServerRunOptions) applyTo(config *internal.Config) {
 	config.GatewayControllerConfig.Address = o.gatewayAddress
 	config.GatewayControllerConfig.HeartbeatInterval = o.heartbeatInterval
 	config.GatewayControllerConfig.WorkerNumber = o.workerNumber
@@ -75,9 +79,9 @@ func (o completedServerRunOptions) applyTo(config *aggregator.Config) {
 
 }
 
-func (o *completedServerRunOptions) NewServer() *aggregator.Aggregator {
-	c := aggregator.NewConfig()
+func (o *completedServerRunOptions) NewServer() *internal.Server {
+	c := internal.NewConfig()
 	o.applyTo(c)
 
-	return c.New()
+	return c.BuildInstance()
 }

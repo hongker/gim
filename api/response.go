@@ -7,16 +7,16 @@ const (
 )
 
 type Response struct {
-	Code int `json:"code"`
-	Msg string `json:"msg"`
-	Data interface{} `json:"data"`
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Data any    `json:"data"`
 }
 
-func FailureResponse(err error) *Response  {
+func NewFailureResponse(err error) *Response {
 	e := errors.Convert(err)
 	return &Response{Code: e.Code(), Msg: e.Message()}
 }
 
-func SuccessResponse(data interface{}) *Response {
+func NewSuccessResponse(data any) *Response {
 	return &Response{Code: CodeSuccess, Data: data}
 }

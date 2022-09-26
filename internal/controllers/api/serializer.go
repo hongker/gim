@@ -1,4 +1,4 @@
-package render
+package api
 
 import (
 	"encoding/json"

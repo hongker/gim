@@ -47,6 +47,9 @@ GLOBAL OPTIONS:
 
 ## 选项设计
 ```
+--enable-profiling: 是否开启pprof
+--gateway-address: websocket网关地址
+--api-address: http接口地址
 --message-protocol: 消息协议(json,proto)
 --enable-message-sequence: 是否开启消息sequence
 --message-push-count: 每次推送消息条数

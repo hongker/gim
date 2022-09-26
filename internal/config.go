@@ -1,4 +1,4 @@
-package aggregator
+package internal
 
 import (
 	"gim/internal/controllers/api"
@@ -21,12 +21,13 @@ func NewConfig() *Config {
 	return &Config{
 		ApiControllerConfig:     &api.Config{},
 		GatewayControllerConfig: &gateway.Config{},
+		JobControllerConfig:     &job.Config{},
 	}
 }
 
-// New build aggregator instance.
-func (c *Config) New() *Aggregator {
-	return &Aggregator{
+// BuildInstance return a new server instance.
+func (c *Config) BuildInstance() *Server {
+	return &Server{
 		config: c,
 	}
 }

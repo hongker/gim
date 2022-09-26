@@ -2,10 +2,10 @@ package gateway
 
 import (
 	"context"
+	"gim/api"
 	"gim/internal/application"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/types/auth"
-	"gim/internal/infrastructure/render"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/server/ws"
 	"github.com/ebar-go/ego/utils/runtime"
@@ -32,11 +32,11 @@ func generic[Request any, Response any](fn func(context.Context, *Request) (*Res
 			if err != nil {
 				return err
 			}
-			return proto.Marshal(render.SuccessResponse(resp))
+			return proto.Marshal(api.NewSuccessResponse(resp))
 		})
 
 		runtime.HandlerError(err, func(err error) {
-			_ = proto.Marshal(render.ErrorResponse(err))
+			_ = proto.Marshal(api.NewFailureResponse(err))
 		})
 		return
 
