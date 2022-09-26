@@ -42,7 +42,7 @@ func (agg *Aggregator) run(stopCh <-chan struct{}) {
 	for _, controller := range agg.controllers {
 		ch := make(chan struct{})
 		stopChs = append(stopChs, ch)
-		go controller.Run(ch, 1)
+		go controller.Run(ch, 2)
 	}
 
 	agg.watcher = watcher.NewChanWatcher(stopChs...)
