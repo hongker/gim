@@ -1,11 +1,11 @@
 package aggregator
 
 import (
-	"context"
 	"gim/internal/controllers"
 	"gim/internal/controllers/api"
 	"gim/internal/controllers/job"
 	"gim/internal/controllers/socket"
+	"gim/pkg/watcher"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
@@ -14,7 +14,7 @@ import (
 type Aggregator struct {
 	once        sync.Once
 	controllers []controllers.Controller
-	watcher     Watcher
+	watcher     watcher.Interface
 }
 
 func (agg *Aggregator) Run() {
@@ -40,35 +40,9 @@ func (agg *Aggregator) run() {
 		go controller.Run(ch, 1)
 	}
 
-	agg.watcher = NewChanWatcher(stopChs...)
+	agg.watcher = watcher.NewChanWatcher(stopChs...)
 }
 func (agg *Aggregator) shutdown() {
 	agg.watcher.Stop()
 	component.Provider().Logger().Info("shutdown success")
-}
-
-type Watcher interface {
-	Stop()
-}
-type ChanWatcher struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-}
-
-func (w ChanWatcher) Stop() {
-	w.cancel()
-}
-
-func NewChanWatcher(chs ...chan struct{}) *ChanWatcher {
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		<-ctx.Done()
-		for _, ch := range chs {
-			close(ch)
-		}
-	}()
-	return &ChanWatcher{
-		ctx:    ctx,
-		cancel: cancel,
-	}
 }
