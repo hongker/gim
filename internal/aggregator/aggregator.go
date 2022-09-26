@@ -11,20 +11,26 @@ import (
 	"sync"
 )
 
+// Aggregate represents a controller aggregator
 type Aggregator struct {
 	once        sync.Once
 	controllers []controllers.Controller
 	watcher     watcher.Interface
 }
 
+// Run runs the aggregator
 func (agg *Aggregator) Run() {
-	agg.once.Do(agg.initialize)
+	// run one times.
+	agg.once.Do(func() {
+		agg.initialize()
 
-	agg.run()
+		agg.run()
+	})
 
 	runtime.Shutdown(agg.shutdown)
 }
 
+// initialize init controllers.
 func (agg *Aggregator) initialize() {
 	agg.controllers = append(agg.controllers,
 		api.NewController().WithName("api"),
@@ -32,6 +38,8 @@ func (agg *Aggregator) initialize() {
 		job.NewController().WithName("job"),
 	)
 }
+
+// run start controller async.
 func (agg *Aggregator) run() {
 	stopChs := make([]chan struct{}, 0)
 	for _, controller := range agg.controllers {
@@ -42,6 +50,8 @@ func (agg *Aggregator) run() {
 
 	agg.watcher = watcher.NewChanWatcher(stopChs...)
 }
+
+// shutdown stops the aggregator.
 func (agg *Aggregator) shutdown() {
 	agg.watcher.Stop()
 	component.Provider().Logger().Info("shutdown success")
