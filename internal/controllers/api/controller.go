@@ -22,7 +22,7 @@ func (c *Controller) WithName(name string) *Controller {
 
 func (c *Controller) initialize() {}
 func (c *Controller) run() {
-	component.Provider().Logger().Infof("api controller [%s] running", c.name)
+	component.Provider().Logger().Infof("controller running: [%s]", c.name)
 }
 
 func NewController() *Controller {
