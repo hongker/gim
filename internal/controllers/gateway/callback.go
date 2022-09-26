@@ -1,23 +1,21 @@
 package gateway
 
 import (
-	"gim/internal/domain/dto"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/server/ws"
 	"github.com/ebar-go/ego/utils/runtime"
 )
 
 type Callback struct {
-	codec  Codec
-	events map[OperateType]Event
+	codec Codec
+	em    *EventManager
 }
 
 func NewCallback() *Callback {
 	c := &Callback{
-		codec:  DefaultCodec(),
-		events: map[OperateType]Event{},
+		codec: DefaultCodec(),
+		em:    NewEventManager(),
 	}
-	c.prepare()
 	return c
 }
 
@@ -36,32 +34,9 @@ func (c *Callback) OnMessage(ctx *ws.Context) {
 		return
 	}
 
-	handler := c.matchEvents(proto)
-	if handler == nil {
-		return
-	}
-
-	handler(ctx, proto)
+	c.em.Handle(ctx, proto)
 
 	response := c.codec.Encode(proto)
 	component.Provider().Logger().Infof("[%s] Response: %s", ctx.Conn().ID(), string(response))
 	ctx.Output(response)
-}
-
-func (c *Callback) matchEvents(proto *Proto) Event {
-	return c.events[proto.OperateType()]
-}
-
-func (c *Callback) prepare() {
-	c.initHandler()
-}
-
-func (c *Callback) initHandler() {
-	em := NewEventManager()
-	c.events[LoginOperate] = Action[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
-	c.events[LogoutOperate] = Action[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
-	c.events[HeartbeatOperate] = Action[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
-	c.events[MessageSendOperate] = Action[dto.MessageSendRequest, dto.MessageSendResponse](em.SendMessage)
-	c.events[ChatroomJoinOperate] = Action[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
-
 }
