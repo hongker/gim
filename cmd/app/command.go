@@ -3,7 +3,6 @@ package app
 import (
 	"gim/cmd/app/options"
 	"gim/internal"
-	"gim/pkg/runtime/signal"
 	"github.com/urfave/cli/v2"
 )
 
@@ -37,7 +36,7 @@ func run(opts *options.ServerRunOptions) error {
 
 	// run server with signal.
 	server := completedOptions.NewServer()
-	server.Run(signal.SetupSignalHandler())
+	server.Run()
 
 	return nil
 }

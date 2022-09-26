@@ -2,14 +2,14 @@ package repository
 
 import (
 	"context"
-	"gim/internal/module/gateway/domain/types"
+	types2 "gim/internal/domain/types"
 	"sync"
 )
 
 type SessionRepository interface {
-	List(ctx context.Context, uid string) ([]types.Session, error)
-	SaveMessage(ctx context.Context, session *types.Session, msg *types.Message) error
-	QueryMessage(ctx context.Context, session *types.Session)
+	List(ctx context.Context, uid string) ([]types2.Session, error)
+	SaveMessage(ctx context.Context, session *types2.Session, msg *types2.Message) error
+	QueryMessage(ctx context.Context, session *types2.Session)
 }
 
 type sessionRepo struct {
@@ -17,12 +17,12 @@ type sessionRepo struct {
 	items map[string][]string
 }
 
-func (repo *sessionRepo) List(ctx context.Context, uid string) ([]types.Session, error) {
+func (repo *sessionRepo) List(ctx context.Context, uid string) ([]types2.Session, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (repo *sessionRepo) SaveMessage(ctx context.Context, session *types.Session, msg *types.Message) error {
+func (repo *sessionRepo) SaveMessage(ctx context.Context, session *types2.Session, msg *types2.Message) error {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 	if _, ok := repo.items[session.Id]; !ok {
@@ -32,7 +32,7 @@ func (repo *sessionRepo) SaveMessage(ctx context.Context, session *types.Session
 	return nil
 }
 
-func (repo *sessionRepo) QueryMessage(ctx context.Context, session *types.Session) {
+func (repo *sessionRepo) QueryMessage(ctx context.Context, session *types2.Session) {
 	//TODO implement me
 	panic("implement me")
 }

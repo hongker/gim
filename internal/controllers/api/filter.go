@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
-	"gim/internal/module/gateway/domain/types"
-	"gim/internal/module/gateway/domain/types/auth"
-	"gim/internal/module/gateway/render"
+	"gim/internal/domain/types"
+	"gim/internal/domain/types/auth"
+	"gim/internal/infrastructure/render"
 	"github.com/ebar-go/ego/errors"
 	"github.com/gin-gonic/gin"
 )

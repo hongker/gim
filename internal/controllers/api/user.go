@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"gim/internal/module/gateway/application"
-	"gim/internal/module/gateway/domain/dto"
+	"gim/internal/application"
+	"gim/internal/domain/dto"
 	"github.com/gin-gonic/gin"
 )
 

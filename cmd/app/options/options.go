@@ -1,17 +1,12 @@
 package options
 
 import (
-	"gim/internal"
-	"gim/internal/infrastructure/config"
-	"gim/internal/module/gateway"
-	"gim/internal/module/message"
+	"gim/internal/aggregator"
 	"github.com/urfave/cli/v2"
 )
 
 // ServerRunOptions run a server.
 type ServerRunOptions struct {
-	GatewayOptions *gateway.Options
-	MessageOptions *message.Options
 }
 
 const (
@@ -35,22 +30,12 @@ func (ServerRunOptions) Flags() []cli.Flag {
 }
 
 func (o *ServerRunOptions) ParseArgsFromContext(ctx *cli.Context) {
-	o.GatewayOptions.HttpServerAddress = ctx.String(flagGatewayServerAddress)
-	o.GatewayOptions.TraceHeader = ctx.String(flagGatewayTraceHeader)
-	o.GatewayOptions.EnablePprof = ctx.Bool(flagGatewayPprofEnabled)
 
 }
 
 func NewServerRunOptions() *ServerRunOptions {
-	o := &ServerRunOptions{
-		GatewayOptions: gateway.NewOptions(),
-		MessageOptions: message.NewOptions(),
-	}
+	o := &ServerRunOptions{}
 	return o
-}
-
-func (o ServerRunOptions) ApplyTo(conf *config.Config) {
-
 }
 
 func (o *ServerRunOptions) Complete() *completedServerRunOptions {
@@ -65,6 +50,8 @@ func (o completedServerRunOptions) Validate() error {
 	return nil
 }
 
-func (o *completedServerRunOptions) NewServer() *internal.Server {
-	return internal.NewServer(o.GatewayOptions.BuildInstance())
+func (o *completedServerRunOptions) NewServer() *aggregator.Aggregator {
+	c := aggregator.NewConfig()
+
+	return c.New()
 }

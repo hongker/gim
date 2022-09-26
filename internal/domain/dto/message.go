@@ -1,17 +1,43 @@
 package dto
 
-type MessageHistoryQuery struct {
-	SessionId string
-	Limit     int
-	Last      int64
+type SessionQueryRequest struct {
+	SessionType string `json:"session_type"`
 }
 
-type BatchMessage struct {
-	Count int       `json:"count"`
-	Items []Message `json:"items"`
+type SessionQueryResponse struct {
+	Items []Session `json:"items"`
 }
 
-type SessionMessagePackage struct {
-	Session Session   `json:"session"`
-	Items   []Message `json:"items"`
+type Session struct {
+	Id    string `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
 }
+
+type MessageQueryRequest struct {
+	SessionId string `json:"session_id"`
+	MessageId string `json:"message_id"`
+	Count     int    `json:"count"`
+}
+
+type MessageQueryResponse struct {
+	Items []MessageItem `json:"items"`
+}
+type MessageUser struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+type MessageItem struct {
+	Id      string      `json:"id"`
+	Content string      `json:"content"`
+	Sender  MessageUser `json:"sender"`
+}
+
+type MessageSendRequest struct {
+	Type      string `json:"type"`
+	TargetId  string `json:"target_id"`
+	Content   string `json:"content"`
+	Category  string `json:"category"`
+	RequestId string `json:"request_id"`
+}
+type MessageSendResponse struct{}

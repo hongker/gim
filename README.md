@@ -61,7 +61,7 @@ GLOBAL OPTIONS:
 ## 连接测试
 ```
 # connect
-wscat.cmd -c ws://127.0.0.1:8082
+wscat.cmd -c ws://127.0.0.1:8081
 
 # login
 {"op":101,"body":"{\"id\":\"1001\"}"}

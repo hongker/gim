@@ -2,14 +2,49 @@ package repository
 
 import (
 	"context"
-	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
+	"gim/internal/domain/types"
+	"github.com/ebar-go/ego/errors"
+	uuid "github.com/satori/go.uuid"
+	"sync"
 )
 
-type MessageRepo interface {
-	Save(ctx context.Context, message *entity.Message) error
-	Query(ctx context.Context, query dto.MessageHistoryQuery) ([]entity.Message, error)
-	Count(ctx context.Context,sessionId string) int
-	PopMin(ctx context.Context,sessionId string, n int)
-	GenerateSequence(ctx context.Context, sessionId string) int64
+type MessageRepository interface {
+	Save(ctx context.Context, msg *types.Message) error
+	Find(ctx context.Context, id string) (*entity.Message, error)
+}
+
+func NewMessageRepository() MessageRepository {
+	return &messageRepo{
+		messages: make(map[string]*entity.Message),
+	}
+}
+
+type messageRepo struct {
+	mu       sync.RWMutex
+	messages map[string]*entity.Message
+}
+
+func (repo *messageRepo) Save(ctx context.Context, msg *types.Message) error {
+	repo.mu.Lock()
+	defer repo.mu.Unlock()
+	msg.Id = uuid.NewV4().String()
+	repo.messages[msg.Id] = &entity.Message{
+		Id:        msg.Id,
+		SenderId:  msg.SenderId,
+		Content:   msg.Content,
+		Category:  string(msg.Category),
+		Status:    msg.Status,
+		CreatedAt: msg.CreatedAt,
+	}
+	return nil
+}
+func (repo *messageRepo) Find(ctx context.Context, id string) (*entity.Message, error) {
+	repo.mu.RLock()
+	defer repo.mu.RUnlock()
+	item, ok := repo.messages[id]
+	if !ok {
+		return nil, errors.NotFound("message not found")
+	}
+	return item, nil
 }

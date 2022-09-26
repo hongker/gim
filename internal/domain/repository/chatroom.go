@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"gim/internal/module/gateway/domain/types"
+	"gim/internal/domain/types"
 	"gim/pkg/store"
 	"github.com/ebar-go/ego/errors"
 	"sync"

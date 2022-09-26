@@ -1,7 +1,7 @@
 package socket
 
 import (
-	"gim/internal/module/gateway/domain/dto"
+	"gim/internal/domain/dto"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/server/ws"
 	"github.com/ebar-go/ego/utils/runtime"

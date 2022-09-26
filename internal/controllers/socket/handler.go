@@ -2,10 +2,10 @@ package socket
 
 import (
 	"context"
-	"gim/internal/module/gateway/application"
-	"gim/internal/module/gateway/domain/dto"
-	"gim/internal/module/gateway/domain/types/auth"
-	"gim/internal/module/gateway/render"
+	"gim/internal/application"
+	"gim/internal/domain/dto"
+	"gim/internal/domain/types/auth"
+	"gim/internal/infrastructure/render"
 	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/server/ws"
 	"github.com/ebar-go/ego/utils/runtime"

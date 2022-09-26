@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"gim/internal/module/gateway/render"
+	"gim/internal/infrastructure/render"
 	"github.com/gin-gonic/gin"
 )
 

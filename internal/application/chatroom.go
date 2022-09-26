@@ -3,9 +3,9 @@ package application
 import (
 	"context"
 	"fmt"
-	"gim/internal/module/gateway/domain/dto"
-	"gim/internal/module/gateway/domain/repository"
-	"gim/internal/module/gateway/domain/types"
+	"gim/internal/domain/dto"
+	"gim/internal/domain/repository"
+	"gim/internal/domain/types"
 	"github.com/ebar-go/ego/errors"
 	"sync"
 	"time"

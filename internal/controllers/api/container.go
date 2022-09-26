@@ -1,7 +1,7 @@
 package api
 
 import (
-	"gim/internal/module/gateway/domain/types"
+	"gim/internal/domain/types"
 	"github.com/gin-gonic/gin"
 	"sync"
 )

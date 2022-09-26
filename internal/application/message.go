@@ -2,137 +2,126 @@ package application
 
 import (
 	"context"
-	"gim/api"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
-	"gim/internal/domain/event"
-	"gim/internal/domain/repository"
-	"gim/internal/infrastructure/config"
-	"gim/pkg/errors"
-	"gim/pkg/queue"
-	"sync"
-	"time"
+	repository2 "gim/internal/domain/repository"
+	types2 "gim/internal/domain/types"
+	"github.com/ebar-go/ego/component"
+	"github.com/ebar-go/ego/errors"
+	"github.com/ebar-go/ego/utils/runtime"
 )
 
-type MessageApp struct {
-	repo       repository.MessageRepo
-	groupRepo  repository.GroupRepo
-	rmu        sync.RWMutex
-	queues     map[string]*queue.Queue
-	queueCap   int
-	messageCap int
+type MessageApplication interface {
+	Send(ctx context.Context, uid string, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error)
 }
 
-func (app *MessageApp) getQueue(sessionType string, targetId string) *queue.Queue {
-	app.rmu.Lock()
-	defer app.rmu.Unlock()
-	if q, ok := app.queues[targetId]; ok {
-		return q
-	}
-	limit := true
-	if sessionType == api.UserSession {
-		limit = false
-	}
-	q := queue.NewQueue(app.queueCap, limit)
-	app.queues[targetId] = q
-	go q.Poll(time.Second, func(items []interface{}) {
-		batchMessages := dto.BatchMessage{Count: len(items), Items: make([]dto.Message, len(items))}
-		for i, item := range items {
-			batchMessages.Items[i] = item.(dto.Message)
-		}
+type messageApplication struct {
+	userRepo     repository2.UserRepository
+	sessionRepo  repository2.SessionRepository
+	msgRepo      repository2.MessageRepository
+	chatroomRepo repository2.ChatroomRepository
+}
 
-		event.Trigger(event.Push, &event.PushMessageEvent{sessionType, targetId, batchMessages})
+func (app messageApplication) Send(ctx context.Context, uid string, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
+	sender, err := app.userRepo.Find(ctx, uid)
+	if err != nil {
+		return nil, errors.WithMessage(err, "find sender")
+	}
+
+	if req.Type == string(types2.SessionPrivate) {
+		err = app.sendPrivate(ctx, sender, req)
+	} else {
+		err = app.sendChatroom(ctx, sender, req)
+	}
+
+	return
+}
+
+func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
+	// find receiver info
+	receiver, err := app.userRepo.Find(ctx, req.TargetId)
+	if err != nil {
+		return errors.WithMessage(err, "find receiver")
+	}
+
+	// save source message
+	msg := types2.NewTextMessage(req.Content)
+	msg.SenderId = sender.Id
+	err = app.msgRepo.Save(ctx, msg)
+	if err != nil {
+		return errors.WithMessage(err, "save message")
+	}
+
+	// save session message of sender and receiver.
+	err = runtime.Call(func() error {
+		senderSession := types2.NewPrivateSession(sender.Id, receiver.Id, receiver.Name)
+		go app.deliverySessionMessage(senderSession, msg)
+		return app.sessionRepo.SaveMessage(ctx, senderSession, msg)
+	}, func() error {
+		receiverSession := types2.NewPrivateSession(receiver.Id, sender.Id, sender.Name)
+		go app.deliverySessionMessage(receiverSession, msg)
+		return app.sessionRepo.SaveMessage(ctx, receiverSession, msg)
 	})
-	return q
+
+	return
 }
 
-func (app *MessageApp) Send(ctx context.Context, sender *dto.User, req *dto.MessageSendRequest) (err error) {
-	var group *entity.Group
-	if req.Type == api.UserSession {
-		if sender.Id == req.TargetId {
-			return errors.InvalidParameter("sender same as target")
-		}
-	} else if req.Type == api.GroupSession {
-		group, err = app.groupRepo.Find(ctx, req.TargetId)
-		if err != nil {
-			return errors.WithMessage(err, "find group")
-		}
-
+func (app messageApplication) sendChatroom(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
+	chatroom, err := app.chatroomRepo.Find(ctx, req.TargetId)
+	if err != nil {
+		return
 	}
 
-	sessionId := req.SessionId(sender.Id)
-	item := &entity.Message{
-		SessionType: req.Type,
-		Content:     req.Content,
-		ContentType: req.ContentType,
-		CreatedAt:   time.Now().UnixNano(),
-		RequestId:   req.RequestId,
-		Sequence:    app.repo.GenerateSequence(ctx, sessionId),
-		SessionId:   sessionId,
-		FromUser:    &entity.User{Id: sender.Id, Name: sender.Name},
-		Group:       group,
+	// save source message
+	msg := types2.NewTextMessage(req.Content)
+	msg.SenderId = sender.Id
+	err = app.msgRepo.Save(ctx, msg)
+	if err != nil {
+		return errors.WithMessage(err, "save message")
 	}
-	if err := app.repo.Save(ctx, item); err != nil {
+
+	chatroomSession := types2.NewChatroomSession(chatroom.Id, chatroom.Name)
+	go app.deliverySessionMessage(chatroomSession, msg)
+	return app.sessionRepo.SaveMessage(ctx, chatroomSession, msg)
+
+}
+
+func (app messageApplication) pushUid(uid string, msg *types2.Message) error {
+	conn, err := GetCometApplication().GetUserConnection(uid)
+	if err != nil {
 		return err
 	}
 
-	// 超过容量后删除早期数据
-	count := app.repo.Count(ctx, item.SessionId)
-	if diff := app.messageCap - count; diff > 0 {
-		app.repo.PopMin(ctx, item.SessionId, diff)
-	}
-	res := dto.Message{
-		Id:          item.Id,
-		RequestId:   item.RequestId,
-		Session:     item.Session(),
-		Content:     item.Content,
-		ContentType: item.ContentType,
-		CreatedAt:   item.CreatedAt,
-		Sequence:    item.Sequence,
-		FromUser: dto.User{
-			Id: item.FromUser.Id,
-		},
-	}
-
-	app.getQueue(item.SessionType, req.TargetId).Offer(res)
-
-	return nil
-}
-
-func (app *MessageApp) Query(ctx context.Context, req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
-	items, err := app.repo.Query(ctx, dto.MessageHistoryQuery{
-		SessionId: req.SessionId,
-		Limit:     req.Limit,
-		Last:      req.Last,
-	})
+	bytes, err := msg.Encode()
 	if err != nil {
-		return nil, err
+		return err
 	}
+	return conn.Push(bytes)
 
-	res := &dto.MessageQueryResponse{Items: make([]dto.Message, 0, len(items))}
-	for _, item := range items {
-		res.Items = append(res.Items, dto.Message{
-			Id:          item.Id,
-			RequestId:   item.RequestId,
-			Session:     dto.Session{Id: item.SessionId, Type: item.SessionType},
-			Content:     item.Content,
-			ContentType: item.ContentType,
-			CreatedAt:   item.CreatedAt,
-			Sequence:    item.Sequence,
-			FromUser:    dto.User{Id: item.FromUser.Id},
-		})
+}
+func (app messageApplication) deliverySessionMessage(session *types2.Session, msg *types2.Message) {
+	var err error
+	if session.IsPrivate() {
+		uid := session.GetPrivateUid()
+		err = app.pushUid(uid, msg)
+
+	} else if session.IsChatroom() {
+		members, lastErr := app.chatroomRepo.GetMember(context.Background(), session.GetChatroomId())
+		for _, member := range members {
+			_ = app.pushUid(member, msg)
+		}
+		err = lastErr
 	}
-
-	return res, nil
+	runtime.HandlerError(err, func(err error) {
+		component.Provider().Logger().Errorf("deliverySessionMessage: %v", err)
+	})
 }
 
-func NewMessageApp(repo repository.MessageRepo, groupRepo repository.GroupRepo, config *config.Config) *MessageApp {
-	app := &MessageApp{
-		repo:       repo,
-		groupRepo:  groupRepo,
-		queues:     map[string]*queue.Queue{},
-		queueCap:   config.Message.PushCount,
-		messageCap: config.Message.MaxStoreSize,
+func NewMessageApplication() MessageApplication {
+	return &messageApplication{
+		userRepo:     repository2.NewUserRepository(),
+		msgRepo:      repository2.NewMessageRepository(),
+		sessionRepo:  repository2.NewSessionRepository(),
+		chatroomRepo: repository2.NewChatroomRepository(),
 	}
-	return app
 }
