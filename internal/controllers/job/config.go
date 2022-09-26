@@ -1,4 +1,4 @@
-package api
+package job
 
 type Config struct {
 	Address         string
@@ -7,5 +7,5 @@ type Config struct {
 }
 
 func (c *Config) New() *Controller {
-	return &Controller{name: "api", config: c}
+	return &Controller{name: "job", config: c}
 }

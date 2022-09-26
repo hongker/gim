@@ -3,6 +3,7 @@ package options
 import (
 	"gim/internal/aggregator"
 	"github.com/urfave/cli/v2"
+	"runtime"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type ServerRunOptions struct {
 	traceHeader       string
 	enableProfiling   bool
 	heartbeatInterval time.Duration
+	workerNumber      int
 }
 
 const (
@@ -20,6 +22,7 @@ const (
 	flagProfilingEnabled = "profiling-enabled" //
 	flagTraceHeader      = "trace-header"
 	flagApiAddress       = "api-address"
+	flagGatewayWorker    = "gateway-worker"
 )
 
 // Flags returns the command-line flags.
@@ -29,7 +32,7 @@ func (ServerRunOptions) Flags() []cli.Flag {
 		&cli.StringFlag{Name: flagTraceHeader, Aliases: []string{"trace"}, Value: "trace", Usage: "Set trace header"},
 		&cli.BoolFlag{Name: flagProfilingEnabled, Aliases: []string{"profiling"}, Value: false, Usage: "Set pprof switch"},
 		&cli.StringFlag{Name: flagApiAddress, Aliases: []string{"http"}, Value: ":8081", Usage: "Set http server bind address"},
-		//&cli.IntFlag{Name: "message", Aliases: []string{"l"}, Value: 10000, Usage: "Set max number of session history messages"},
+		&cli.IntFlag{Name: flagGatewayWorker, Aliases: []string{"ws-worker"}, Value: runtime.NumCPU(), Usage: "Set websocket server worker number"},
 		//&cli.IntFlag{Name: "push-count", Value: 5, Usage: "Set count of message push event"},
 		//&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
 		//&cli.StringFlag{Name: "storage", Aliases: []string{"s"}, Value: infrastructure.MemoryStore, Usage: "Set storage, like memory/redis"},
@@ -41,6 +44,7 @@ func (o *ServerRunOptions) ParseArgsFromContext(ctx *cli.Context) {
 	o.gatewayAddress = ctx.String(flagGatewayAddress)
 	o.traceHeader = ctx.String(flagTraceHeader)
 	o.enableProfiling = ctx.Bool(flagProfilingEnabled)
+	o.workerNumber = ctx.Int(flagGatewayWorker)
 }
 
 func NewServerRunOptions() *ServerRunOptions {
@@ -63,6 +67,7 @@ func (o completedServerRunOptions) Validate() error {
 func (o completedServerRunOptions) applyTo(config *aggregator.Config) {
 	config.GatewayControllerConfig.Address = o.gatewayAddress
 	config.GatewayControllerConfig.HeartbeatInterval = o.heartbeatInterval
+	config.GatewayControllerConfig.WorkerNumber = o.workerNumber
 
 	config.ApiControllerConfig.Address = o.apiAddress
 	config.ApiControllerConfig.TraceHeader = o.traceHeader

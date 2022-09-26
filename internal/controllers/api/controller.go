@@ -2,19 +2,21 @@ package api
 
 import (
 	"github.com/ebar-go/ego/component"
+	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
 )
 
 type Controller struct {
-	name string
-	once sync.Once
+	name   string
+	once   sync.Once
+	config *Config
 }
 
-func (c *Controller) Run(stopCh <-chan struct{}, worker int) {
+func (c *Controller) Run(stopCh <-chan struct{}) {
 	c.once.Do(c.initialize)
 	c.run()
-	<-stopCh
-	c.shutdown()
+
+	runtime.WaitClose(stopCh, c.shutdown)
 
 }
 
@@ -29,8 +31,4 @@ func (c *Controller) run() {
 }
 func (c *Controller) shutdown() {
 	component.Provider().Logger().Infof("controller shutdown: [%s]", c.name)
-}
-
-func NewController() *Controller {
-	return &Controller{name: "api"}
 }

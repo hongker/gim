@@ -3,6 +3,7 @@ package gateway
 import (
 	"github.com/ebar-go/ego"
 	"github.com/ebar-go/ego/component"
+	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
 )
 
@@ -17,11 +18,11 @@ type Controller struct {
 }
 
 // Run runs the controller.
-func (c *Controller) Run(stopCh <-chan struct{}, worker int) {
-	c.once.Do(func() {
-		c.initialize(worker)
-	})
-	c.run(stopCh)
+func (c *Controller) Run(stopCh <-chan struct{}) {
+	c.once.Do(c.initialize)
+	c.run()
+
+	runtime.WaitClose(stopCh, c.shutdown)
 
 }
 
@@ -32,35 +33,26 @@ func (c *Controller) WithName(name string) *Controller {
 }
 
 // initialize init controller dependencies.
-func (c *Controller) initialize(worker int) {
+func (c *Controller) initialize() {
+	c.engine = ego.New()
+
 	callback := NewCallback()
 
 	wss := ego.NewWebsocketServer(c.config.Address).
 		OnConnect(callback.OnConnect).
 		OnDisconnect(callback.OnDisconnect).
-		OnMessage(callback.OnMessage).WithWorker(worker)
+		OnMessage(callback.OnMessage).WithWorker(c.config.WorkerNumber)
 
 	c.engine.WithServer(wss)
 }
 
 // run start module.
-func (c *Controller) run(stopCh <-chan struct{}) {
+func (c *Controller) run() {
 	component.Provider().Logger().Infof("controller running: [%s]", c.name)
 	c.engine.NonBlockingRun()
-	<-stopCh
-	c.shutdown()
 }
 
 // shutdown shuts down the controller.
 func (c *Controller) shutdown() {
 	component.Provider().Logger().Infof("controller shutdown: [%s]", c.name)
-}
-
-// NewController returns a new Controller instance with *Config.
-func NewController(config *Config) *Controller {
-	return &Controller{
-		name:   "gateway",
-		config: config,
-		engine: ego.New(),
-	}
 }
