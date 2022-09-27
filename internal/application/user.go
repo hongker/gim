@@ -28,7 +28,7 @@ type userApplication struct {
 }
 
 func (app userApplication) Login(ctx context.Context, req *dto.UserLoginRequest) (*dto.UserLoginResponse, error) {
-	user := &entity.User{Id: req.ID, Name: req.Name}
+	user := &entity.User{Primary: entity.Primary{Id: req.ID}, Name: req.Name}
 	if err := app.repo.Save(ctx, user); err != nil {
 		return nil, errors.WithMessage(err, "save user")
 	}

@@ -25,11 +25,11 @@ func (storage *MemoryStorage) Save(ctx context.Context, object Object) error {
 func (storage *MemoryStorage) Find(ctx context.Context, object Object) error {
 	storage.mu.RLock()
 	defer storage.mu.RUnlock()
-	var found bool
-	object, found = storage.items[object.ID()]
+	res, found := storage.items[object.ID()]
 	if !found {
 		return errors.NotFound("object not found")
 	}
+	object = res
 
 	return nil
 }

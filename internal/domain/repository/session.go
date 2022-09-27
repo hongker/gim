@@ -3,7 +3,8 @@ package repository
 import (
 	"context"
 	types "gim/internal/domain/types"
-	"sync"
+	"gim/internal/infra/storage"
+	"github.com/ebar-go/ego/errors"
 )
 
 type SessionRepository interface {
@@ -13,8 +14,7 @@ type SessionRepository interface {
 }
 
 type sessionRepo struct {
-	mu    sync.Mutex
-	items map[string][]string
+	store storage.Storage
 }
 
 func (repo *sessionRepo) List(ctx context.Context, uid string) ([]types.Session, error) {
@@ -23,13 +23,14 @@ func (repo *sessionRepo) List(ctx context.Context, uid string) ([]types.Session,
 }
 
 func (repo *sessionRepo) SaveMessage(ctx context.Context, session *types.Session, msg *types.Message) error {
-	repo.mu.Lock()
-	defer repo.mu.Unlock()
-	if _, ok := repo.items[session.Id]; !ok {
-		repo.items[session.Id] = make([]string, 0, 64)
+	sessionMessages := &types.SessionMessage{Id: session.Id}
+	if err := repo.store.Find(ctx, sessionMessages); err != nil {
+		if !errors.Is(err, errors.NotFound("")) {
+			return err
+		}
 	}
-	repo.items[session.Id] = append(repo.items[session.Id], msg.Id)
-	return nil
+	sessionMessages.AddMessage(msg.Id)
+	return repo.store.Save(ctx, sessionMessages)
 }
 
 func (repo *sessionRepo) QueryMessage(ctx context.Context, session *types.Session) {
@@ -38,5 +39,5 @@ func (repo *sessionRepo) QueryMessage(ctx context.Context, session *types.Sessio
 }
 
 func NewSessionRepository() SessionRepository {
-	return &sessionRepo{items: map[string][]string{}}
+	return &sessionRepo{store: storage.NewMemoryStorage("session")}
 }

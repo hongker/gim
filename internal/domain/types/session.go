@@ -64,3 +64,15 @@ func NewPrivateSession(senderId, receiverId string, title string) *Session {
 	targetId := strings.Join(userIds, ":")
 	return NewSession(SessionId(SessionPrivate, targetId), title)
 }
+
+type SessionMessage struct {
+	Id       string   `json:"id"`
+	Messages []string `json:"messages"`
+}
+
+func (sm *SessionMessage) ID() string {
+	return sm.Id
+}
+func (sm *SessionMessage) AddMessage(msgId ...string) {
+	sm.Messages = append(sm.Messages, msgId...)
+}
