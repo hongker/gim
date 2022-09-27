@@ -4,9 +4,8 @@ import (
 	"context"
 	"gim/internal/domain/entity"
 	"gim/internal/domain/types"
-	"github.com/ebar-go/ego/errors"
+	"gim/internal/infra/storage"
 	uuid "github.com/satori/go.uuid"
-	"sync"
 )
 
 type MessageRepository interface {
@@ -16,35 +15,33 @@ type MessageRepository interface {
 
 func NewMessageRepository() MessageRepository {
 	return &messageRepo{
-		messages: make(map[string]*entity.Message),
+		store: storage.NewMemoryStorage("message"),
 	}
 }
 
 type messageRepo struct {
-	mu       sync.RWMutex
-	messages map[string]*entity.Message
+	store storage.Storage
 }
 
 func (repo *messageRepo) Save(ctx context.Context, msg *types.Message) error {
-	repo.mu.Lock()
-	defer repo.mu.Unlock()
-	msg.Id = uuid.NewV4().String()
-	repo.messages[msg.Id] = &entity.Message{
-		Id:        msg.Id,
+	item := &entity.Message{
 		SenderId:  msg.SenderId,
 		Content:   msg.Content,
 		Category:  string(msg.Category),
 		Status:    msg.Status,
 		CreatedAt: msg.CreatedAt,
 	}
+	item.Id = uuid.NewV4().String()
+
+	if err := repo.store.Save(ctx, item); err != nil {
+		return err
+	}
+	msg.Id = item.ID()
 	return nil
 }
+
 func (repo *messageRepo) Find(ctx context.Context, id string) (*entity.Message, error) {
-	repo.mu.RLock()
-	defer repo.mu.RUnlock()
-	item, ok := repo.messages[id]
-	if !ok {
-		return nil, errors.NotFound("message not found")
-	}
-	return item, nil
+	item := entity.NewMessageWithID(id)
+	err := repo.store.Find(ctx, item)
+	return item, err
 }

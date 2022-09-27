@@ -54,6 +54,7 @@ GLOBAL OPTIONS:
 --message-push-count: 每次推送消息条数
 --message-push-duration: 每次推送时间间隔
 --message-push-concurrency-limit: 消息推送并发上限
+--storage: 存储类型(memory, redis)
 ```
 ## 模块设计
 ```
