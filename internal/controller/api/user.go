@@ -21,9 +21,10 @@ func NewUserHandler() *UserHandler {
 
 func (h *UserHandler) Install(route *gin.Engine) {
 	g := route.Group(h.groupName)
-	g.GET("", generic[dto.UserFindRequest, dto.UserFindResponse](h.find))
+	g.GET("/find", generic[dto.UserFindRequest, dto.UserFindResponse](h.find))
 }
 
+// find return user query response.
 func (h *UserHandler) find(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
 	return h.userApp.Find(ctx, req)
 }

@@ -13,12 +13,16 @@ type Handler interface {
 func generic[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		req := new(Request)
-		err := SerializeRequestFromContext(ctx, req)
+		// decode request from context.
+		err := DecodeRequestFromContext(ctx, req)
+		// abort response if err is nil
 		Abort(err)
 
+		// process request and return response
 		response, err := fn(NewValidatedContext(ctx), req)
 		Abort(err)
 
+		// output response
 		Success(ctx, response)
 	}
 }
@@ -28,8 +32,8 @@ func RequestBodyFromContext(ctx *gin.Context) (p []byte, err error) {
 	return ctx.GetRawData()
 }
 
-// SerializeRequestFromContext
-func SerializeRequestFromContext(ctx *gin.Context, container interface{}) error {
+// DecodeRequestFromContext
+func DecodeRequestFromContext(ctx *gin.Context, container interface{}) error {
 	body, err := RequestBodyFromContext(ctx)
 	if err != nil {
 		return err
