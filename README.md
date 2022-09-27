@@ -13,15 +13,14 @@ golang实现的基于内存的聊天服务
 - 推送策略：私聊全量推送，群聊按时间间隔推送最新n条数据
 - 消息策略：通过SortedSet数据结构实现消息存储，按发送时间排序
 
-## 启动
+## 启动服务
 ```
-cd cmd
-go build -o gim server.go
+go run cmd/main.go
 ```
 
-- 启动服务   
+- 查看帮助   
 ```
->gim --help
+> go run cmd/main.go --help
 NAME:
    gim - simple and fast im service
 
@@ -35,14 +34,14 @@ COMMANDS:
    help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --config FILE, -c FILE     Load configuration from FILE
-   --debug                    Set debug mode (default: false)
-   --help, -h                 show help (default: false)
-   --limit value, -l value    Set max number of session history messages (default: 10000)
-   --port value, -p value     Set tcp port (default: 8080)
-   --push-count value         Set count of message push event (default: 5)
-   --storage value, -s value  Set storage, like memory/redis (default: "memory")
-   --version, -v              print the version (default: false)
+   --api-address value, --http value          Set http server bind address (default: ":8081")
+   --gateway-address value, --ws value        Set websocket server bind address (default: ":8080")
+   --gateway-worker value, --ws-worker value  Set websocket server worker number (default: 8)
+   --help, -h                                 show help (default: false)
+   --profiling-enabled, --profiling           Set pprof switch (default: false)
+   --trace-header value, --trace value        Set trace header (default: "trace")
+   --version, -v                              print the version (default: false)
+
 ```
 
 ## 选项设计
@@ -63,13 +62,17 @@ GLOBAL OPTIONS:
 
 ## 连接测试
 ```
+# install websocket client
+npm install -g wscat
+
 # connect
-wscat.cmd -c ws://127.0.0.1:8080
+wscat.cmd -c ws://127.0.0.1:8080 # windows
+wscat -c ws://127.0.0.1:8080 # linux
 
 # login
 {"op":101,"body":"{\"id\":\"1001\"}"}
 
-# heartbeat
+# send heartbeat
 {"op":105}
 
 # send private message
