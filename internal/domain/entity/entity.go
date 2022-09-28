@@ -35,3 +35,15 @@ type SessionMessage struct {
 	SessionId string `json:"session_id"`
 	MessageId string `json:"message_id"`
 }
+
+type Chatroom struct {
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Creator   string `json:"creator"`
+	CreatedAt int64  `json:"created_at"`
+}
+
+type Session struct {
+	Id    string `json:"id"`
+	Title string `json:"title"`
+}
