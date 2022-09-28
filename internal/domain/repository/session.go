@@ -31,12 +31,21 @@ func (repo *sessionRepo) QueryMessage(ctx context.Context, session *entity.Sessi
 func (repo *sessionRepo) SaveMessage(ctx context.Context, uid string, session *entity.Session, msg *entity.Message) error {
 	return runtime.Call(func() error {
 		err := repo.store.Session().Create(ctx, uid, session)
+		if err == nil {
+			return nil
+		}
 		return errors.WithMessage(err, "create user session")
 	}, func() error {
 		err := repo.store.Message().Create(ctx, msg)
+		if err == nil {
+			return nil
+		}
 		return errors.WithMessage(err, "create message")
 	}, func() error {
 		err := repo.store.Session().SaveMessage(ctx, session.Id, msg.Id)
+		if err == nil {
+			return nil
+		}
 		return errors.WithMessage(err, "save session message")
 	})
 

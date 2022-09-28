@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"gim/internal/domain/dto"
+	"gim/internal/domain/entity"
 	"gim/internal/domain/repository"
-	"gim/internal/domain/types"
 	"github.com/ebar-go/ego/errors"
 	"sync"
 	"time"
@@ -20,17 +20,19 @@ type ChatroomApplication interface {
 
 func NewChatroomApplication() ChatroomApplication {
 	return &chatroomApplication{
-		repo: repository.NewChatroomRepository(),
+		repo:     repository.NewChatroomRepository(),
+		userRepo: repository.NewUserRepository(),
 	}
 }
 
 type chatroomApplication struct {
-	mu   sync.Mutex // guards
-	repo repository.ChatroomRepository
+	mu       sync.Mutex // guards
+	repo     repository.ChatroomRepository
+	userRepo repository.UserRepository
 }
 
 func (app *chatroomApplication) Create(ctx context.Context, uid string, req *dto.ChatroomCreateRequest) (resp *dto.ChatroomCreateResponse, err error) {
-	chatroom := &types.Chatroom{
+	chatroom := &entity.Chatroom{
 		Id:        req.Id,
 		Name:      req.Name,
 		Creator:   uid,
@@ -47,6 +49,10 @@ func (app *chatroomApplication) Update(ctx context.Context, uid string, req *dto
 }
 
 func (app *chatroomApplication) Join(ctx context.Context, uid string, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
+	user, err := app.userRepo.Find(ctx, uid)
+	if err != nil {
+		return nil, errors.WithMessage(err, "find user")
+	}
 	chatroom, err := app.repo.Find(ctx, req.Id)
 	if err != nil && !errors.Is(err, errors.NotFound("")) {
 		err = errors.WithMessage(err, "find chatroom")
@@ -54,7 +60,7 @@ func (app *chatroomApplication) Join(ctx context.Context, uid string, req *dto.C
 	}
 
 	if chatroom == nil { // if not exist, create it
-		chatroom = &types.Chatroom{
+		chatroom = &entity.Chatroom{
 			Id:        req.Id,
 			Name:      fmt.Sprintf("chatroom:%s", req.Id),
 			Creator:   uid,
@@ -65,8 +71,11 @@ func (app *chatroomApplication) Join(ctx context.Context, uid string, req *dto.C
 		}
 	}
 
-	err = app.repo.AddMember(ctx, chatroom, uid)
-	return
+	err = app.repo.AddMember(ctx, chatroom, user)
+	if err != nil {
+		return nil, errors.WithMessage(err, "add member")
+	}
+	return &dto.ChatroomJoinResponse{}, nil
 }
 
 func (app *chatroomApplication) Leave(ctx context.Context, uid string, req *dto.ChatroomLeaveRequest) (resp *dto.ChatroomLeaveResponse, err error) {

@@ -1,6 +1,6 @@
 package api
 
-import "gim/pkg/errors"
+import "github.com/ebar-go/ego/errors"
 
 const (
 	CodeSuccess = 0

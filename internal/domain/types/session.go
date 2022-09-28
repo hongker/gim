@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"gim/internal/domain/dto"
+	"gim/internal/domain/entity"
 	"strings"
 )
 
@@ -20,6 +21,13 @@ func SessionId(category SessionCategory, targetId string) string {
 type Session struct {
 	Id    string `json:"id"`
 	Title string `json:"title"`
+}
+
+func (s Session) Entity() *entity.Session {
+	return &entity.Session{
+		Id:    s.Id,
+		Title: s.Title,
+	}
 }
 
 func (s Session) Transform() dto.Session {

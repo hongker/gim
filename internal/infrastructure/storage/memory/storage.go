@@ -30,14 +30,15 @@ func (container *MapContainer[T]) Set(key string, value T) error {
 
 func (container *MapContainer[T]) Find(key string) (T, error) {
 	item, exist := container.Get(key)
+	var empty T
 	if !exist {
-		return nil, errors.NotFound("not found")
+		return empty, errors.NotFound("not found")
 	}
 	return item, nil
 }
 
 func NewMapContainer[T any]() *MapContainer[T] {
-	return &MapContainer[T]{}
+	return &MapContainer[T]{items: make(map[string]T, 0)}
 }
 
 type SetContainer[T string | int] struct {
@@ -54,11 +55,10 @@ func (container *SetContainer[T]) Contain(item T) bool {
 	return container.set.Contain(item)
 }
 
-func (container *SetContainer[T]) ToSlice() []T {
-	res := make([]T, 0, container.set.Size())
-	items := container.set.ToSlice()
+func ToSlice[T any](items []interface{}) []T {
+	res := make([]T, 0)
 	for _, item := range items {
-		res = append(res, item)
+		res = append(res, item.(T))
 	}
 	return res
 }
@@ -117,6 +117,20 @@ func (storage *ChatroomStorage) Find(ctx context.Context, id string) (*entity.Ch
 		return nil, err
 	}
 	return item.chatroom, nil
+}
+
+func (storage *ChatroomStorage) GetMember(ctx context.Context, id string) ([]string, error) {
+	item, err := storage.container.Find(id)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]string, 0, item.members.Size())
+	members := item.members.ToSlice()
+	for _, member := range members {
+		res = append(res, member.(string))
+	}
+	return res, nil
 }
 
 func (storage *ChatroomStorage) AddMember(ctx context.Context, id string, member *entity.User) error {
@@ -181,7 +195,7 @@ func (storage *SessionStorage) List(ctx context.Context, uid string) ([]*entity.
 		return emptySessions, nil
 	}
 
-	sessionIds := container.ToSlice()
+	sessionIds := ToSlice[string](container.set.ToSlice())
 
 	for _, id := range sessionIds {
 		session, err := storage.container.Find(id)

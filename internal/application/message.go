@@ -4,11 +4,13 @@ import (
 	"context"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
-	repository "gim/internal/domain/repository"
-	types "gim/internal/domain/types"
+	"gim/internal/domain/repository"
+	"gim/internal/domain/types"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/utils/runtime"
+	uuid "github.com/satori/go.uuid"
+	"time"
 )
 
 type MessageApplication interface {
@@ -18,7 +20,6 @@ type MessageApplication interface {
 type messageApplication struct {
 	userRepo     repository.UserRepository
 	sessionRepo  repository.SessionRepository
-	msgRepo      repository.MessageRepository
 	chatroomRepo repository.ChatroomRepository
 }
 
@@ -45,22 +46,26 @@ func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.Us
 	}
 
 	// save source message
-	msg := types.NewTextMessage(req.Content)
-	msg.SenderId = sender.Id
-	err = app.msgRepo.Save(ctx, msg)
-	if err != nil {
-		return errors.WithMessage(err, "save message")
+	msg := &entity.Message{
+		Id:        uuid.NewV4().String(),
+		SenderId:  sender.Id,
+		Content:   req.Content,
+		Category:  req.Category,
+		Status:    0,
+		CreatedAt: time.Now().UnixMilli(),
 	}
+	msg.SenderId = sender.Id
 
 	// save session message of sender and receiver.
 	err = runtime.Call(func() error {
 		senderSession := types.NewPrivateSession(sender.Id, receiver.Id, receiver.Name)
+
 		go app.deliverySessionMessage(senderSession, msg)
-		return app.sessionRepo.SaveMessage(ctx, senderSession, msg)
+		return app.sessionRepo.SaveMessage(ctx, sender.Id, senderSession.Entity(), msg)
 	}, func() error {
 		receiverSession := types.NewPrivateSession(receiver.Id, sender.Id, sender.Name)
 		go app.deliverySessionMessage(receiverSession, msg)
-		return app.sessionRepo.SaveMessage(ctx, receiverSession, msg)
+		return app.sessionRepo.SaveMessage(ctx, receiver.Id, receiverSession.Entity(), msg)
 	})
 
 	return
@@ -73,21 +78,24 @@ func (app messageApplication) sendChatroom(ctx context.Context, sender *entity.U
 	}
 
 	// user is not allowed to send messages before join chatroom.
-	if !app.chatroomRepo.HasMember(ctx, chatroom, sender.Id) {
+	if !app.chatroomRepo.HasMember(ctx, chatroom, sender) {
 		return errors.Forbidden("cannot send message before join the chatroom")
 	}
 
 	// save source message
-	msg := types.NewTextMessage(req.Content)
-	msg.SenderId = sender.Id
-	err = app.msgRepo.Save(ctx, msg)
-	if err != nil {
-		return errors.WithMessage(err, "save message")
+	msg := &entity.Message{
+		Id:        uuid.NewV4().String(),
+		SenderId:  sender.Id,
+		Content:   req.Content,
+		Category:  req.Category,
+		Status:    0,
+		CreatedAt: time.Now().UnixMilli(),
 	}
+	msg.SenderId = sender.Id
 
 	chatroomSession := types.NewChatroomSession(chatroom.Id, chatroom.Name)
 	go app.deliverySessionMessage(chatroomSession, msg)
-	return app.sessionRepo.SaveMessage(ctx, chatroomSession, msg)
+	return app.sessionRepo.SaveMessage(ctx, sender.Id, chatroomSession.Entity(), msg)
 
 }
 
@@ -104,16 +112,21 @@ func (app messageApplication) pushUid(uid string, msg *types.Message) error {
 	return conn.Push(bytes)
 
 }
-func (app messageApplication) deliverySessionMessage(session *types.Session, msg *types.Message) {
+func (app messageApplication) deliverySessionMessage(session *types.Session, msg *entity.Message) {
+	message := &types.Message{Id: msg.Id, SenderId: msg.SenderId, Category: types.MessageCategory(msg.Category), Content: msg.Content, CreatedAt: msg.CreatedAt}
 	var err error
 	if session.IsPrivate() {
 		uid := session.GetPrivateUid()
-		err = app.pushUid(uid, msg)
+		err = app.pushUid(uid, message)
 
 	} else if session.IsChatroom() {
-		members, lastErr := app.chatroomRepo.GetMember(context.Background(), session.GetChatroomId())
+		chatroom, lastErr := app.chatroomRepo.Find(context.TODO(), session.GetChatroomId())
+		if lastErr != nil {
+			err = errors.WithMessage(lastErr, "find chatroom")
+		}
+		members, lastErr := app.chatroomRepo.GetMember(context.Background(), chatroom)
 		for _, member := range members {
-			_ = app.pushUid(member, msg)
+			_ = app.pushUid(member, message)
 		}
 		err = lastErr
 	}
@@ -125,7 +138,6 @@ func (app messageApplication) deliverySessionMessage(session *types.Session, msg
 func NewMessageApplication() MessageApplication {
 	return &messageApplication{
 		userRepo:     repository.NewUserRepository(),
-		msgRepo:      repository.NewMessageRepository(),
 		sessionRepo:  repository.NewSessionRepository(),
 		chatroomRepo: repository.NewChatroomRepository(),
 	}

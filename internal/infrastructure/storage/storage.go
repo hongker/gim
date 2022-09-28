@@ -18,6 +18,7 @@ type User interface {
 type Chatroom interface {
 	Create(ctx context.Context, item *entity.Chatroom) error
 	Find(ctx context.Context, id string) (*entity.Chatroom, error)
+	GetMember(ctx context.Context, id string) ([]string, error)
 	AddMember(ctx context.Context, id string, member *entity.User) error
 	RemoveMember(ctx context.Context, id string, member *entity.User) error
 	HasMember(ctx context.Context, id string, member *entity.User) bool

@@ -12,6 +12,7 @@ type ChatroomRepository interface {
 	AddMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) error
 	HasMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) bool
 	RemoveMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) error
+	GetMember(ctx context.Context, chatroom *entity.Chatroom) ([]string, error)
 }
 
 func NewChatroomRepository() ChatroomRepository {
@@ -22,6 +23,10 @@ func NewChatroomRepository() ChatroomRepository {
 
 type chatroomRepo struct {
 	store *storage.StorageManager
+}
+
+func (repo *chatroomRepo) GetMember(ctx context.Context, chatroom *entity.Chatroom) ([]string, error) {
+	return repo.store.Chatroom().GetMember(ctx, chatroom.Id)
 }
 
 func (repo *chatroomRepo) RemoveMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) error {
