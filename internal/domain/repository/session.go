@@ -2,42 +2,46 @@ package repository
 
 import (
 	"context"
-	types "gim/internal/domain/types"
-	"gim/internal/infra/storage"
+	"gim/internal/domain/entity"
+	"gim/internal/infrastructure/storage"
 	"github.com/ebar-go/ego/errors"
+	"github.com/ebar-go/ego/utils/runtime"
 )
 
 type SessionRepository interface {
-	List(ctx context.Context, uid string) ([]types.Session, error)
-	SaveMessage(ctx context.Context, session *types.Session, msg *types.Message) error
-	QueryMessage(ctx context.Context, session *types.Session)
+	List(ctx context.Context, uid string) ([]*entity.Session, error)
+	SaveMessage(ctx context.Context, uid string, session *entity.Session, msg *entity.Message) error
+	QueryMessage(ctx context.Context, session *entity.Session)
 }
 
 type sessionRepo struct {
-	store storage.Storage
+	store *storage.StorageManager
 }
 
-func (repo *sessionRepo) List(ctx context.Context, uid string) ([]types.Session, error) {
+func (repo *sessionRepo) List(ctx context.Context, uid string) ([]*entity.Session, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (repo *sessionRepo) SaveMessage(ctx context.Context, session *types.Session, msg *types.Message) error {
-	sessionMessages := &types.SessionMessage{Id: session.Id}
-	if err := repo.store.Find(ctx, sessionMessages); err != nil {
-		if !errors.Is(err, errors.NotFound("")) {
-			return err
-		}
-	}
-	sessionMessages.AddMessage(msg.Id)
-	return repo.store.Save(ctx, sessionMessages)
-}
-
-func (repo *sessionRepo) QueryMessage(ctx context.Context, session *types.Session) {
+func (repo *sessionRepo) QueryMessage(ctx context.Context, session *entity.Session) {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (repo *sessionRepo) SaveMessage(ctx context.Context, uid string, session *entity.Session, msg *entity.Message) error {
+	return runtime.Call(func() error {
+		err := repo.store.Session().Create(ctx, uid, session)
+		return errors.WithMessage(err, "create user session")
+	}, func() error {
+		err := repo.store.Message().Create(ctx, msg)
+		return errors.WithMessage(err, "create message")
+	}, func() error {
+		err := repo.store.Session().SaveMessage(ctx, session.Id, msg.Id)
+		return errors.WithMessage(err, "save session message")
+	})
+
 }
 
 func NewSessionRepository() SessionRepository {
-	return &sessionRepo{store: storage.NewMemoryStorage("session")}
+	return &sessionRepo{store: storage.MemoryManager()}
 }

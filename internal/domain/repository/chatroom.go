@@ -2,85 +2,44 @@ package repository
 
 import (
 	"context"
-	"gim/internal/domain/types"
-	"gim/internal/infra/storage"
-	"gim/pkg/store"
-	"github.com/ebar-go/ego/errors"
-	"sync"
+	"gim/internal/domain/entity"
+	"gim/internal/infrastructure/storage"
 )
 
 type ChatroomRepository interface {
-	Create(ctx context.Context, chatroom *types.Chatroom) error
-	Update(ctx context.Context, chatroom *types.Chatroom) error
-	Find(ctx context.Context, id string) (*types.Chatroom, error)
-	AddMember(ctx context.Context, chatroom *types.Chatroom, uid string) error
-	HasMember(ctx context.Context, chatroom *types.Chatroom, uid string) bool
-	GetMember(ctx context.Context, roomId string) ([]string, error)
+	Create(ctx context.Context, chatroom *entity.Chatroom) error
+	Find(ctx context.Context, id string) (*entity.Chatroom, error)
+	AddMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) error
+	HasMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) bool
+	RemoveMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) error
 }
 
-var chatroomRepoOnce = struct {
-	once     sync.Once
-	instance ChatroomRepository
-}{}
-
 func NewChatroomRepository() ChatroomRepository {
-	chatroomRepoOnce.once.Do(func() {
-		chatroomRepoOnce.instance = &chatroomRepo{
-			store:       storage.NewMemoryStorage("chatroom"),
-			memberStore: storage.NewMemoryStorage("chatroomMember"),
-		}
-	})
-	return chatroomRepoOnce.instance
+	return &chatroomRepo{
+		store: storage.MemoryManager(),
+	}
 }
 
 type chatroomRepo struct {
-	mu          sync.Mutex // guards
-	store       storage.Storage
-	memberStore storage.Storage
+	store *storage.StorageManager
 }
 
-func (repo *chatroomRepo) GetMember(ctx context.Context, roomId string) ([]string, error) {
-	return nil, nil
+func (repo *chatroomRepo) RemoveMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) error {
+	return repo.store.Chatroom().RemoveMember(ctx, chatroom.Id, member)
 }
 
-func (repo *chatroomRepo) Create(ctx context.Context, chatroom *types.Chatroom) error {
-	return repo.store.Save(ctx, chatroom)
+func (repo *chatroomRepo) Create(ctx context.Context, chatroom *entity.Chatroom) error {
+	return repo.store.Chatroom().Create(ctx, chatroom)
 }
 
-func (repo *chatroomRepo) Update(ctx context.Context, chatroom *types.Chatroom) error {
-	return repo.store.Save(ctx, chatroom)
+func (repo *chatroomRepo) Find(ctx context.Context, id string) (*entity.Chatroom, error) {
+	return repo.store.Chatroom().Find(ctx, id)
 }
 
-func (repo *chatroomRepo) Find(ctx context.Context, id string) (*types.Chatroom, error) {
-	item := &types.Chatroom{Id: id}
-	if err := repo.store.Find(ctx, item); err != nil {
-		return nil, err
-	}
-	return item, nil
+func (repo *chatroomRepo) AddMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) error {
+	return repo.store.Chatroom().AddMember(ctx, chatroom.Id, member)
 }
 
-func (repo *chatroomRepo) AddMember(ctx context.Context, chatroom *types.Chatroom, uid string) error {
-	cm := &types.ChatroomMember{Id: chatroom.Id}
-	if err := repo.memberStore.Find(ctx, cm); err != nil {
-		if !errors.Is(err, errors.NotFound("")) {
-			return err
-		}
-
-	}
-	if cm.Members == nil {
-		cm.Members = store.ThreadSafe()
-	}
-	cm.Members.Add(uid)
-	return repo.memberStore.Save(ctx, cm)
-}
-
-func (repo *chatroomRepo) HasMember(ctx context.Context, chatroom *types.Chatroom, uid string) bool {
-	cm := &types.ChatroomMember{Id: chatroom.Id}
-	if err := repo.memberStore.Find(ctx, cm); err != nil {
-		return false
-	}
-	if cm.Members == nil {
-		return false
-	}
-	return cm.Members.Contain(uid)
+func (repo *chatroomRepo) HasMember(ctx context.Context, chatroom *entity.Chatroom, member *entity.User) bool {
+	return repo.store.Chatroom().HasMember(ctx, chatroom.Id, member)
 }
