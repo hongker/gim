@@ -11,7 +11,7 @@ import (
 type SessionRepository interface {
 	List(ctx context.Context, uid string) ([]*entity.Session, error)
 	SaveMessage(ctx context.Context, uid string, session *entity.Session, msg *entity.Message) error
-	QueryMessage(ctx context.Context, session *entity.Session)
+	QueryMessage(ctx context.Context, session *entity.Session) ([]*entity.Message, error)
 }
 
 type sessionRepo struct {
@@ -23,9 +23,19 @@ func (repo *sessionRepo) List(ctx context.Context, uid string) ([]*entity.Sessio
 	panic("implement me")
 }
 
-func (repo *sessionRepo) QueryMessage(ctx context.Context, session *entity.Session) {
-	//TODO implement me
-	panic("implement me")
+func (repo *sessionRepo) QueryMessage(ctx context.Context, session *entity.Session) ([]*entity.Message, error) {
+	ids, err := repo.store.Session().QueryMessage(ctx, session.Id)
+	if err != nil {
+		return nil, err
+	}
+	messages := make([]*entity.Message, 0, len(ids))
+	for _, id := range ids {
+		item, lastErr := repo.store.Message().Find(ctx, id)
+		if lastErr != nil {
+			messages = append(messages, item)
+		}
+	}
+	return messages, nil
 }
 
 func (repo *sessionRepo) SaveMessage(ctx context.Context, uid string, session *entity.Session, msg *entity.Message) error {

@@ -17,6 +17,9 @@ const (
 	MessageSendOperate      OperateType = 201
 	MessageSendOperateReply OperateType = 202
 
+	MessageQueryOperate      OperateType = 203
+	MessageQueryOperateReply OperateType = 204
+
 	ChatroomJoinOperate      OperateType = 301
 	ChatroomJoinOperateReply OperateType = 302
 )

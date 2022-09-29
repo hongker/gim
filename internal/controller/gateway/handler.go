@@ -15,19 +15,24 @@ import (
 
 type HandleFunc func(ctx *ws.Context, proto *Proto)
 
-func generic[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) HandleFunc {
+type Action[Request, Response any] func(ctx context.Context, req *Request) (*Response, error)
+
+func generic[Request any, Response any](action Action[Request, Response]) HandleFunc {
 	return func(ctx *ws.Context, proto *Proto) {
 		req := new(Request)
 		err := runtime.Call(
+			// bind with request.
 			proto.BindFunc(req),
+			// validate request.
 			dto.ValidateFunc(req),
+			// invoke action.
 			func() error {
 				validatedCtx, err := NewValidatedContext(ctx)
 				if proto.Operate != LoginOperate && err != nil {
 					return err
 				}
 
-				resp, err := fn(validatedCtx, req)
+				resp, err := action(validatedCtx, req)
 				if err != nil {
 					return err
 				}
@@ -80,6 +85,7 @@ func (em *EventManager) initialize() {
 	em.handlers[LogoutOperate] = generic[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
 	em.handlers[HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
 	em.handlers[MessageSendOperate] = generic[dto.MessageSendRequest, dto.MessageSendResponse](em.SendMessage)
+	em.handlers[MessageQueryOperate] = generic[dto.MessageQueryRequest, dto.MessageQueryResponse](em.QueryMessage)
 	em.handlers[ChatroomJoinOperate] = generic[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
 }
 
@@ -117,4 +123,8 @@ func (em *EventManager) SendMessage(ctx context.Context, req *dto.MessageSendReq
 func (em *EventManager) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
 	uid := auth.UserFromContext(ctx)
 	return em.chatroomApp.Join(ctx, uid, req)
+}
+
+func (em *EventManager) QueryMessage(ctx context.Context, req *dto.MessageQueryRequest) (resp *dto.MessageQueryResponse, err error) {
+	return em.messageApp.Query(ctx, req)
 }

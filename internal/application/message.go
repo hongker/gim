@@ -15,6 +15,7 @@ import (
 
 type MessageApplication interface {
 	Send(ctx context.Context, uid string, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error)
+	Query(ctx context.Context, req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error)
 }
 
 type messageApplication struct {
@@ -36,6 +37,33 @@ func (app messageApplication) Send(ctx context.Context, uid string, req *dto.Mes
 	}
 
 	return
+}
+
+func (app messageApplication) Query(ctx context.Context, req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error) {
+	session := &entity.Session{Id: req.SessionId}
+	messages, err := app.sessionRepo.QueryMessage(ctx, session)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.MessageQueryResponse{Items: make([]dto.MessageItem, 0, len(messages))}
+	for _, message := range messages {
+		sender, lastErr := app.userRepo.Find(ctx, message.SenderId)
+		if lastErr != nil {
+			component.Provider().Logger().Errorf("user not found: %v", lastErr)
+			continue
+		}
+		res.Items = append(res.Items, dto.MessageItem{
+			Id:      message.Id,
+			Content: message.Content,
+			Sender: dto.MessageUser{
+				Id:   sender.Id,
+				Name: sender.Name,
+			},
+		})
+	}
+
+	return res, nil
 }
 
 func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
