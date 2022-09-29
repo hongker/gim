@@ -1,6 +1,9 @@
 package gateway
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sync"
+)
 
 type OperateType int
 
@@ -59,4 +62,39 @@ func (p *Proto) Marshal(container interface{}) (err error) {
 	p.Seq++
 	p.Operate++
 	return
+}
+
+type ProtoProvider interface {
+	AcquireProto() *Proto
+	ReleaseProto(p *Proto)
+}
+
+var (
+	defaultProtoProvider = NewSharedProtoProvider()
+	AcquireProto         = defaultProtoProvider.AcquireProto
+	ReleaseProto         = defaultProtoProvider.ReleaseProto
+)
+
+// TOODO 使用泛型
+// SharedProvider[T any]
+type SharedProtoProvider struct {
+	pool *sync.Pool
+}
+
+func NewSharedProtoProvider() *SharedProtoProvider {
+	return &SharedProtoProvider{pool: &sync.Pool{New: func() interface{} {
+		return new(Proto)
+	}}}
+}
+
+func (provider *SharedProtoProvider) AcquireProto() *Proto {
+	p := provider.pool.Get().(*Proto)
+	p.Seq = 0
+	p.Body = ""
+	p.Operate = 0
+	return p
+}
+
+func (provider *SharedProtoProvider) ReleaseProto(p *Proto) {
+	provider.pool.Put(p)
 }

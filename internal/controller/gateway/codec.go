@@ -15,10 +15,11 @@ func JsonCodecInstance() Codec {
 	return &JsonCodec{}
 }
 
-type JsonCodec struct{}
+type JsonCodec struct {
+}
 
 func (c JsonCodec) Decode(bytes []byte) (*Proto, error) {
-	p := new(Proto)
+	p := AcquireProto()
 	err := json.Unmarshal(bytes, p)
 	if err != nil {
 		return nil, err
@@ -28,5 +29,6 @@ func (c JsonCodec) Decode(bytes []byte) (*Proto, error) {
 
 func (c JsonCodec) Encode(proto *Proto) []byte {
 	b, _ := json.Marshal(proto)
+	ReleaseProto(proto)
 	return b
 }
