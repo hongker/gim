@@ -31,12 +31,13 @@ func (c *Callback) OnMessage(ctx *ws.Context) {
 
 	proto, err := c.codec.Decode(ctx.Body())
 	if err != nil {
+		component.Provider().Logger().Errorf("[%s] OnDecode: %v", ctx.Conn().ID(), err)
 		return
 	}
 
 	c.em.Handle(ctx, proto)
 
 	response := c.codec.Encode(proto)
-	component.Provider().Logger().Infof("[%s] Response: %s", ctx.Conn().ID(), string(response))
+	component.Provider().Logger().Infof("[%s] OnResponse: %s", ctx.Conn().ID(), string(response))
 	ctx.Output(response)
 }

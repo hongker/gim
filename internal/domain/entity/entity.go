@@ -24,4 +24,5 @@ type Chatroom struct {
 type Session struct {
 	Id    string `json:"id"`
 	Title string `json:"title"`
+	Last  string `json:"last"`
 }

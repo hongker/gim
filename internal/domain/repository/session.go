@@ -12,10 +12,15 @@ type SessionRepository interface {
 	List(ctx context.Context, uid string) ([]*entity.Session, error)
 	SaveMessage(ctx context.Context, uid string, session *entity.Session, msg *entity.Message) error
 	QueryMessage(ctx context.Context, session *entity.Session) ([]*entity.Message, error)
+	FindMessage(ctx context.Context, id string) (*entity.Message, error)
 }
 
 type sessionRepo struct {
 	store *storage.StorageManager
+}
+
+func (s *sessionRepo) FindMessage(ctx context.Context, id string) (*entity.Message, error) {
+	return s.store.Message().Find(ctx, id)
 }
 
 func (repo *sessionRepo) List(ctx context.Context, uid string) ([]*entity.Session, error) {
@@ -32,8 +37,9 @@ func (repo *sessionRepo) QueryMessage(ctx context.Context, session *entity.Sessi
 	for _, id := range ids {
 		item, lastErr := repo.store.Message().Find(ctx, id)
 		if lastErr != nil {
-			messages = append(messages, item)
+			continue
 		}
+		messages = append(messages, item)
 	}
 	return messages, nil
 }

@@ -202,6 +202,10 @@ func (storage *SessionStorage) List(ctx context.Context, uid string) ([]*entity.
 		if err != nil {
 			continue
 		}
+		if len(session.messages) > 0 {
+			session.session.Last = session.messages[len(session.messages)-1]
+		}
+
 		emptySessions = append(emptySessions, session.session)
 	}
 	return emptySessions, nil

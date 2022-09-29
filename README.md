@@ -83,12 +83,12 @@ wscat -c ws://127.0.0.1:8080 # linux
 {"op":301,"body":"{\"id\":\"9999\"}"}
 
 # send chatroom message
-{"op":201,"body":"{\"content\":\"test\",\"type\":\"chatroom\",\"category\":\"text\",\"target_id\":\"9999\"}"}
+{"op":201,"body":"{\"content\":\"test\",\"type\":1,\"category\":\"text\",\"target_id\":\"9999\"}"}
 
 
 # list session
 {"op":205}
 
 # query history message
-{"op":203,body:"{\"session_id\":\"chatroom:9999\"}"}
+{"op":203,"body":"{\"session_id\":\"1:9999\"}"}
 ```

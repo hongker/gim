@@ -31,7 +31,7 @@ func (app messageApplication) Send(ctx context.Context, uid string, req *dto.Mes
 		return nil, errors.WithMessage(err, "find sender")
 	}
 
-	if req.Type == string(types.SessionPrivate) {
+	if req.Type == types.SessionPrivate {
 		err = app.sendPrivate(ctx, sender, req)
 	} else {
 		err = app.sendChatroom(ctx, sender, req)
@@ -75,7 +75,23 @@ func (app messageApplication) ListSession(ctx context.Context, uid string, req *
 
 	res := &dto.SessionQueryResponse{Items: make([]dto.Session, 0, len(items))}
 	for _, item := range items {
-		res.Items = append(res.Items, dto.Session{Id: item.Id, Title: item.Title})
+		msg, lastErr := app.sessionRepo.FindMessage(ctx, item.Last)
+		if lastErr != nil {
+			continue
+		}
+		sender, lastErr := app.userRepo.Find(ctx, msg.SenderId)
+		if lastErr != nil {
+			continue
+		}
+		res.Items = append(res.Items, dto.Session{
+			Id:    item.Id,
+			Title: item.Title,
+			Type:  types.CategoryFromSessionId(item.Id),
+			Last: &dto.MessageItem{
+				Id:      msg.Id,
+				Content: msg.Content,
+				Sender:  dto.MessageUser{Id: sender.Id, Name: sender.Name},
+			}})
 	}
 	return res, nil
 }

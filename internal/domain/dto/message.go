@@ -11,7 +11,7 @@ type SessionQueryResponse struct {
 type Session struct {
 	Id    string       `json:"id"`
 	Title string       `json:"title"`
-	Type  string       `json:"type"`
+	Type  int          `json:"type"`
 	Last  *MessageItem `json:"last"`
 }
 
@@ -35,7 +35,7 @@ type MessageItem struct {
 }
 
 type MessageSendRequest struct {
-	Type      string `json:"type"`
+	Type      int    `json:"type"`
 	TargetId  string `json:"target_id"`
 	Content   string `json:"content"`
 	Category  string `json:"category"`

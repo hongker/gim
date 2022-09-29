@@ -2,20 +2,23 @@ package types
 
 import (
 	"fmt"
-	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
+	"strconv"
 	"strings"
 )
 
-type SessionCategory string
-
 var (
-	SessionChatroom SessionCategory = "chatroom"
-	SessionPrivate  SessionCategory = "private"
+	SessionChatroom = 1
+	SessionPrivate  = 2
 )
 
-func SessionId(category SessionCategory, targetId string) string {
-	return fmt.Sprintf("%s:%s", category, targetId)
+func SessionId(category int, targetId string) string {
+	return fmt.Sprintf("%v:%s", category, targetId)
+}
+
+func CategoryFromSessionId(id string) int {
+	category, _ := strconv.Atoi(strings.Split(id, ":")[0])
+	return category
 }
 
 type Session struct {
@@ -30,16 +33,8 @@ func (s Session) Entity() *entity.Session {
 	}
 }
 
-func (s Session) Transform() dto.Session {
-	return dto.Session{
-		Id:    s.Id,
-		Title: s.Title,
-		Type:  string(s.Category()),
-	}
-}
-
-func (s Session) Category() SessionCategory {
-	return SessionCategory(strings.Split(s.Id, ":")[0])
+func (s Session) Category() int {
+	return CategoryFromSessionId(s.Id)
 }
 
 func (s Session) IsChatroom() bool {
@@ -66,21 +61,6 @@ func NewChatroomSession(roomId string, title string) *Session {
 
 func NewPrivateSession(senderId, receiverId string, title string) *Session {
 	userIds := []string{senderId, receiverId}
-	//if receiverId > senderId {
-	//	userIds[1], userIds[0] = senderId, receiverId
-	//}
 	targetId := strings.Join(userIds, ":")
 	return NewSession(SessionId(SessionPrivate, targetId), title)
-}
-
-type SessionMessage struct {
-	Id       string   `json:"id"`
-	Messages []string `json:"messages"`
-}
-
-func (sm *SessionMessage) ID() string {
-	return sm.Id
-}
-func (sm *SessionMessage) AddMessage(msgId ...string) {
-	sm.Messages = append(sm.Messages, msgId...)
 }
