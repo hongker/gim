@@ -38,6 +38,12 @@ func (p *Proto) Bind(container any) error {
 	return json.Unmarshal([]byte(p.Body), container)
 }
 
+func (p *Proto) BindFunc(container any) func() error {
+	return func() error {
+		return p.Bind(container)
+	}
+}
+
 func (p *Proto) Marshal(container interface{}) (err error) {
 	b, err := json.Marshal(container)
 	if err != nil {

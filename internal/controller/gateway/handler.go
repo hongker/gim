@@ -18,22 +18,21 @@ type HandleFunc func(ctx *ws.Context, proto *Proto)
 func generic[Request any, Response any](fn func(context.Context, *Request) (*Response, error)) HandleFunc {
 	return func(ctx *ws.Context, proto *Proto) {
 		req := new(Request)
-		err := runtime.Call(func() error {
-			return proto.Bind(req)
-		}, func() error {
-			return dto.Validate(req)
-		}, func() error {
-			validatedCtx, err := NewValidatedContext(ctx)
-			if proto.Operate != LoginOperate && err != nil {
-				return err
-			}
+		err := runtime.Call(
+			proto.BindFunc(req),
+			dto.ValidateFunc(req),
+			func() error {
+				validatedCtx, err := NewValidatedContext(ctx)
+				if proto.Operate != LoginOperate && err != nil {
+					return err
+				}
 
-			resp, err := fn(validatedCtx, req)
-			if err != nil {
-				return err
-			}
-			return proto.Marshal(api.NewSuccessResponse(resp))
-		})
+				resp, err := fn(validatedCtx, req)
+				if err != nil {
+					return err
+				}
+				return proto.Marshal(api.NewSuccessResponse(resp))
+			})
 
 		runtime.HandlerError(err, func(err error) {
 			_ = proto.Marshal(api.NewFailureResponse(err))

@@ -10,3 +10,9 @@ func Validate(obj any) error {
 	}
 	return nil
 }
+
+func ValidateFunc(obj any) func() error {
+	return func() error {
+		return Validate(obj)
+	}
+}
