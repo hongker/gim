@@ -19,8 +19,8 @@ type sessionRepo struct {
 }
 
 func (repo *sessionRepo) List(ctx context.Context, uid string) ([]*entity.Session, error) {
-	//TODO implement me
-	panic("implement me")
+	items, err := repo.store.Session().List(ctx, uid)
+	return items, err
 }
 
 func (repo *sessionRepo) QueryMessage(ctx context.Context, session *entity.Session) ([]*entity.Message, error) {

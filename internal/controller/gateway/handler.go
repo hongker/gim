@@ -86,6 +86,7 @@ func (em *EventManager) initialize() {
 	em.handlers[HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
 	em.handlers[MessageSendOperate] = generic[dto.MessageSendRequest, dto.MessageSendResponse](em.SendMessage)
 	em.handlers[MessageQueryOperate] = generic[dto.MessageQueryRequest, dto.MessageQueryResponse](em.QueryMessage)
+	em.handlers[SessionListOperate] = generic[dto.SessionQueryRequest, dto.SessionQueryResponse](em.ListSession)
 	em.handlers[ChatroomJoinOperate] = generic[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
 }
 
@@ -127,4 +128,8 @@ func (em *EventManager) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinR
 
 func (em *EventManager) QueryMessage(ctx context.Context, req *dto.MessageQueryRequest) (resp *dto.MessageQueryResponse, err error) {
 	return em.messageApp.Query(ctx, req)
+}
+func (em *EventManager) ListSession(ctx context.Context, req *dto.SessionQueryRequest) (resp *dto.SessionQueryResponse, err error) {
+	uid := auth.UserFromContext(ctx)
+	return em.messageApp.ListSession(ctx, uid, req)
 }

@@ -9,9 +9,10 @@ type SessionQueryResponse struct {
 }
 
 type Session struct {
-	Id    string `json:"id"`
-	Title string `json:"title"`
-	Type  string `json:"type"`
+	Id    string       `json:"id"`
+	Title string       `json:"title"`
+	Type  string       `json:"type"`
+	Last  *MessageItem `json:"last"`
 }
 
 type MessageQueryRequest struct {

@@ -16,6 +16,7 @@ import (
 type MessageApplication interface {
 	Send(ctx context.Context, uid string, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error)
 	Query(ctx context.Context, req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error)
+	ListSession(ctx context.Context, uid string, req *dto.SessionQueryRequest) (*dto.SessionQueryResponse, error)
 }
 
 type messageApplication struct {
@@ -66,6 +67,18 @@ func (app messageApplication) Query(ctx context.Context, req *dto.MessageQueryRe
 	return res, nil
 }
 
+func (app messageApplication) ListSession(ctx context.Context, uid string, req *dto.SessionQueryRequest) (*dto.SessionQueryResponse, error) {
+	items, err := app.sessionRepo.List(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.SessionQueryResponse{Items: make([]dto.Session, 0, len(items))}
+	for _, item := range items {
+		res.Items = append(res.Items, dto.Session{Id: item.Id, Title: item.Title})
+	}
+	return res, nil
+}
 func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
 	// find receiver info
 	receiver, err := app.userRepo.Find(ctx, req.TargetId)

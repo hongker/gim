@@ -20,6 +20,9 @@ const (
 	MessageQueryOperate      OperateType = 203
 	MessageQueryOperateReply OperateType = 204
 
+	SessionListOperate      OperateType = 205
+	SessionListOperateReply OperateType = 206
+
 	ChatroomJoinOperate      OperateType = 301
 	ChatroomJoinOperateReply OperateType = 302
 )

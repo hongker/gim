@@ -85,4 +85,10 @@ wscat -c ws://127.0.0.1:8080 # linux
 # send chatroom message
 {"op":201,"body":"{\"content\":\"test\",\"type\":\"chatroom\",\"category\":\"text\",\"target_id\":\"9999\"}"}
 
+
+# list session
+{"op":205}
+
+# query history message
+{"op":203,body:"{\"session_id\":\"chatroom:9999\"}"}
 ```
