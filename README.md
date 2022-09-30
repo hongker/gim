@@ -77,7 +77,7 @@ wscat -c ws://127.0.0.1:8080 # linux
 {"op":105}
 
 # send private message
-{"op":201,"body":"{\"content\":\"test\",\"type\":\"private\",\"category\":\"text\",\"target_id\":\"1002\"}"}
+{"op":201,"body":"{\"content\":\"test\",\"type\":2,\"category\":\"text\",\"target_id\":\"1002\"}"}
 
 # join chatroom
 {"op":301,"body":"{\"id\":\"9999\"}"}

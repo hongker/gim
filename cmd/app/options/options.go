@@ -41,7 +41,7 @@ func (o *ServerRunOptions) Flags() []cli.Flag {
 		//&cli.IntFlag{Name: "push-count", Value: 5, Usage: "Set count of message push event"},
 		//&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
 		//&cli.StringFlag{Name: "storage", Aliases: []string{"s"}, Value: infrastructure.MemoryStore, Usage: "Set storage, like memory/redis"},
-		&cli.DurationFlag{Name: flagGatewayHeartbeatInterval, Aliases: []string{"heartbeat-interval"}, Value: time.Minute, Usage: "Set connection heartbeat interval"},
+		&cli.DurationFlag{Name: flagGatewayHeartbeatInterval, Aliases: []string{"heartbeat-interval"}, Value: time.Minute * 10, Usage: "Set connection heartbeat interval"},
 	}
 }
 

@@ -46,3 +46,18 @@ func NewTextMessage(content string) *Message {
 func NewPictureMessage(content string) *Message {
 	return NewMessage(MessagePicture, content)
 }
+
+type SessionMessage struct {
+	Session *Session
+	Message *Message
+}
+
+type MessagePacket struct {
+	Session *Session   `json:"session"`
+	Items   []*Message `json:"items"`
+}
+
+func (packet MessagePacket) Encode() []byte {
+	b, _ := json.Marshal(packet)
+	return b
+}

@@ -117,11 +117,13 @@ func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.Us
 	err = runtime.Call(func() error {
 		senderSession := types.NewPrivateSession(sender.Id, receiver.Id, receiver.Name)
 
-		go app.deliverySessionMessage(senderSession, msg)
+		//go app.deliverySessionMessage(senderSession, msg)
+		app.delivery(senderSession, msg)
 		return app.sessionRepo.SaveMessage(ctx, sender.Id, senderSession.Entity(), msg)
 	}, func() error {
 		receiverSession := types.NewPrivateSession(receiver.Id, sender.Id, sender.Name)
-		go app.deliverySessionMessage(receiverSession, msg)
+		//go app.deliverySessionMessage(receiverSession, msg)
+		app.delivery(receiverSession, msg)
 		return app.sessionRepo.SaveMessage(ctx, receiver.Id, receiverSession.Entity(), msg)
 	})
 
@@ -192,6 +194,11 @@ func (app messageApplication) deliverySessionMessage(session *types.Session, msg
 	})
 }
 
+func (app messageApplication) delivery(session *types.Session, msg *entity.Message) {
+	message := &types.Message{Id: msg.Id, SenderId: msg.SenderId, Category: types.MessageCategory(msg.Category), Content: msg.Content, CreatedAt: msg.CreatedAt}
+	sessionMessage := &types.SessionMessage{Session: session, Message: message}
+	component.Provider().EventDispatcher().Trigger(dto.EventDeliveryMessage, sessionMessage)
+}
 func NewMessageApplication() MessageApplication {
 	return &messageApplication{
 		userRepo:     repository.NewUserRepository(),
