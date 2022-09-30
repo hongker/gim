@@ -39,9 +39,10 @@ func (c *Controller) initialize() {
 	callback := NewCallback()
 
 	wss := ego.NewWebsocketServer(c.config.Address).
+		WithWorker(c.config.WorkerNumber).
 		OnConnect(callback.OnConnect).
 		OnDisconnect(callback.OnDisconnect).
-		OnMessage(callback.OnMessage).WithWorker(c.config.WorkerNumber)
+		OnMessage(callback.OnMessage)
 
 	c.engine.WithServer(wss)
 }

@@ -75,12 +75,6 @@ type ProtoProvider interface {
 	Release(p *Proto)
 }
 
-var (
-	defaultProtoProvider = NewSharedProtoProvider()
-	AcquireProto         = defaultProtoProvider.Acquire
-	ReleaseProto         = defaultProtoProvider.Release
-)
-
 // TOODO 使用泛型
 // SharedProvider[T any]
 type SharedProtoProvider struct {

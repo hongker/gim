@@ -7,14 +7,16 @@ import (
 )
 
 type Callback struct {
-	codec Codec
-	em    *EventManager
+	codec    Codec
+	em       *EventManager
+	provider ProtoProvider
 }
 
 func NewCallback() *Callback {
 	c := &Callback{
-		codec: DefaultCodec(),
-		em:    NewEventManager(),
+		codec:    DefaultCodec(),
+		em:       NewEventManager(),
+		provider: NewSharedProtoProvider(),
 	}
 	return c
 }
@@ -29,8 +31,11 @@ func (c *Callback) OnMessage(ctx *ws.Context) {
 	defer runtime.HandleCrash()
 	component.Provider().Logger().Infof("[%s] OnMessage: %s", ctx.Conn().ID(), string(ctx.Body()))
 
-	proto := AcquireProto()
-	defer ReleaseProto(proto)
+	// acquire proto from provider,optimize for GC.
+	proto := c.provider.Acquire()
+	// release proto to provider
+	defer c.provider.Release(proto)
+
 	err := c.codec.Decode(ctx.Body(), proto)
 	if err != nil {
 		component.Provider().Logger().Errorf("[%s] OnDecode: %v", ctx.Conn().ID(), err)
