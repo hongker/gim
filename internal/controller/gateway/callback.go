@@ -2,8 +2,9 @@ package gateway
 
 import (
 	"github.com/ebar-go/ego/component"
-	"github.com/ebar-go/ego/server/ws"
+	"github.com/ebar-go/ego/server/socket"
 	"github.com/ebar-go/ego/utils/runtime"
+	"time"
 )
 
 type Callback struct {
@@ -21,13 +22,24 @@ func NewCallback() *Callback {
 	return c
 }
 
-func (c *Callback) OnConnect(conn ws.Conn) {
+func (c *Callback) OnConnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Connected, IP: %s", conn.ID(), conn.IP())
+
+	// close the connection if client don't send heartbeat request.
+	timer := time.NewTimer(time.Minute)
+	go func() {
+		<-timer.C
+		runtime.HandlerError(conn.Close(), func(err error) {
+			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
+		})
+	}()
+
+	conn.Property().Set("timer", timer)
 }
-func (c *Callback) OnDisconnect(conn ws.Conn) {
+func (c *Callback) OnDisconnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Disconnected", conn.ID())
 }
-func (c *Callback) OnMessage(ctx *ws.Context) {
+func (c *Callback) OnMessage(ctx *socket.Context) {
 	defer runtime.HandleCrash()
 	component.Provider().Logger().Infof("[%s] OnMessage: %s", ctx.Conn().ID(), string(ctx.Body()))
 

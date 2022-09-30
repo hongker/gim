@@ -89,3 +89,7 @@ require (
 	gorm.io/gorm v1.20.1 // indirect
 	gorm.io/plugin/dbresolver v1.0.0 // indirect
 )
+
+replace (
+github.com/ebar-go/ego => D:\Workspace\go\src\github.com\ebar-go\ego
+)

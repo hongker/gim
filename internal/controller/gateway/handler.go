@@ -7,18 +7,18 @@ import (
 	"gim/internal/domain/dto"
 	"gim/internal/domain/types/auth"
 	"github.com/ebar-go/ego/component"
-	"github.com/ebar-go/ego/server/ws"
+	"github.com/ebar-go/ego/server/socket"
 	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
 	"time"
 )
 
-type HandleFunc func(ctx *ws.Context, proto *Proto)
+type HandleFunc func(ctx *socket.Context, proto *Proto)
 
 type Action[Request, Response any] func(ctx context.Context, req *Request) (*Response, error)
 
 func generic[Request any, Response any](action Action[Request, Response]) HandleFunc {
-	return func(ctx *ws.Context, proto *Proto) {
+	return func(ctx *socket.Context, proto *Proto) {
 		req := new(Request)
 		err := runtime.Call(
 			// bind with request.
@@ -68,7 +68,7 @@ func NewEventManager() *EventManager {
 	}
 }
 
-func (em *EventManager) Handle(ctx *ws.Context, proto *Proto) {
+func (em *EventManager) Handle(ctx *socket.Context, proto *Proto) {
 	em.once.Do(em.initialize)
 
 	handler := em.handlers[proto.OperateType()]
@@ -109,6 +109,17 @@ func (em *EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) 
 
 func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
+
+	conn := ConnectionFromContext(ctx)
+	property := conn.Property().Get("timer")
+	if property == nil {
+		return
+	}
+	timer, ok := property.(*time.Timer)
+	if !ok {
+		return
+	}
+	timer.Reset(time.Minute)
 	return
 }
 
