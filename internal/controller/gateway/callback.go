@@ -13,10 +13,10 @@ type Callback struct {
 	provider ProtoProvider
 }
 
-func NewCallback() *Callback {
+func NewCallback(heartbeatInterval time.Duration) *Callback {
 	c := &Callback{
 		codec:    DefaultCodec(),
-		em:       NewEventManager(),
+		em:       NewEventManager(heartbeatInterval),
 		provider: NewSharedProtoProvider(),
 	}
 	return c
@@ -26,13 +26,11 @@ func (c *Callback) OnConnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Connected, IP: %s", conn.ID(), conn.IP())
 
 	// close the connection if client don't send heartbeat request.
-	timer := time.NewTimer(time.Minute)
-	go func() {
-		<-timer.C
+	timer := c.em.BuildClosedTimer(func() {
 		runtime.HandlerError(conn.Close(), func(err error) {
 			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
 		})
-	}()
+	})
 
 	conn.Property().Set("timer", timer)
 }

@@ -55,17 +55,30 @@ type EventManager struct {
 	cometApp    application.CometApplication
 	messageApp  application.MessageApplication
 	chatroomApp application.ChatroomApplication
+
+	heartbeatInterval time.Duration
 }
 
-func NewEventManager() *EventManager {
+func NewEventManager(heartbeatInterval time.Duration) *EventManager {
 	return &EventManager{
-		handlers: map[OperateType]HandleFunc{},
+		heartbeatInterval: heartbeatInterval,
+		handlers:          map[OperateType]HandleFunc{},
 
 		userApp:     application.NewUserApplication(),
 		cometApp:    application.GetCometApplication(),
 		messageApp:  application.NewMessageApplication(),
 		chatroomApp: application.NewChatroomApplication(),
 	}
+}
+
+func (em *EventManager) BuildClosedTimer(callback func()) *time.Timer {
+	timer := time.NewTimer(em.heartbeatInterval)
+	go func() {
+		defer runtime.HandleCrash()
+		<-timer.C
+		callback()
+	}()
+	return timer
 }
 
 func (em *EventManager) Handle(ctx *socket.Context, proto *Proto) {
@@ -104,12 +117,16 @@ func (em *EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (r
 
 func (em *EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
 	resp, err = em.userApp.Logout(ctx, req)
+	if err == nil {
+		em.cometApp.RemoveUserConnection(auth.UserFromContext(ctx))
+	}
 	return
 }
 
 func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 
+	// reset timer for close connection
 	conn := ConnectionFromContext(ctx)
 	property := conn.Property().Get("timer")
 	if property == nil {
@@ -119,7 +136,7 @@ func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatR
 	if !ok {
 		return
 	}
-	timer.Reset(time.Minute)
+	timer.Reset(em.heartbeatInterval)
 	return
 }
 

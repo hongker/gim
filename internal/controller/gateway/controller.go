@@ -36,7 +36,7 @@ func (c *Controller) WithName(name string) *Controller {
 func (c *Controller) initialize() {
 	c.engine = ego.New()
 
-	callback := NewCallback()
+	callback := NewCallback(c.config.HeartbeatInterval)
 
 	wss := ego.NewWebsocketServer(c.config.Address).
 		WithWorker(c.config.WorkerNumber).

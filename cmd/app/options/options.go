@@ -20,12 +20,13 @@ type ServerRunOptions struct {
 }
 
 const (
-	flagGatewayAddress   = "gateway-address"
-	flagProfilingEnabled = "profiling-enabled" //
-	flagTraceHeader      = "trace-header"
-	flagApiAddress       = "api-address"
-	flagGatewayWorker    = "gateway-worker"
-	flagGatewayCodec     = "gateway-codec"
+	flagGatewayAddress           = "gateway-address"
+	flagProfilingEnabled         = "profiling-enabled" //
+	flagTraceHeader              = "trace-header"
+	flagApiAddress               = "api-address"
+	flagGatewayWorker            = "gateway-worker"
+	flagGatewayCodec             = "gateway-codec"
+	flagGatewayHeartbeatInterval = "gateway-heartbeat-interval"
 )
 
 // Flags returns the command-line flags.
@@ -40,7 +41,7 @@ func (o *ServerRunOptions) Flags() []cli.Flag {
 		//&cli.IntFlag{Name: "push-count", Value: 5, Usage: "Set count of message push event"},
 		//&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
 		//&cli.StringFlag{Name: "storage", Aliases: []string{"s"}, Value: infrastructure.MemoryStore, Usage: "Set storage, like memory/redis"},
-		//&cli.DurationFlag{Name: "heartbeat", Value: time.Minute, Usage: "Set connection heartbeat interval"},
+		&cli.DurationFlag{Name: flagGatewayHeartbeatInterval, Aliases: []string{"heartbeat-interval"}, Value: time.Minute, Usage: "Set connection heartbeat interval"},
 	}
 }
 
@@ -50,6 +51,7 @@ func (o *ServerRunOptions) ParseArgsFromContext(ctx *cli.Context) {
 	o.enableProfiling = ctx.Bool(flagProfilingEnabled)
 	o.workerNumber = ctx.Int(flagGatewayWorker)
 	o.gatewayCodec = ctx.String(flagGatewayCodec)
+	o.heartbeatInterval = ctx.Duration(flagGatewayHeartbeatInterval)
 }
 
 func NewServerRunOptions() *ServerRunOptions {

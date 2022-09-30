@@ -9,6 +9,7 @@ import (
 type CometApplication interface {
 	SetUserConnection(uid string, conn socket.Connection)
 	GetUserConnection(uid string) (socket.Connection, error)
+	RemoveUserConnection(uid string)
 }
 
 type cometApplication struct {
@@ -30,6 +31,12 @@ func (app *cometApplication) GetUserConnection(uid string) (socket.Connection, e
 		return nil, errors.NotFound("user not connected")
 	}
 	return conn, nil
+}
+
+func (app *cometApplication) RemoveUserConnection(uid string) {
+	app.mu.Lock()
+	delete(app.connections, uid)
+	app.mu.Unlock()
 }
 
 func (app *cometApplication) JoinChatroom(roomId string, conn socket.Connection) {
