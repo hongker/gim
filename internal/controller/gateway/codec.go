@@ -1,9 +1,16 @@
 package gateway
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
+
+const (
+	CodecJson     = "json"
+	CodecProtobuf = "protobuf"
+)
 
 type Codec interface {
-	Decode([]byte) (*Proto, error)
+	Decode([]byte, *Proto) error
 	Encode(proto *Proto) []byte
 }
 
@@ -15,20 +22,22 @@ func JsonCodecInstance() Codec {
 	return &JsonCodec{}
 }
 
-type JsonCodec struct {
-}
+type JsonCodec struct{}
 
-func (c JsonCodec) Decode(bytes []byte) (*Proto, error) {
-	p := AcquireProto()
-	err := json.Unmarshal(bytes, p)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
+func (c JsonCodec) Decode(bytes []byte, p *Proto) error {
+	return json.Unmarshal(bytes, p)
 }
 
 func (c JsonCodec) Encode(proto *Proto) []byte {
 	b, _ := json.Marshal(proto)
-	ReleaseProto(proto)
 	return b
+}
+
+type ProtobufCodec struct{}
+
+func (c ProtobufCodec) Encode(p *Proto) []byte {
+	panic("implement me")
+}
+func (c ProtobufCodec) Decode(bytes []byte, p *Proto) error {
+	panic("implement me")
 }
