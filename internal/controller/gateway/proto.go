@@ -36,6 +36,12 @@ type Proto struct {
 	Seq     int         `json:"seq"`
 }
 
+func (p *Proto) reset() {
+	p.Operate = 0
+	p.Body = ""
+	p.Seq = 0
+}
+
 func (p *Proto) OperateType() OperateType {
 	return p.Operate
 }
@@ -65,36 +71,37 @@ func (p *Proto) Marshal(container interface{}) (err error) {
 }
 
 type ProtoProvider interface {
-	AcquireProto() *Proto
-	ReleaseProto(p *Proto)
+	Acquire() *Proto
+	Release(p *Proto)
 }
 
 var (
 	defaultProtoProvider = NewSharedProtoProvider()
-	AcquireProto         = defaultProtoProvider.AcquireProto
-	ReleaseProto         = defaultProtoProvider.ReleaseProto
+	AcquireProto         = defaultProtoProvider.Acquire
+	ReleaseProto         = defaultProtoProvider.Release
 )
 
 // TOODO 使用泛型
 // SharedProvider[T any]
 type SharedProtoProvider struct {
-	pool *sync.Pool
+	pool sync.Pool
 }
 
 func NewSharedProtoProvider() *SharedProtoProvider {
-	return &SharedProtoProvider{pool: &sync.Pool{New: func() interface{} {
-		return new(Proto)
-	}}}
+	return &SharedProtoProvider{
+		pool: sync.Pool{
+			New: func() interface{} {
+				return new(Proto)
+			}},
+	}
 }
 
-func (provider *SharedProtoProvider) AcquireProto() *Proto {
+func (provider *SharedProtoProvider) Acquire() *Proto {
 	p := provider.pool.Get().(*Proto)
-	p.Seq = 0
-	p.Body = ""
-	p.Operate = 0
+	p.reset()
 	return p
 }
 
-func (provider *SharedProtoProvider) ReleaseProto(p *Proto) {
+func (provider *SharedProtoProvider) Release(p *Proto) {
 	provider.pool.Put(p)
 }
