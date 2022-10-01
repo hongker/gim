@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"gim/api"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/server/socket"
 	"github.com/ebar-go/ego/utils/runtime"
@@ -10,14 +11,14 @@ import (
 type Callback struct {
 	codec    Codec
 	em       *EventManager
-	provider ProtoProvider
+	provider api.ProtoProvider
 }
 
 func NewCallback(heartbeatInterval time.Duration) *Callback {
 	c := &Callback{
 		codec:    DefaultCodec(),
 		em:       NewEventManager(heartbeatInterval),
-		provider: NewSharedProtoProvider(),
+		provider: api.NewSharedProtoProvider(),
 	}
 	return c
 }

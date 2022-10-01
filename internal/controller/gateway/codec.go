@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	"gim/api"
 )
 
 const (
@@ -10,8 +11,8 @@ const (
 )
 
 type Codec interface {
-	Decode([]byte, *Proto) error
-	Encode(proto *Proto) []byte
+	Decode([]byte, *api.Proto) error
+	Encode(proto *api.Proto) []byte
 }
 
 var (
@@ -24,20 +25,20 @@ func JsonCodecInstance() Codec {
 
 type JsonCodec struct{}
 
-func (c JsonCodec) Decode(bytes []byte, p *Proto) error {
+func (c JsonCodec) Decode(bytes []byte, p *api.Proto) error {
 	return json.Unmarshal(bytes, p)
 }
 
-func (c JsonCodec) Encode(proto *Proto) []byte {
+func (c JsonCodec) Encode(proto *api.Proto) []byte {
 	b, _ := json.Marshal(proto)
 	return b
 }
 
 type ProtobufCodec struct{}
 
-func (c ProtobufCodec) Encode(p *Proto) []byte {
+func (c ProtobufCodec) Encode(p *api.Proto) []byte {
 	panic("implement me")
 }
-func (c ProtobufCodec) Decode(bytes []byte, p *Proto) error {
+func (c ProtobufCodec) Decode(bytes []byte, p *api.Proto) error {
 	panic("implement me")
 }

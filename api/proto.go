@@ -1,4 +1,4 @@
-package gateway
+package api
 
 import (
 	"encoding/json"
@@ -22,6 +22,9 @@ const (
 
 	MessageQueryOperate      OperateType = 203
 	MessageQueryOperateReply OperateType = 204
+
+	MessagePushOperate      OperateType = 205
+	MessagePushOperateReply OperateType = 206
 
 	SessionListOperate      OperateType = 205
 	SessionListOperateReply OperateType = 206

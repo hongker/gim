@@ -13,12 +13,12 @@ import (
 	"time"
 )
 
-type HandleFunc func(ctx *socket.Context, proto *Proto)
+type HandleFunc func(ctx *socket.Context, proto *api.Proto)
 
 type Action[Request, Response any] func(ctx context.Context, req *Request) (*Response, error)
 
 func generic[Request any, Response any](action Action[Request, Response]) HandleFunc {
-	return func(ctx *socket.Context, proto *Proto) {
+	return func(ctx *socket.Context, proto *api.Proto) {
 		req := new(Request)
 		err := runtime.Call(
 			// bind with request.
@@ -28,7 +28,7 @@ func generic[Request any, Response any](action Action[Request, Response]) Handle
 			// invoke action.
 			func() error {
 				validatedCtx, err := NewValidatedContext(ctx)
-				if proto.Operate != LoginOperate && err != nil {
+				if proto.Operate != api.LoginOperate && err != nil {
 					return err
 				}
 
@@ -49,7 +49,7 @@ func generic[Request any, Response any](action Action[Request, Response]) Handle
 
 type EventManager struct {
 	once     sync.Once
-	handlers map[OperateType]HandleFunc
+	handlers map[api.OperateType]HandleFunc
 
 	userApp     application.UserApplication
 	cometApp    application.CometApplication
@@ -62,7 +62,7 @@ type EventManager struct {
 func NewEventManager(heartbeatInterval time.Duration) *EventManager {
 	return &EventManager{
 		heartbeatInterval: heartbeatInterval,
-		handlers:          map[OperateType]HandleFunc{},
+		handlers:          map[api.OperateType]HandleFunc{},
 
 		userApp:     application.NewUserApplication(),
 		cometApp:    application.GetCometApplication(),
@@ -81,7 +81,7 @@ func (em *EventManager) BuildClosedTimer(callback func()) *time.Timer {
 	return timer
 }
 
-func (em *EventManager) Handle(ctx *socket.Context, proto *Proto) {
+func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
 	em.once.Do(em.initialize)
 
 	handler := em.handlers[proto.OperateType()]
@@ -94,13 +94,13 @@ func (em *EventManager) Handle(ctx *socket.Context, proto *Proto) {
 }
 
 func (em *EventManager) initialize() {
-	em.handlers[LoginOperate] = generic[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
-	em.handlers[LogoutOperate] = generic[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
-	em.handlers[HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
-	em.handlers[MessageSendOperate] = generic[dto.MessageSendRequest, dto.MessageSendResponse](em.SendMessage)
-	em.handlers[MessageQueryOperate] = generic[dto.MessageQueryRequest, dto.MessageQueryResponse](em.QueryMessage)
-	em.handlers[SessionListOperate] = generic[dto.SessionQueryRequest, dto.SessionQueryResponse](em.ListSession)
-	em.handlers[ChatroomJoinOperate] = generic[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
+	em.handlers[api.LoginOperate] = generic[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
+	em.handlers[api.LogoutOperate] = generic[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
+	em.handlers[api.HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
+	em.handlers[api.MessageSendOperate] = generic[dto.MessageSendRequest, dto.MessageSendResponse](em.SendMessage)
+	em.handlers[api.MessageQueryOperate] = generic[dto.MessageQueryRequest, dto.MessageQueryResponse](em.QueryMessage)
+	em.handlers[api.SessionListOperate] = generic[dto.SessionQueryRequest, dto.SessionQueryResponse](em.ListSession)
+	em.handlers[api.ChatroomJoinOperate] = generic[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
 }
 
 func (em *EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
