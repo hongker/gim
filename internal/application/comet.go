@@ -41,6 +41,9 @@ func (app *cometApplication) GetUserConnection(uid string) (socket.Connection, e
 }
 
 func (app *cometApplication) RemoveUserConnection(uid string) {
+	if uid == "" {
+		return
+	}
 	app.mu.Lock()
 	delete(app.connections, uid)
 	app.mu.Unlock()

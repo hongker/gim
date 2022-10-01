@@ -25,15 +25,8 @@ func NewCallback(heartbeatInterval time.Duration) *Callback {
 
 func (c *Callback) OnConnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Connected, IP: %s", conn.ID(), conn.IP())
+	c.em.RunReleaseConnectionTimer(conn)
 
-	// close the connection if client don't send heartbeat request.
-	timer := c.em.BuildClosedTimer(func() {
-		runtime.HandleError(conn.Close(), func(err error) {
-			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
-		})
-	})
-
-	conn.Property().Set("timer", timer)
 }
 func (c *Callback) OnDisconnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Disconnected", conn.ID())

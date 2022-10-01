@@ -71,7 +71,7 @@ func NewEventManager(heartbeatInterval time.Duration) *EventManager {
 	}
 }
 
-func (em *EventManager) BuildClosedTimer(callback func()) *time.Timer {
+func (em *EventManager) buildReleaseTimer(callback func()) *time.Timer {
 	timer := time.NewTimer(em.heartbeatInterval)
 	go func() {
 		defer runtime.HandleCrash()
@@ -79,6 +79,29 @@ func (em *EventManager) BuildClosedTimer(callback func()) *time.Timer {
 		callback()
 	}()
 	return timer
+}
+
+func (em *EventManager) RunReleaseConnectionTimer(conn socket.Connection) {
+	// close the connection if client don't send heartbeat request.
+	timer := em.buildReleaseTimer(func() {
+		runtime.HandleError(conn.Close(), func(err error) {
+			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
+		})
+
+		em.cometApp.RemoveUserConnection(conn.Property().GetString(UidParam))
+
+	})
+
+	SetConnectionTimer(conn, timer)
+}
+
+func (em *EventManager) leaseConnection(conn socket.Connection) {
+	timer := GetTimerFromConnection(conn)
+	if timer == nil {
+		return
+	}
+
+	timer.Reset(em.heartbeatInterval)
 }
 
 func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
@@ -110,7 +133,7 @@ func (em *EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (r
 	}
 
 	conn := ConnectionFromContext(ctx)
-	conn.Property().Set(UidParam, req.ID)
+	SetConnectionUid(conn, req.ID)
 	em.cometApp.SetUserConnection(req.ID, conn)
 	return
 }
@@ -126,17 +149,9 @@ func (em *EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) 
 func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 
-	// reset timer for close connection
+	// lease timer for close connection
 	conn := ConnectionFromContext(ctx)
-	property := conn.Property().Get("timer")
-	if property == nil {
-		return
-	}
-	timer, ok := property.(*time.Timer)
-	if !ok {
-		return
-	}
-	timer.Reset(em.heartbeatInterval)
+	em.leaseConnection(conn)
 	return
 }
 
