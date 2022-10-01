@@ -57,12 +57,12 @@ func (job *MessageJob) getOrInitQueue(session *types.Session) *queue.GenericQueu
 			if session.IsPrivate() {
 				uid := session.GetPrivateUid()
 
-				runtime.HandlerError(job.cometApp.PushUserMessage(uid, packet.Encode()), func(err error) {
+				runtime.HandleError(job.cometApp.PushUserMessage(uid, packet.Encode()), func(err error) {
 					component.Provider().Logger().Errorf("push user message: %v, %v", uid, err)
 				})
 			} else if session.IsChatroom() {
 				roomId := session.GetChatroomId()
-				runtime.HandlerError(job.cometApp.PushChatroomMessage(roomId, packet.Encode()), func(err error) {
+				runtime.HandleError(job.cometApp.PushChatroomMessage(roomId, packet.Encode()), func(err error) {
 					component.Provider().Logger().Errorf("push room message: %v, %v", roomId, err)
 				})
 			}

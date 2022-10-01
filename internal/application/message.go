@@ -189,7 +189,7 @@ func (app messageApplication) deliverySessionMessage(session *types.Session, msg
 		}
 		err = lastErr
 	}
-	runtime.HandlerError(err, func(err error) {
+	runtime.HandleError(err, func(err error) {
 		component.Provider().Logger().Errorf("deliverySessionMessage: %v", err)
 	})
 }

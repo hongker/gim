@@ -28,7 +28,7 @@ func (c *Callback) OnConnect(conn socket.Connection) {
 
 	// close the connection if client don't send heartbeat request.
 	timer := c.em.BuildClosedTimer(func() {
-		runtime.HandlerError(conn.Close(), func(err error) {
+		runtime.HandleError(conn.Close(), func(err error) {
 			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
 		})
 	})

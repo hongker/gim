@@ -39,7 +39,7 @@ func generic[Request any, Response any](action Action[Request, Response]) Handle
 				return proto.Marshal(api.NewSuccessResponse(resp))
 			})
 
-		runtime.HandlerError(err, func(err error) {
+		runtime.HandleError(err, func(err error) {
 			_ = proto.Marshal(api.NewFailureResponse(err))
 		})
 		return
