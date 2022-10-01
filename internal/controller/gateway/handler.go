@@ -81,27 +81,27 @@ func (em *EventManager) buildReleaseTimer(callback func()) *time.Timer {
 	return timer
 }
 
-func (em *EventManager) RunReleaseConnectionTimer(conn socket.Connection) {
+func (em *EventManager) RegisterReleaseTimer(conn socket.Connection) {
 	// close the connection if client don't send heartbeat request.
 	timer := em.buildReleaseTimer(func() {
 		runtime.HandleError(conn.Close(), func(err error) {
 			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
 		})
 
-		em.cometApp.RemoveUserConnection(conn.Property().GetString(UidParam))
+		em.cometApp.RemoveUserConnection(GetUidFromConnection(conn))
 
 	})
 
 	SetConnectionTimer(conn, timer)
 }
 
-func (em *EventManager) leaseConnection(conn socket.Connection) {
+func (em *EventManager) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
 	timer := GetTimerFromConnection(conn)
 	if timer == nil {
 		return
 	}
 
-	timer.Reset(em.heartbeatInterval)
+	timer.Reset(duration)
 }
 
 func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
@@ -151,7 +151,7 @@ func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatR
 
 	// lease timer for close connection
 	conn := ConnectionFromContext(ctx)
-	em.leaseConnection(conn)
+	em.leaseReleaseTimer(conn, em.heartbeatInterval)
 	return
 }
 

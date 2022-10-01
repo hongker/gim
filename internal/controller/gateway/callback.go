@@ -25,7 +25,7 @@ func NewCallback(heartbeatInterval time.Duration) *Callback {
 
 func (c *Callback) OnConnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Connected, IP: %s", conn.ID(), conn.IP())
-	c.em.RunReleaseConnectionTimer(conn)
+	c.em.RegisterReleaseTimer(conn)
 
 }
 func (c *Callback) OnDisconnect(conn socket.Connection) {
