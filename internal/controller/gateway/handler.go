@@ -96,12 +96,9 @@ func (em *EventManager) RegisterReleaseTimer(conn socket.Connection) {
 }
 
 func (em *EventManager) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
-	timer := GetTimerFromConnection(conn)
-	if timer == nil {
-		return
-	}
-
-	timer.Reset(duration)
+	runtime.HandleNil[time.Timer](GetTimerFromConnection(conn), func(timer *time.Timer) {
+		timer.Reset(duration)
+	})
 }
 
 func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
