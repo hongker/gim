@@ -1,6 +1,7 @@
 package job
 
 import (
+	"gim/internal/controller/job/task"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
@@ -27,7 +28,7 @@ func (c *Controller) WithName(name string) *Controller {
 }
 
 func (c *Controller) initialize() {
-	NewMessageJob(c.config.QueuePollInterval, c.config.QueuePollCount).Prepare()
+	task.NewMessageTask(c.config.QueuePollInterval, c.config.QueuePollCount).Start()
 }
 
 func (c *Controller) run() {
