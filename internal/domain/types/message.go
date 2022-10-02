@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"gim/internal/domain/entity"
 	"time"
 )
 
@@ -24,6 +25,17 @@ type Message struct {
 	Sequence  int64           `json:"sequence"`
 	Status    int             `json:"status"`
 	CreatedAt int64           `json:"created_at"`
+}
+
+func (msg *Message) Entity() *entity.Message {
+	return &entity.Message{
+		Id:        msg.Id,
+		SenderId:  msg.SenderId,
+		Content:   msg.Content,
+		Category:  string(msg.Category),
+		Status:    msg.Status,
+		CreatedAt: msg.CreatedAt,
+	}
 }
 
 func (msg *Message) Encode() ([]byte, error) {

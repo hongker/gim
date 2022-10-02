@@ -116,28 +116,22 @@ func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.Us
 	}
 
 	// save source message
-	msg := &entity.Message{
+	msg := &types.Message{
 		Id:        uuid.NewV4().String(),
 		SenderId:  sender.Id,
 		Content:   req.Content,
-		Category:  req.Category,
+		Category:  types.MessageCategory(req.Category),
 		Status:    0,
 		CreatedAt: time.Now().UnixMilli(),
 	}
-	msg.SenderId = sender.Id
 
 	// save session message of sender and receiver.
 	err = runtime.Call(func() error {
 		senderSession := types.NewPrivateSession(sender.Id, receiver.Id, receiver.Name)
-
-		//go app.deliverySessionMessage(senderSession, msg)
-		app.delivery(senderSession, msg)
-		return app.sessionRepo.SaveMessage(ctx, sender.Id, senderSession.Entity(), msg)
+		return senderSession.SaveAndDelivery(ctx, app.sessionRepo, sender, msg)
 	}, func() error {
 		receiverSession := types.NewPrivateSession(receiver.Id, sender.Id, sender.Name)
-		//go app.deliverySessionMessage(receiverSession, msg)
-		app.delivery(receiverSession, msg)
-		return app.sessionRepo.SaveMessage(ctx, receiver.Id, receiverSession.Entity(), msg)
+		return receiverSession.SaveAndDelivery(ctx, app.sessionRepo, receiver, msg)
 	})
 
 	return
@@ -155,19 +149,17 @@ func (app messageApplication) sendChatroom(ctx context.Context, sender *entity.U
 	}
 
 	// save source message
-	msg := &entity.Message{
+	msg := &types.Message{
 		Id:        uuid.NewV4().String(),
 		SenderId:  sender.Id,
 		Content:   req.Content,
-		Category:  req.Category,
+		Category:  types.MessageCategory(req.Category),
 		Status:    0,
 		CreatedAt: time.Now().UnixMilli(),
 	}
-	msg.SenderId = sender.Id
 
 	chatroomSession := types.NewChatroomSession(chatroom.Id, chatroom.Name)
-	go app.deliverySessionMessage(chatroomSession, msg)
-	return app.sessionRepo.SaveMessage(ctx, sender.Id, chatroomSession.Entity(), msg)
+	return chatroomSession.SaveAndDelivery(ctx, app.sessionRepo, sender, msg)
 
 }
 
@@ -184,6 +176,7 @@ func (app messageApplication) pushUid(uid string, msg *types.Message) error {
 	return conn.Push(bytes)
 
 }
+
 func (app messageApplication) deliverySessionMessage(session *types.Session, msg *entity.Message) {
 	message := &types.Message{Id: msg.Id, SenderId: msg.SenderId, Category: types.MessageCategory(msg.Category), Content: msg.Content, CreatedAt: msg.CreatedAt}
 	var err error
@@ -207,11 +200,6 @@ func (app messageApplication) deliverySessionMessage(session *types.Session, msg
 	})
 }
 
-func (app messageApplication) delivery(session *types.Session, msg *entity.Message) {
-	message := &types.Message{Id: msg.Id, SenderId: msg.SenderId, Category: types.MessageCategory(msg.Category), Content: msg.Content, CreatedAt: msg.CreatedAt}
-	sessionMessage := &types.SessionMessage{Session: session, Message: message}
-	component.Provider().EventDispatcher().Trigger(dto.EventDeliveryMessage, sessionMessage)
-}
 func NewMessageApplication() MessageApplication {
 	return &messageApplication{
 		userRepo:     repository.NewUserRepository(),

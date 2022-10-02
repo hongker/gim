@@ -1,8 +1,13 @@
 package types
 
 import (
+	"context"
 	"fmt"
+	"gim/internal/domain/dto"
 	"gim/internal/domain/entity"
+	"gim/internal/domain/repository"
+	"github.com/ebar-go/ego/component"
+	"github.com/ebar-go/ego/utils/runtime"
 	"strconv"
 	"strings"
 )
@@ -63,4 +68,16 @@ func NewPrivateSession(senderId, receiverId string, title string) *Session {
 	userIds := []string{senderId, receiverId}
 	targetId := strings.Join(userIds, ":")
 	return NewSession(SessionId(SessionPrivate, targetId), title)
+}
+
+func (session *Session) SaveAndDelivery(ctx context.Context, sessionRepo repository.SessionRepository, user *entity.User, msg *Message) error {
+	go func() {
+		defer runtime.HandleCrash()
+
+		sessionMessage := &SessionMessage{Session: session, Message: msg}
+		component.Provider().EventDispatcher().Trigger(dto.EventDeliveryMessage, sessionMessage)
+	}()
+
+	// save message
+	return sessionRepo.SaveMessage(ctx, user.Id, session.Entity(), msg.Entity())
 }
