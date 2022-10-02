@@ -13,12 +13,19 @@ import (
 	"time"
 )
 
+// MessaegApplication represents message application
 type MessageApplication interface {
+	// Send sends a message to the receiver or chatroom.
 	Send(ctx context.Context, uid string, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error)
+
+	// Query return message response.
 	Query(ctx context.Context, req *dto.MessageQueryRequest) (*dto.MessageQueryResponse, error)
+
+	// ListSession returns user sessions.
 	ListSession(ctx context.Context, uid string, req *dto.SessionQueryRequest) (*dto.SessionQueryResponse, error)
 }
 
+// messageApplication implements the MessageApplication interface
 type messageApplication struct {
 	userRepo     repository.UserRepository
 	sessionRepo  repository.SessionRepository
@@ -31,10 +38,14 @@ func (app messageApplication) Send(ctx context.Context, uid string, req *dto.Mes
 		return nil, errors.WithMessage(err, "find sender")
 	}
 
-	if req.Type == types.SessionPrivate {
+	switch req.Type {
+	case types.SessionPrivate:
 		err = app.sendPrivate(ctx, sender, req)
-	} else {
+	case types.SessionChatroom:
 		err = app.sendChatroom(ctx, sender, req)
+	default:
+		err = errors.InvalidParam("unknown session type")
+
 	}
 
 	return
@@ -95,6 +106,8 @@ func (app messageApplication) ListSession(ctx context.Context, uid string, req *
 	}
 	return res, nil
 }
+
+// -------------------------private methods------------------------
 func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.User, req *dto.MessageSendRequest) (err error) {
 	// find receiver info
 	receiver, err := app.userRepo.Find(ctx, req.TargetId)
