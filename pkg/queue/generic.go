@@ -40,6 +40,19 @@ func (q *GenericQueue[T]) Poll(duration time.Duration, fn func(items []T)) {
 				timer.Reset(duration)
 			}
 			q.mu.Unlock()
+		default:
+			//if q.limit || q.l.Len() < q.cap {
+			//	continue
+			//}
+			//q.mu.Lock()
+			//// 按容量来触发批处理
+			//items := make([]T, 0, q.l.Len())
+			//for next := q.l.Front(); next != nil; next = next.Next() {
+			//	items = append(items, next.Value)
+			//}
+			//q.l.Init()
+			//fn(items)
+			//q.mu.Unlock()
 		}
 	}
 }
