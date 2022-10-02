@@ -9,14 +9,14 @@ import (
 )
 
 type Callback struct {
-	codec    Codec
+	codec    api.Codec
 	em       *EventManager
 	provider api.ProtoProvider
 }
 
 func NewCallback(heartbeatInterval time.Duration) *Callback {
 	c := &Callback{
-		codec:    DefaultCodec(),
+		codec:    api.DefaultCodec(),
 		em:       NewEventManager(heartbeatInterval),
 		provider: api.NewSharedProtoProvider(),
 	}

@@ -73,16 +73,24 @@ func (task *MessageTask) initQueue(session *types.Session) *queue.GenericQueue[*
 func (task *MessageTask) handleSessionMessage(session *types.Session, messages []*types.Message) {
 	packet := &types.MessagePacket{Session: session, Items: messages}
 
+	proto := task.provider.Acquire()
+	proto.Operate = api.MessagePushOperate
+	defer task.provider.Release(proto)
+	runtime.HandleError(proto.Marshal(packet), func(err error) {
+		component.Provider().Logger().Errorf("proto marshal: %v", err)
+	})
+
+	bytes := api.DefaultCodec().Encode(proto)
 	// send private message
 	if session.IsPrivate() {
 		uid := session.GetPrivateUid()
 
-		runtime.HandleError(task.cometApp.PushUserMessage(uid, packet.Encode()), func(err error) {
+		runtime.HandleError(task.cometApp.PushUserMessage(uid, bytes), func(err error) {
 			component.Provider().Logger().Errorf("push user message: %v, %v", uid, err)
 		})
 	} else if session.IsChatroom() {
 		roomId := session.GetChatroomId()
-		runtime.HandleError(task.cometApp.PushChatroomMessage(roomId, packet.Encode()), func(err error) {
+		runtime.HandleError(task.cometApp.PushChatroomMessage(roomId, bytes), func(err error) {
 			component.Provider().Logger().Errorf("push room message: %v, %v", roomId, err)
 		})
 	}

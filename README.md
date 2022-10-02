@@ -56,9 +56,16 @@ GLOBAL OPTIONS:
 --message-push-concurrency-limit: 消息推送并发上限
 --storage: 存储类型(memory, redis)
 ```
-## 模块设计
+## 应用领域
+- 游戏   
+支持高并发，低带宽的功能特性
 ```
-
+--enbale-message-sequence=false 
+```
+- 社交
+支持低延时，高可达率的功能特性
+```
+--enbale-message-sequence=true
 ```
 
 ## 连接测试

@@ -88,7 +88,10 @@ var cometApplicationOnce struct {
 
 func GetCometApplication() CometApplication {
 	cometApplicationOnce.once.Do(func() {
-		cometApplicationOnce.instance = &cometApplication{connections: map[string]socket.Connection{}}
+		cometApplicationOnce.instance = &cometApplication{
+			connections:  map[string]socket.Connection{},
+			chatroomRepo: repository.NewChatroomRepository(),
+		}
 	})
 	return cometApplicationOnce.instance
 }
