@@ -27,7 +27,7 @@ func (c *Controller) WithName(name string) *Controller {
 }
 
 func (c *Controller) initialize() {
-	NewMessageJob().Prepare()
+	NewMessageJob(c.config.QueuePollInterval, c.config.QueuePollCount).Prepare()
 }
 
 func (c *Controller) run() {

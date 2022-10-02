@@ -17,6 +17,8 @@ type ServerRunOptions struct {
 	heartbeatInterval time.Duration
 	workerNumber      int
 	gatewayCodec      string
+	queuePollInterval time.Duration
+	queuePollCount    int
 }
 
 const (
@@ -27,6 +29,8 @@ const (
 	flagGatewayWorker            = "gateway-worker"
 	flagGatewayCodec             = "gateway-codec"
 	flagGatewayHeartbeatInterval = "gateway-heartbeat-interval"
+	flagJobQueuePollInterval     = "job-queue-poll-interval"
+	flagJobQueuePollCount        = "job-queue-poll-count"
 )
 
 // Flags returns the command-line flags.
@@ -42,6 +46,8 @@ func (o *ServerRunOptions) Flags() []cli.Flag {
 		//&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
 		//&cli.StringFlag{Name: "storage", Aliases: []string{"s"}, Value: infrastructure.MemoryStore, Usage: "Set storage, like memory/redis"},
 		&cli.DurationFlag{Name: flagGatewayHeartbeatInterval, Aliases: []string{"heartbeat-interval"}, Value: time.Minute * 10, Usage: "Set connection heartbeat interval"},
+		&cli.DurationFlag{Name: flagJobQueuePollInterval, Aliases: []string{"queue-poll-interval"}, Value: time.Second, Usage: "Set job queue poll interval"},
+		&cli.IntFlag{Name: flagJobQueuePollCount, Aliases: []string{"queue-poll-count"}, Value: 10, Usage: "Set job queue poll count"},
 	}
 }
 
@@ -52,6 +58,9 @@ func (o *ServerRunOptions) ParseArgsFromContext(ctx *cli.Context) {
 	o.workerNumber = ctx.Int(flagGatewayWorker)
 	o.gatewayCodec = ctx.String(flagGatewayCodec)
 	o.heartbeatInterval = ctx.Duration(flagGatewayHeartbeatInterval)
+	o.queuePollInterval = ctx.Duration(flagJobQueuePollCount)
+	o.queuePollCount = ctx.Int(flagJobQueuePollCount)
+
 }
 
 func NewServerRunOptions() *ServerRunOptions {
@@ -83,6 +92,9 @@ func (o *completedServerRunOptions) applyTo(config *internal.Config) {
 	config.ApiControllerConfig.Address = o.apiAddress
 	config.ApiControllerConfig.TraceHeader = o.traceHeader
 	config.ApiControllerConfig.EnableProfiling = o.enableProfiling
+
+	config.JobControllerConfig.QueuePollCount = o.queuePollCount
+	config.JobControllerConfig.QueuePollInterval = o.queuePollInterval
 
 }
 

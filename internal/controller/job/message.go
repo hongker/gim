@@ -17,13 +17,18 @@ type MessageJob struct {
 	mu       sync.Mutex
 	queues   map[string]*queue.GenericQueue[*types.Message]
 	provider *api.SharedProtoProvider
+
+	pollInterval time.Duration
+	pollCount    int
 }
 
-func NewMessageJob() *MessageJob {
+func NewMessageJob(queuePollInterval time.Duration, queuePollCount int) *MessageJob {
 	return &MessageJob{
-		queues:   make(map[string]*queue.GenericQueue[*types.Message]),
-		cometApp: application.GetCometApplication(),
-		provider: api.NewSharedProtoProvider(),
+		queues:       make(map[string]*queue.GenericQueue[*types.Message]),
+		cometApp:     application.GetCometApplication(),
+		provider:     api.NewSharedProtoProvider(),
+		pollInterval: queuePollInterval,
+		pollCount:    queuePollCount,
 	}
 }
 
@@ -32,6 +37,7 @@ func (job *MessageJob) Prepare() {
 }
 
 func (job *MessageJob) initialize() {
+	// listen event.
 	component.ListenEvent[*types.SessionMessage](dto.EventDeliveryMessage, func(item *types.SessionMessage) {
 		job.getOrInitQueue(item.Session).Offer(item.Message)
 	})
@@ -43,15 +49,11 @@ func (job *MessageJob) getOrInitQueue(session *types.Session) *queue.GenericQueu
 	if q, ok := job.queues[session.Id]; ok {
 		return q
 	}
-	q := queue.NewGenericQueue[*types.Message](10, true)
+	q := queue.NewGenericQueue[*types.Message](job.pollCount, true)
 	go func() {
 		defer runtime.HandleCrash()
-		q.Poll(time.Second, func(items []*types.Message) {
+		q.Poll(job.pollInterval, func(items []*types.Message) {
 			packet := &types.MessagePacket{Session: session, Items: items}
-			//proto := c.provider.Acquire()
-			//if err := proto.Marshal(packet); err != nil {
-			//	return
-			//}
 
 			// send private message
 			if session.IsPrivate() {
