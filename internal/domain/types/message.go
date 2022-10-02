@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"gim/internal/domain/entity"
+	uuid "github.com/satori/go.uuid"
 	"time"
 )
 
@@ -42,8 +43,10 @@ func (msg *Message) Encode() ([]byte, error) {
 	return json.Marshal(msg)
 }
 
-func NewMessage(category MessageCategory, content string) *Message {
+func NewMessage(senderId string, category MessageCategory, content string) *Message {
 	return &Message{
+		Id:        uuid.NewV4().String(),
+		SenderId:  senderId,
 		Category:  category,
 		Content:   content,
 		Status:    MessageStatusNormal,
@@ -51,12 +54,12 @@ func NewMessage(category MessageCategory, content string) *Message {
 	}
 }
 
-func NewTextMessage(content string) *Message {
-	return NewMessage(MessageText, content)
+func NewTextMessage(senderId string, content string) *Message {
+	return NewMessage(senderId, MessageText, content)
 }
 
-func NewPictureMessage(content string) *Message {
-	return NewMessage(MessagePicture, content)
+func NewPictureMessage(senderId string, content string) *Message {
+	return NewMessage(senderId, MessagePicture, content)
 }
 
 type SessionMessage struct {

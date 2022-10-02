@@ -9,8 +9,6 @@ import (
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/utils/runtime"
-	uuid "github.com/satori/go.uuid"
-	"time"
 )
 
 // MessaegApplication represents message application
@@ -45,7 +43,6 @@ func (app messageApplication) Send(ctx context.Context, uid string, req *dto.Mes
 		err = app.sendChatroom(ctx, sender, req)
 	default:
 		err = errors.InvalidParam("unknown session type")
-
 	}
 
 	return
@@ -116,14 +113,7 @@ func (app messageApplication) sendPrivate(ctx context.Context, sender *entity.Us
 	}
 
 	// save source message
-	msg := &types.Message{
-		Id:        uuid.NewV4().String(),
-		SenderId:  sender.Id,
-		Content:   req.Content,
-		Category:  types.MessageCategory(req.Category),
-		Status:    0,
-		CreatedAt: time.Now().UnixMilli(),
-	}
+	msg := types.NewTextMessage(sender.Id, req.Content)
 
 	// save session message of sender and receiver.
 	err = runtime.Call(func() error {
@@ -149,55 +139,11 @@ func (app messageApplication) sendChatroom(ctx context.Context, sender *entity.U
 	}
 
 	// save source message
-	msg := &types.Message{
-		Id:        uuid.NewV4().String(),
-		SenderId:  sender.Id,
-		Content:   req.Content,
-		Category:  types.MessageCategory(req.Category),
-		Status:    0,
-		CreatedAt: time.Now().UnixMilli(),
-	}
+	msg := types.NewTextMessage(sender.Id, req.Content)
 
 	chatroomSession := types.NewChatroomSession(chatroom.Id, chatroom.Name)
 	return chatroomSession.SaveAndDelivery(ctx, app.sessionRepo, sender, msg)
 
-}
-
-func (app messageApplication) pushUid(uid string, msg *types.Message) error {
-	conn, err := GetCometApplication().GetUserConnection(uid)
-	if err != nil {
-		return err
-	}
-
-	bytes, err := msg.Encode()
-	if err != nil {
-		return err
-	}
-	return conn.Push(bytes)
-
-}
-
-func (app messageApplication) deliverySessionMessage(session *types.Session, msg *entity.Message) {
-	message := &types.Message{Id: msg.Id, SenderId: msg.SenderId, Category: types.MessageCategory(msg.Category), Content: msg.Content, CreatedAt: msg.CreatedAt}
-	var err error
-	if session.IsPrivate() {
-		uid := session.GetPrivateUid()
-		err = app.pushUid(uid, message)
-
-	} else if session.IsChatroom() {
-		chatroom, lastErr := app.chatroomRepo.Find(context.TODO(), session.GetChatroomId())
-		if lastErr != nil {
-			err = errors.WithMessage(lastErr, "find chatroom")
-		}
-		members, lastErr := app.chatroomRepo.GetMember(context.Background(), chatroom)
-		for _, member := range members {
-			_ = app.pushUid(member, message)
-		}
-		err = lastErr
-	}
-	runtime.HandleError(err, func(err error) {
-		component.Provider().Logger().Errorf("deliverySessionMessage: %v", err)
-	})
 }
 
 func NewMessageApplication() MessageApplication {
