@@ -7,14 +7,14 @@ import (
 )
 
 // NewCommand returns a new instance of *cli.App
-func NewCommand(name string) *cli.App {
+func NewCommand(name, usage string) *cli.App {
 	// new options
 	s := options.NewServerRunOptions()
 
 	app := &cli.App{
 		Name:    name,
 		Version: internal.Version,
-		Usage:   "simple and fast im service",
+		Usage:   usage,
 		Flags:   s.Flags(),
 		Action: func(ctx *cli.Context) error {
 			// parse command line arguments

@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	AppName = "gim"
+	name  = "gim"
+	usage = "simple and fast im service"
 )
 
 func main() {
 	// bootstrap with command line
-	cmd := app.NewCommand(AppName)
+	cmd := app.NewCommand(name, usage)
 
 	// run the command with os.Args.
 	runtime.HandleError(cmd.Run(os.Args), func(err error) {
