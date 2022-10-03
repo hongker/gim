@@ -61,8 +61,8 @@ func generic[Request any, Response any](action Action[Request, Response]) Handle
 }
 
 type Handler struct {
-	once     sync.Once
-	handlers map[api.OperateType]HandleFunc
+	once   sync.Once
+	routes map[api.OperateType]HandleFunc
 
 	userApp     application.UserApplication
 	cometApp    application.CometApplication
@@ -75,7 +75,7 @@ type Handler struct {
 func NewHandler(heartbeatInterval time.Duration) *Handler {
 	return &Handler{
 		heartbeatInterval: heartbeatInterval,
-		handlers:          map[api.OperateType]HandleFunc{},
+		routes:            map[api.OperateType]HandleFunc{},
 
 		userApp:     application.NewUserApplication(),
 		cometApp:    application.GetCometApplication(),
@@ -84,8 +84,37 @@ func NewHandler(heartbeatInterval time.Duration) *Handler {
 	}
 }
 
-func (em *Handler) buildReleaseTimer(callback func()) *time.Timer {
-	timer := time.NewTimer(em.heartbeatInterval)
+// InitializeConn initializes connection
+func (handler *Handler) InitializeConn(conn socket.Connection) {
+	// start release timer
+	handler.startReleaseTimer(conn)
+}
+
+// FinalizeConn finalizes connection
+func (handler *Handler) FinalizeConn(conn socket.Connection) {
+	// stop release timer
+	handler.stopReleaseTimer(conn)
+}
+
+// HandleRequest handle user requests
+func (handler *Handler) HandleRequest(ctx *socket.Context, proto *api.Proto) {
+	handler.once.Do(handler.initialize)
+
+	fn := handler.routes[proto.OperateType()]
+	if fn == nil {
+		component.Provider().Logger().Errorf("[%s] No handler registered for type: %s", ctx.Conn().ID(), proto.OperateType())
+		return
+	}
+
+	fn(ctx, proto)
+}
+
+func (handler *Handler) initialize() {
+	handler.registerRoutes()
+}
+
+func (handler *Handler) buildReleaseTimer(callback func()) *time.Timer {
+	timer := time.NewTimer(handler.heartbeatInterval)
 	go func() {
 		defer runtime.HandleCrash()
 		<-timer.C
@@ -94,27 +123,15 @@ func (em *Handler) buildReleaseTimer(callback func()) *time.Timer {
 	return timer
 }
 
-// InitializeConn initializes connection
-func (em *Handler) InitializeConn(conn socket.Connection) {
-	// start release timer
-	em.startReleaseTimer(conn)
-}
-
-// FinalizeConn finalizes connection
-func (em *Handler) FinalizeConn(conn socket.Connection) {
-	// stop release timer
-	em.stopReleaseTimer(conn)
-}
-
 // startReleaseTimer
-func (em *Handler) startReleaseTimer(conn socket.Connection) {
+func (handler *Handler) startReleaseTimer(conn socket.Connection) {
 	// close the connection if client don't send heartbeat request.
-	timer := em.buildReleaseTimer(func() {
+	timer := handler.buildReleaseTimer(func() {
 		runtime.HandleError(conn.Close(), func(err error) {
 			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
 		})
 
-		em.cometApp.RemoveUserConnection(stateful.GetUidFromConnection(conn))
+		handler.cometApp.RemoveUserConnection(stateful.GetUidFromConnection(conn))
 
 	})
 
@@ -122,93 +139,87 @@ func (em *Handler) startReleaseTimer(conn socket.Connection) {
 }
 
 // leaseReleaseTimer
-func (em *Handler) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
+func (handler *Handler) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
 	runtime.HandleNil[time.Timer](stateful.GetTimerFromConnection(conn), func(timer *time.Timer) {
 		timer.Reset(duration)
 	})
 }
 
 // stopReleaseTimer
-func (em *Handler) stopReleaseTimer(conn socket.Connection) {
+func (handler *Handler) stopReleaseTimer(conn socket.Connection) {
 	runtime.HandleNil[time.Timer](stateful.GetTimerFromConnection(conn), func(timer *time.Timer) {
 		timer.Stop()
 	})
 }
 
-func (em *Handler) Handle(ctx *socket.Context, proto *api.Proto) {
-	em.once.Do(em.initialize)
-
-	handler := em.handlers[proto.OperateType()]
-	if handler == nil {
-		component.Provider().Logger().Errorf("[%s] No handler registered for type: %s", ctx.Conn().ID(), proto.OperateType())
-		return
-	}
-
-	handler(ctx, proto)
+// registerRoutes registers routes
+func (handler *Handler) registerRoutes() {
+	handler.routes[api.LoginOperate] = generic[dto.UserLoginRequest, dto.UserLoginResponse](handler.Login)
+	handler.routes[api.LogoutOperate] = generic[dto.UserLogoutRequest, dto.UserLogoutResponse](handler.Logout)
+	handler.routes[api.HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](handler.Heartbeat)
+	handler.routes[api.MessageSendOperate] = generic[dto.MessageSendRequest, dto.MessageSendResponse](handler.SendMessage)
+	handler.routes[api.MessageQueryOperate] = generic[dto.MessageQueryRequest, dto.MessageQueryResponse](handler.QueryMessage)
+	handler.routes[api.SessionListOperate] = generic[dto.SessionQueryRequest, dto.SessionQueryResponse](handler.ListSession)
+	handler.routes[api.ChatroomJoinOperate] = generic[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](handler.JoinChatroom)
 }
 
-func (em *Handler) initialize() {
-	em.prepareHandlers()
-}
-
-func (em *Handler) prepareHandlers() {
-	em.handlers[api.LoginOperate] = generic[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
-	em.handlers[api.LogoutOperate] = generic[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
-	em.handlers[api.HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
-	em.handlers[api.MessageSendOperate] = generic[dto.MessageSendRequest, dto.MessageSendResponse](em.SendMessage)
-	em.handlers[api.MessageQueryOperate] = generic[dto.MessageQueryRequest, dto.MessageQueryResponse](em.QueryMessage)
-	em.handlers[api.SessionListOperate] = generic[dto.SessionQueryRequest, dto.SessionQueryResponse](em.ListSession)
-	em.handlers[api.ChatroomJoinOperate] = generic[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
-}
-
-func (em *Handler) Login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
-	resp, err = em.userApp.Login(ctx, req)
+// Login handle user login request
+func (handler *Handler) Login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
+	resp, err = handler.userApp.Login(ctx, req)
 	if err != nil {
 		return
 	}
 
 	conn := stateful.ConnectionFromContext(ctx)
 	stateful.SetConnectionUid(conn, req.ID)
-	em.cometApp.SetUserConnection(req.ID, conn)
+	handler.cometApp.SetUserConnection(req.ID, conn)
 	return
 }
 
-func (em *Handler) Logout(ctx context.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
-	resp, err = em.userApp.Logout(ctx, req)
+// Logout handle user logout request
+func (handler *Handler) Logout(ctx context.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
+	resp, err = handler.userApp.Logout(ctx, req)
 
 	if err == nil {
-		em.cometApp.RemoveUserConnection(stateful.UserFromContext(ctx))
+		handler.cometApp.RemoveUserConnection(stateful.UserFromContext(ctx))
 	}
 	return
 }
 
-func (em *Handler) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
+// Heartbeat handle user heartbeat request
+func (handler *Handler) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 
 	// lease timer for close connection
 	conn := stateful.ConnectionFromContext(ctx)
-	em.leaseReleaseTimer(conn, em.heartbeatInterval)
+	handler.leaseReleaseTimer(conn, handler.heartbeatInterval)
 	return
 }
 
-func (em *Handler) FindUser(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
-	return em.userApp.Find(ctx, req)
+// FindUser handle user query request
+func (handler *Handler) FindUser(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
+	return handler.userApp.Find(ctx, req)
 }
 
-func (em *Handler) SendMessage(ctx context.Context, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
+// SendMessage handle user send message request
+func (handler *Handler) SendMessage(ctx context.Context, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
 	uid := stateful.UserFromContext(ctx)
-	return em.messageApp.Send(ctx, uid, req)
+	return handler.messageApp.Send(ctx, uid, req)
 }
 
-func (em *Handler) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
+// JoinChatroom handle user join chatroom request
+func (handler *Handler) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
 	uid := stateful.UserFromContext(ctx)
-	return em.chatroomApp.Join(ctx, uid, req)
+	return handler.chatroomApp.Join(ctx, uid, req)
 }
 
-func (em *Handler) QueryMessage(ctx context.Context, req *dto.MessageQueryRequest) (resp *dto.MessageQueryResponse, err error) {
-	return em.messageApp.Query(ctx, req)
+// QueryMessage handle user query session message request
+func (handler *Handler) QueryMessage(ctx context.Context, req *dto.MessageQueryRequest) (resp *dto.MessageQueryResponse, err error) {
+	return handler.messageApp.Query(ctx, req)
 }
-func (em *Handler) ListSession(ctx context.Context, req *dto.SessionQueryRequest) (resp *dto.SessionQueryResponse, err error) {
+
+// ListSession handle use list session request
+func (handler *Handler) ListSession(ctx context.Context, req *dto.SessionQueryRequest) (resp *dto.SessionQueryResponse, err error) {
 	uid := stateful.UserFromContext(ctx)
-	return em.messageApp.ListSession(ctx, uid, req)
+	return handler.messageApp.ListSession(ctx, uid, req)
 }

@@ -54,7 +54,7 @@ func (c *Callback) OnMessage(ctx *socket.Context) {
 		return
 	}
 
-	c.handler.Handle(ctx, proto)
+	c.handler.HandleRequest(ctx, proto)
 
 	response := c.codec.Encode(proto)
 	component.Provider().Logger().Infof("[%s] OnResponse: %s", ctx.Conn().ID(), string(response))
