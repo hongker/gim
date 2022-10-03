@@ -24,8 +24,7 @@ func (srv *Server) Run() error {
 	// run one times.
 	srv.once.Do(srv.initialize)
 
-	// run with signal
-	return srv.run(signal.SetupSignalHandler())
+	return srv.run()
 }
 
 // initialize init controllers.
@@ -36,7 +35,8 @@ func (srv *Server) initialize() {
 }
 
 // run start controller async.
-func (srv *Server) run(stopCh <-chan struct{}) error {
+func (srv *Server) run() error {
+	// use watcher to watch daemon controllers.
 	watch := runtime.NewWatcher(
 		controller.NewDaemonController(srv.gatewayController).NonBlockingRun(),
 		controller.NewDaemonController(srv.apiController).NonBlockingRun(),
@@ -44,7 +44,9 @@ func (srv *Server) run(stopCh <-chan struct{}) error {
 	)
 
 	component.Provider().Logger().Infof("server started successfully")
-	runtime.WaitClose(stopCh, watch.Stop, srv.shutdown)
+
+	// call watch.Stop() and shutdown() when closed signal is received
+	runtime.WaitClose(signal.SetupSignalHandler(), watch.Stop, srv.shutdown)
 	return nil
 }
 
