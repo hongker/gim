@@ -36,18 +36,15 @@ const (
 // Flags returns the command-line flags.
 func (o *ServerRunOptions) Flags() []cli.Flag {
 	return []cli.Flag{
+		&cli.IntFlag{Name: flagJobQueuePollCount, Aliases: []string{"queue-poll-count"}, Value: 10, Usage: "Set job queue poll count"},
+		&cli.IntFlag{Name: flagGatewayWorker, Aliases: []string{"ws-worker"}, Value: runtime.NumCPU(), Usage: "Set websocket server worker number"},
+		&cli.BoolFlag{Name: flagProfilingEnabled, Aliases: []string{"profiling"}, Value: false, Usage: "Set pprof switch"},
 		&cli.StringFlag{Name: flagGatewayAddress, Aliases: []string{"ws"}, Value: ":8080", Usage: "Set websocket server bind address"},
 		&cli.StringFlag{Name: flagTraceHeader, Aliases: []string{"trace"}, Value: "trace", Usage: "Set trace header"},
-		&cli.BoolFlag{Name: flagProfilingEnabled, Aliases: []string{"profiling"}, Value: false, Usage: "Set pprof switch"},
 		&cli.StringFlag{Name: flagApiAddress, Aliases: []string{"http"}, Value: ":8081", Usage: "Set http server bind address"},
-		&cli.IntFlag{Name: flagGatewayWorker, Aliases: []string{"ws-worker"}, Value: runtime.NumCPU(), Usage: "Set websocket server worker number"},
 		&cli.StringFlag{Name: flagGatewayCodec, Aliases: []string{"codec"}, Value: "json", Usage: "Set packet codec type(json/protobuf)"},
-		//&cli.IntFlag{Name: "push-count", Value: 5, Usage: "Set count of message push event"},
-		//&cli.BoolFlag{Name: "debug", Value: false, Usage: "Set debug mode"},
-		//&cli.StringFlag{Name: "storage", Aliases: []string{"s"}, Value: infrastructure.MemoryStore, Usage: "Set storage, like memory/redis"},
 		&cli.DurationFlag{Name: flagGatewayHeartbeatInterval, Aliases: []string{"heartbeat-interval"}, Value: time.Minute * 10, Usage: "Set connection heartbeat interval"},
 		&cli.DurationFlag{Name: flagJobQueuePollInterval, Aliases: []string{"queue-poll-interval"}, Value: time.Second, Usage: "Set job queue poll interval"},
-		&cli.IntFlag{Name: flagJobQueuePollCount, Aliases: []string{"queue-poll-count"}, Value: 10, Usage: "Set job queue poll count"},
 	}
 }
 

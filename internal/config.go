@@ -26,8 +26,8 @@ func NewConfig() *Config {
 }
 
 // BuildInstance return a new server instance.
-func (c *Config) BuildInstance() *Server {
+func (config *Config) BuildInstance() *Server {
 	return &Server{
-		config: c,
+		config: config,
 	}
 }

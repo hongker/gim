@@ -14,18 +14,19 @@ type Server struct {
 	once   sync.Once
 	config *Config
 
-	controllers       []controller.Controller
 	gatewayController controller.Controller
 	apiController     controller.Controller
 	jobController     controller.Controller
 }
 
 // Run runs the server
-func (srv *Server) Run() {
+func (srv *Server) Run() error {
 	// run one times.
 	srv.once.Do(srv.initialize)
 
 	srv.run(signal.SetupSignalHandler())
+
+	return nil
 }
 
 // initialize init controllers.
