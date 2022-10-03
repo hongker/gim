@@ -5,8 +5,9 @@ import (
 	"gim/api"
 	"gim/internal/application"
 	"gim/internal/domain/dto"
-	"gim/internal/domain/types/auth"
+	"gim/internal/domain/stateful"
 	"github.com/ebar-go/ego/component"
+	"github.com/ebar-go/ego/errors"
 	"github.com/ebar-go/ego/server/socket"
 	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
@@ -16,6 +17,18 @@ import (
 type HandleFunc func(ctx *socket.Context, proto *api.Proto)
 
 type Action[Request, Response any] func(ctx context.Context, req *Request) (*Response, error)
+
+// newValidatedContext returns a new context
+// if user is not authenticated, context only include connection param.
+// if user is authenticated, context include uid param and connection param.
+func newValidatedContext(ctx *socket.Context) (context.Context, error) {
+	uid := stateful.GetUidFromConnection(ctx.Conn())
+	connCtx := stateful.NewConnectionContext(ctx, ctx.Conn())
+	if uid == "" {
+		return connCtx, errors.Unauthorized("login required")
+	}
+	return stateful.NewUserContext(connCtx, uid), nil
+}
 
 func generic[Request any, Response any](action Action[Request, Response]) HandleFunc {
 	return func(ctx *socket.Context, proto *api.Proto) {
@@ -27,7 +40,7 @@ func generic[Request any, Response any](action Action[Request, Response]) Handle
 			dto.ValidateFunc(req),
 			// invoke action.
 			func() error {
-				validatedCtx, err := NewValidatedContext(ctx)
+				validatedCtx, err := newValidatedContext(ctx)
 				if proto.Operate != api.LoginOperate && err != nil {
 					return err
 				}
@@ -101,23 +114,23 @@ func (em *EventManager) startReleaseTimer(conn socket.Connection) {
 			component.Provider().Logger().Errorf("[%s] closed failed: %v", conn.ID(), err)
 		})
 
-		em.cometApp.RemoveUserConnection(GetUidFromConnection(conn))
+		em.cometApp.RemoveUserConnection(stateful.GetUidFromConnection(conn))
 
 	})
 
-	SetConnectionTimer(conn, timer)
+	stateful.SetConnectionTimer(conn, timer)
 }
 
 // leaseReleaseTimer
 func (em *EventManager) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
-	runtime.HandleNil[time.Timer](GetTimerFromConnection(conn), func(timer *time.Timer) {
+	runtime.HandleNil[time.Timer](stateful.GetTimerFromConnection(conn), func(timer *time.Timer) {
 		timer.Reset(duration)
 	})
 }
 
 // stopReleaseTimer
 func (em *EventManager) stopReleaseTimer(conn socket.Connection) {
-	runtime.HandleNil[time.Timer](GetTimerFromConnection(conn), func(timer *time.Timer) {
+	runtime.HandleNil[time.Timer](stateful.GetTimerFromConnection(conn), func(timer *time.Timer) {
 		timer.Stop()
 	})
 }
@@ -127,7 +140,7 @@ func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
 
 	handler := em.handlers[proto.OperateType()]
 	if handler == nil {
-		component.Provider().Logger().Errorf("[%s] No handler registered for type %s", ctx.Conn().ID(), proto.OperateType())
+		component.Provider().Logger().Errorf("[%s] No handler registered for type: %s", ctx.Conn().ID(), proto.OperateType())
 		return
 	}
 
@@ -154,8 +167,8 @@ func (em *EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (r
 		return
 	}
 
-	conn := ConnectionFromContext(ctx)
-	SetConnectionUid(conn, req.ID)
+	conn := stateful.ConnectionFromContext(ctx)
+	stateful.SetConnectionUid(conn, req.ID)
 	em.cometApp.SetUserConnection(req.ID, conn)
 	return
 }
@@ -164,7 +177,7 @@ func (em *EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) 
 	resp, err = em.userApp.Logout(ctx, req)
 
 	if err == nil {
-		em.cometApp.RemoveUserConnection(auth.UserFromContext(ctx))
+		em.cometApp.RemoveUserConnection(stateful.UserFromContext(ctx))
 	}
 	return
 }
@@ -173,7 +186,7 @@ func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatR
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 
 	// lease timer for close connection
-	conn := ConnectionFromContext(ctx)
+	conn := stateful.ConnectionFromContext(ctx)
 	em.leaseReleaseTimer(conn, em.heartbeatInterval)
 	return
 }
@@ -183,12 +196,12 @@ func (em *EventManager) FindUser(ctx context.Context, req *dto.UserFindRequest) 
 }
 
 func (em *EventManager) SendMessage(ctx context.Context, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
-	uid := auth.UserFromContext(ctx)
+	uid := stateful.UserFromContext(ctx)
 	return em.messageApp.Send(ctx, uid, req)
 }
 
 func (em *EventManager) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
-	uid := auth.UserFromContext(ctx)
+	uid := stateful.UserFromContext(ctx)
 	return em.chatroomApp.Join(ctx, uid, req)
 }
 
@@ -196,6 +209,6 @@ func (em *EventManager) QueryMessage(ctx context.Context, req *dto.MessageQueryR
 	return em.messageApp.Query(ctx, req)
 }
 func (em *EventManager) ListSession(ctx context.Context, req *dto.SessionQueryRequest) (resp *dto.SessionQueryResponse, err error) {
-	uid := auth.UserFromContext(ctx)
+	uid := stateful.UserFromContext(ctx)
 	return em.messageApp.ListSession(ctx, uid, req)
 }
