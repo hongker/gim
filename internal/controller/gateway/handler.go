@@ -60,7 +60,7 @@ func generic[Request any, Response any](action Action[Request, Response]) Handle
 	}
 }
 
-type EventManager struct {
+type Handler struct {
 	once     sync.Once
 	handlers map[api.OperateType]HandleFunc
 
@@ -72,8 +72,8 @@ type EventManager struct {
 	heartbeatInterval time.Duration
 }
 
-func NewEventManager(heartbeatInterval time.Duration) *EventManager {
-	return &EventManager{
+func NewHandler(heartbeatInterval time.Duration) *Handler {
+	return &Handler{
 		heartbeatInterval: heartbeatInterval,
 		handlers:          map[api.OperateType]HandleFunc{},
 
@@ -84,7 +84,7 @@ func NewEventManager(heartbeatInterval time.Duration) *EventManager {
 	}
 }
 
-func (em *EventManager) buildReleaseTimer(callback func()) *time.Timer {
+func (em *Handler) buildReleaseTimer(callback func()) *time.Timer {
 	timer := time.NewTimer(em.heartbeatInterval)
 	go func() {
 		defer runtime.HandleCrash()
@@ -95,19 +95,19 @@ func (em *EventManager) buildReleaseTimer(callback func()) *time.Timer {
 }
 
 // InitializeConn initializes connection
-func (em *EventManager) InitializeConn(conn socket.Connection) {
+func (em *Handler) InitializeConn(conn socket.Connection) {
 	// start release timer
 	em.startReleaseTimer(conn)
 }
 
 // FinalizeConn finalizes connection
-func (em *EventManager) FinalizeConn(conn socket.Connection) {
+func (em *Handler) FinalizeConn(conn socket.Connection) {
 	// stop release timer
 	em.stopReleaseTimer(conn)
 }
 
 // startReleaseTimer
-func (em *EventManager) startReleaseTimer(conn socket.Connection) {
+func (em *Handler) startReleaseTimer(conn socket.Connection) {
 	// close the connection if client don't send heartbeat request.
 	timer := em.buildReleaseTimer(func() {
 		runtime.HandleError(conn.Close(), func(err error) {
@@ -122,20 +122,20 @@ func (em *EventManager) startReleaseTimer(conn socket.Connection) {
 }
 
 // leaseReleaseTimer
-func (em *EventManager) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
+func (em *Handler) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
 	runtime.HandleNil[time.Timer](stateful.GetTimerFromConnection(conn), func(timer *time.Timer) {
 		timer.Reset(duration)
 	})
 }
 
 // stopReleaseTimer
-func (em *EventManager) stopReleaseTimer(conn socket.Connection) {
+func (em *Handler) stopReleaseTimer(conn socket.Connection) {
 	runtime.HandleNil[time.Timer](stateful.GetTimerFromConnection(conn), func(timer *time.Timer) {
 		timer.Stop()
 	})
 }
 
-func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
+func (em *Handler) Handle(ctx *socket.Context, proto *api.Proto) {
 	em.once.Do(em.initialize)
 
 	handler := em.handlers[proto.OperateType()]
@@ -147,11 +147,11 @@ func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
 	handler(ctx, proto)
 }
 
-func (em *EventManager) initialize() {
+func (em *Handler) initialize() {
 	em.prepareHandlers()
 }
 
-func (em *EventManager) prepareHandlers() {
+func (em *Handler) prepareHandlers() {
 	em.handlers[api.LoginOperate] = generic[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
 	em.handlers[api.LogoutOperate] = generic[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
 	em.handlers[api.HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
@@ -161,7 +161,7 @@ func (em *EventManager) prepareHandlers() {
 	em.handlers[api.ChatroomJoinOperate] = generic[dto.ChatroomJoinRequest, dto.ChatroomJoinResponse](em.JoinChatroom)
 }
 
-func (em *EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
+func (em *Handler) Login(ctx context.Context, req *dto.UserLoginRequest) (resp *dto.UserLoginResponse, err error) {
 	resp, err = em.userApp.Login(ctx, req)
 	if err != nil {
 		return
@@ -173,7 +173,7 @@ func (em *EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (r
 	return
 }
 
-func (em *EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
+func (em *Handler) Logout(ctx context.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
 	resp, err = em.userApp.Logout(ctx, req)
 
 	if err == nil {
@@ -182,7 +182,7 @@ func (em *EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) 
 	return
 }
 
-func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
+func (em *Handler) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 
 	// lease timer for close connection
@@ -191,24 +191,24 @@ func (em *EventManager) Heartbeat(ctx context.Context, req *dto.SocketHeartbeatR
 	return
 }
 
-func (em *EventManager) FindUser(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
+func (em *Handler) FindUser(ctx context.Context, req *dto.UserFindRequest) (resp *dto.UserFindResponse, err error) {
 	return em.userApp.Find(ctx, req)
 }
 
-func (em *EventManager) SendMessage(ctx context.Context, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
+func (em *Handler) SendMessage(ctx context.Context, req *dto.MessageSendRequest) (resp *dto.MessageSendResponse, err error) {
 	uid := stateful.UserFromContext(ctx)
 	return em.messageApp.Send(ctx, uid, req)
 }
 
-func (em *EventManager) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
+func (em *Handler) JoinChatroom(ctx context.Context, req *dto.ChatroomJoinRequest) (resp *dto.ChatroomJoinResponse, err error) {
 	uid := stateful.UserFromContext(ctx)
 	return em.chatroomApp.Join(ctx, uid, req)
 }
 
-func (em *EventManager) QueryMessage(ctx context.Context, req *dto.MessageQueryRequest) (resp *dto.MessageQueryResponse, err error) {
+func (em *Handler) QueryMessage(ctx context.Context, req *dto.MessageQueryRequest) (resp *dto.MessageQueryResponse, err error) {
 	return em.messageApp.Query(ctx, req)
 }
-func (em *EventManager) ListSession(ctx context.Context, req *dto.SessionQueryRequest) (resp *dto.SessionQueryResponse, err error) {
+func (em *Handler) ListSession(ctx context.Context, req *dto.SessionQueryRequest) (resp *dto.SessionQueryResponse, err error) {
 	uid := stateful.UserFromContext(ctx)
 	return em.messageApp.ListSession(ctx, uid, req)
 }

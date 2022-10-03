@@ -9,29 +9,36 @@ import (
 )
 
 type Callback struct {
-	codec    api.Codec
-	em       *EventManager
+	// codec decode request and encode response
+	codec api.Codec
+
+	// handler handle operation
+	handler  *Handler
 	provider api.ProtoProvider
 }
 
 func NewCallback(heartbeatInterval time.Duration) *Callback {
-	c := &Callback{
+	return &Callback{
 		codec:    api.DefaultCodec(),
-		em:       NewEventManager(heartbeatInterval),
+		handler:  NewHandler(heartbeatInterval),
 		provider: api.NewSharedProtoProvider(),
 	}
-	return c
 }
 
 func (c *Callback) OnConnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Connected, IP: %s", conn.ID(), conn.IP())
-	c.em.InitializeConn(conn)
+
+	// initialize connection
+	c.handler.InitializeConn(conn)
 
 }
 func (c *Callback) OnDisconnect(conn socket.Connection) {
 	component.Provider().Logger().Infof("[%s] Disconnected", conn.ID())
-	c.em.FinalizeConn(conn)
+
+	// finalize connection
+	c.handler.FinalizeConn(conn)
 }
+
 func (c *Callback) OnMessage(ctx *socket.Context) {
 	defer runtime.HandleCrash()
 	component.Provider().Logger().Infof("[%s] OnMessage: %s", ctx.Conn().ID(), string(ctx.Body()))
@@ -47,7 +54,7 @@ func (c *Callback) OnMessage(ctx *socket.Context) {
 		return
 	}
 
-	c.em.Handle(ctx, proto)
+	c.handler.Handle(ctx, proto)
 
 	response := c.codec.Encode(proto)
 	component.Provider().Logger().Infof("[%s] OnResponse: %s", ctx.Conn().ID(), string(response))
