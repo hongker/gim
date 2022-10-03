@@ -81,7 +81,20 @@ func (em *EventManager) buildReleaseTimer(callback func()) *time.Timer {
 	return timer
 }
 
-func (em *EventManager) RegisterReleaseTimer(conn socket.Connection) {
+// InitializeConn initializes connection
+func (em *EventManager) InitializeConn(conn socket.Connection) {
+	// start release timer
+	em.startReleaseTimer(conn)
+}
+
+// FinalizeConn finalizes connection
+func (em *EventManager) FinalizeConn(conn socket.Connection) {
+	// stop release timer
+	em.stopReleaseTimer(conn)
+}
+
+// startReleaseTimer
+func (em *EventManager) startReleaseTimer(conn socket.Connection) {
 	// close the connection if client don't send heartbeat request.
 	timer := em.buildReleaseTimer(func() {
 		runtime.HandleError(conn.Close(), func(err error) {
@@ -95,9 +108,17 @@ func (em *EventManager) RegisterReleaseTimer(conn socket.Connection) {
 	SetConnectionTimer(conn, timer)
 }
 
+// leaseReleaseTimer
 func (em *EventManager) leaseReleaseTimer(conn socket.Connection, duration time.Duration) {
 	runtime.HandleNil[time.Timer](GetTimerFromConnection(conn), func(timer *time.Timer) {
 		timer.Reset(duration)
+	})
+}
+
+// stopReleaseTimer
+func (em *EventManager) stopReleaseTimer(conn socket.Connection) {
+	runtime.HandleNil[time.Timer](GetTimerFromConnection(conn), func(timer *time.Timer) {
+		timer.Stop()
 	})
 }
 
@@ -114,6 +135,10 @@ func (em *EventManager) Handle(ctx *socket.Context, proto *api.Proto) {
 }
 
 func (em *EventManager) initialize() {
+	em.prepareHandlers()
+}
+
+func (em *EventManager) prepareHandlers() {
 	em.handlers[api.LoginOperate] = generic[dto.UserLoginRequest, dto.UserLoginResponse](em.Login)
 	em.handlers[api.LogoutOperate] = generic[dto.UserLogoutRequest, dto.UserLogoutResponse](em.Logout)
 	em.handlers[api.HeartbeatOperate] = generic[dto.SocketHeartbeatRequest, dto.SocketHeartbeatResponse](em.Heartbeat)
@@ -137,6 +162,7 @@ func (em *EventManager) Login(ctx context.Context, req *dto.UserLoginRequest) (r
 
 func (em *EventManager) Logout(ctx context.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
 	resp, err = em.userApp.Logout(ctx, req)
+
 	if err == nil {
 		em.cometApp.RemoveUserConnection(auth.UserFromContext(ctx))
 	}
