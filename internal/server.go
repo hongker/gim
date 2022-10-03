@@ -14,6 +14,7 @@ type Server struct {
 	once   sync.Once
 	config *Config
 
+	controllers       []controller.Controller
 	gatewayController controller.Controller
 	apiController     controller.Controller
 	jobController     controller.Controller
