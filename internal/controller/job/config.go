@@ -12,9 +12,9 @@ type Config struct {
 	QueuePollCount    int
 }
 
-func (c *Config) New() *Controller {
+func (c *Config) New(name string) *Controller {
 	return &Controller{
-		name:   "job",
+		name:   name,
 		config: c,
 	}
 }

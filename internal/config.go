@@ -13,6 +13,7 @@ type Config struct {
 	// GatewayControllerConfig
 	GatewayControllerConfig *gateway.Config
 
+	// JobControllerConfig
 	JobControllerConfig *job.Config
 }
 

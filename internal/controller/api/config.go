@@ -6,6 +6,6 @@ type Config struct {
 	EnableProfiling bool
 }
 
-func (c *Config) New() *Controller {
-	return &Controller{name: "api", config: c}
+func (c *Config) New(name string) *Controller {
+	return &Controller{name: name, config: c}
 }

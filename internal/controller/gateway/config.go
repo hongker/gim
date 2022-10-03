@@ -9,6 +9,6 @@ type Config struct {
 	Codec             string
 }
 
-func (c *Config) New() *Controller {
-	return &Controller{name: "gateway", config: c}
+func (c *Config) New(name string) *Controller {
+	return &Controller{name: name, config: c}
 }
