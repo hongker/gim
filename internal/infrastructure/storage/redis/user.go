@@ -15,6 +15,21 @@ type Storage struct {
 	serializer *Serializer
 }
 
+func (storage Storage) Set(ctx context.Context, key string, value any) error {
+	bytes, err := storage.serializer.Encode(value)
+	if err != nil {
+		return err
+	}
+	return storage.redis.Set(ctx, key, bytes, storage.expired).Err()
+}
+func (storage Storage) Get(ctx context.Context, key string, value any) error {
+	bytes, err := storage.redis.Get(ctx, key).Bytes()
+	if err != nil {
+		return err
+	}
+	return storage.serializer.Decode(bytes, value)
+}
+
 type Serializer struct {
 }
 
@@ -34,16 +49,11 @@ func (storage UserStorage) cacheKey(id string) string {
 }
 
 func (storage UserStorage) Create(ctx context.Context, item *entity.User) error {
-	encoded, _ := storage.serializer.Encode(item)
-	return storage.redis.Set(ctx, storage.cacheKey(item.Id), encoded, storage.expired).Err()
+	return storage.Set(ctx, storage.cacheKey(item.Id), item)
 }
 
 func (storage UserStorage) Find(ctx context.Context, id string) (*entity.User, error) {
-	bytes, err := storage.redis.Get(ctx, id).Bytes()
-	if err != nil {
-		return nil, err
-	}
 	item := &entity.User{}
-	err = storage.serializer.Decode(bytes, item)
+	err := storage.Get(ctx, storage.cacheKey(id), item)
 	return item, err
 }

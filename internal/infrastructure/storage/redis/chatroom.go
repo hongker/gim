@@ -15,17 +15,12 @@ func (storage ChatroomStorage) cacheKey(id string) string {
 }
 
 func (storage ChatroomStorage) Create(ctx context.Context, item *entity.Chatroom) error {
-	bytes, _ := storage.serializer.Encode(item)
-	return storage.redis.Set(ctx, storage.cacheKey(item.Id), bytes, storage.expired).Err()
+	return storage.Set(ctx, storage.cacheKey(item.Id), item)
 }
 
 func (storage ChatroomStorage) Find(ctx context.Context, id string) (*entity.Chatroom, error) {
 	item := &entity.Chatroom{}
-	bytes, err := storage.redis.Get(ctx, storage.cacheKey(id)).Bytes()
-	if err != nil {
-		return nil, err
-	}
-	err = storage.serializer.Decode(bytes, item)
+	err := storage.Get(ctx, storage.cacheKey(id), item)
 	return item, err
 }
 
