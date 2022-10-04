@@ -4,6 +4,7 @@ import (
 	"context"
 	"gim/internal/domain/entity"
 	"gim/internal/infrastructure/storage/memory"
+	"gim/internal/infrastructure/storage/redis"
 	"sync"
 )
 
@@ -54,20 +55,32 @@ func (s StorageManager) Session() Session {
 	return s.session
 }
 
-var memoryStorageSingleton = struct {
+var storageProvider = struct {
 	once     sync.Once
 	instance *StorageManager
 }{}
 
 func MemoryManager() *StorageManager {
-	memoryStorageSingleton.once.Do(func() {
-		memoryStorageSingleton.instance = &StorageManager{
+	storageProvider.once.Do(func() {
+		storageProvider.instance = &StorageManager{
 			user:     memory.NewUserStorage(),
 			message:  memory.NewMessageStorage(),
 			chatroom: memory.NewChatroomStorage(),
 			session:  memory.NewSessionStorage(),
 		}
 	})
-	return memoryStorageSingleton.instance
+	return storageProvider.instance
 
+}
+
+func RedisManager() *StorageManager {
+	storageProvider.once.Do(func() {
+		storageProvider.instance = &StorageManager{
+			user:     redis.NewUserStorage(),
+			message:  redis.NewMessageStorage(),
+			chatroom: redis.NewChatroomStorage(),
+			session:  redis.NewSessionStorage(),
+		}
+	})
+	return storageProvider.instance
 }

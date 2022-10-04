@@ -10,6 +10,10 @@ type SessionStorage struct {
 	Storage
 }
 
+func NewSessionStorage() *SessionStorage {
+	return &SessionStorage{newStorage()}
+}
+
 func (storage SessionStorage) cacheKey(id string) string {
 	return fmt.Sprintf("session:%s", id)
 }
@@ -51,6 +55,10 @@ func (storage SessionStorage) SaveMessage(ctx context.Context, sessionId, msgId 
 
 type MessageStorage struct {
 	Storage
+}
+
+func NewMessageStorage() *MessageStorage {
+	return &MessageStorage{newStorage()}
 }
 
 func (storage *MessageStorage) cacheKey(id string) string {

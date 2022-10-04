@@ -39,3 +39,7 @@ func (storage ChatroomStorage) RemoveMember(ctx context.Context, id string, memb
 func (storage ChatroomStorage) HasMember(ctx context.Context, id string, member *entity.User) bool {
 	return storage.redis.SIsMember(ctx, storage.cacheKey(id), member.Id).Val()
 }
+
+func NewChatroomStorage() *ChatroomStorage {
+	return &ChatroomStorage{newStorage()}
+}
