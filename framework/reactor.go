@@ -20,11 +20,12 @@ func (reactor *Reactor) Run(stopCh <-chan struct{}) {
 	defer threadCancel()
 	go reactor.thread.Polling(threadCtx.Done(), reactor.container.BuildContext)
 
+	log.Println("reactor started")
 	reactor.run(stopCh)
+	log.Println("reactor stopped")
 }
 
 func (reactor *Reactor) run(stopCh <-chan struct{}) {
-
 	for {
 		select {
 		case <-stopCh:
@@ -50,14 +51,19 @@ func NewReactor() (*Reactor, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Reactor{
+	reactor := &Reactor{
 		poll: poll,
-		thread: &Thread{
-			queue:  make(chan int, 10),
-			worker: pool.NewWorkerPool(1000),
-		},
+
 		container: NewContextContainer(),
-	}, nil
+	}
+
+	reactor.thread = &Thread{
+		core:        reactor,
+		queue:       make(chan int, 10),
+		worker:      pool.NewWorkerPool(1000),
+		connections: map[int]*Connection{},
+	}
+	return reactor, nil
 }
 
 type ThreadProvider struct {
@@ -91,8 +97,17 @@ func (thread *Thread) Remove(conn *Connection) {
 	delete(thread.connections, fd)
 	thread.rmu.Unlock()
 }
-func (thread *Thread) Get(fd int) *Connection { return nil }
-func (thread *Thread) Offer(fd int)           {}
+func (thread *Thread) Get(fd int) *Connection {
+	thread.rmu.RLock()
+	conn := thread.connections[fd]
+	thread.rmu.RUnlock()
+	return conn
+}
+func (thread *Thread) Offer(fd int) {
+	select {
+	case thread.queue <- fd:
+	}
+}
 func (thread *Thread) Polling(stopCh <-chan struct{}, builder func(conn *Connection) (*Context, error)) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

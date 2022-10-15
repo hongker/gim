@@ -2,7 +2,7 @@ package framework
 
 type Codec interface {
 	Pack(operate int, data any) ([]byte, error)
-	Unpack(msg []byte) (operate int)
+	Unpack(msg []byte) (operate int, err error)
 	Serializer() Serializer
 }
 

@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"errors"
 	"gim/pkg/bytes"
 	"log"
 	"math"
@@ -93,6 +94,11 @@ func (e *ContextContainer) BuildContext(conn *Connection) (*Context, error) {
 	if err != nil {
 		bytes.Put(buf)
 		return nil, err
+	}
+
+	if n == 0 {
+		bytes.Put(buf)
+		return nil, errors.New("empty packet")
 	}
 	ctx := e.contextProvider.AcquireContext()
 	ctx.Reset(conn, buf[:n])

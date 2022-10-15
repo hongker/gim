@@ -20,9 +20,13 @@ func (router *Router) Handle(operate int, handler Handler) *Router {
 	router.rwm.Unlock()
 	return router
 }
+
 func (router *Router) Request() HandleFunc {
 	return func(ctx *Context) {
-		operate := router.codec.Unpack(ctx.body)
+		operate, err := router.codec.Unpack(ctx.body)
+		if err != nil {
+			return
+		}
 		router.rwm.RLock()
 		defer router.rwm.RUnlock()
 

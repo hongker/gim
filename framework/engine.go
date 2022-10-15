@@ -46,18 +46,34 @@ func (engine *Engine) Run(stopCh <-chan struct{}) error {
 
 	ctx := context.Background()
 
-	err := runtime.Call(func() error {
-		return engine.runServer(ctx)
-	}, func() error {
-		return engine.runReactor(ctx)
-	})
+	if len(engine.schemas) == 0 {
+		return errors.New("empty listen target")
+	}
+	// start listen protocol
+	schemaContext, schemeCancel := context.WithCancel(ctx)
+	defer schemeCancel()
+	for _, schema := range engine.schemas {
+		err := schema.Listen(schemaContext.Done(), engine.handle)
+		runtime.HandleError(err, func(err error) {
+			log.Println("listen error:", err)
+		})
+	}
+
+	reactor, err := NewReactor()
 	if err != nil {
 		return err
 	}
+	reactor.container.Use(engine.router.Request())
+	reactorContext, reactorCancel := context.WithCancel(ctx)
+	defer reactorCancel()
+	go func() {
+		defer runtime.HandleCrash()
+		reactor.Run(reactorContext.Done())
+	}()
 
-	log.Println("engine started")
+	engine.reactor = reactor
+
 	runtime.WaitClose(stopCh)
-
 	return nil
 }
 
@@ -90,6 +106,8 @@ func (engine *Engine) runReactor(ctx context.Context) error {
 		defer runtime.HandleCrash()
 		reactor.Run(refactorContext.Done())
 	}()
+
+	engine.reactor = reactor
 	return nil
 
 }
@@ -101,7 +119,7 @@ func (engine *Engine) handle(conn net.Conn) {
 		connection.Close()
 		return
 	}
-	connection.AddBeforeCloseHook(engine.reactor.thread.Remove, engine.callback.disconnect)
+	connection.AddBeforeCloseHook(engine.callback.disconnect, engine.reactor.thread.Remove)
 
 	engine.callback.connect(connection)
 
