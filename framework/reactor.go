@@ -8,15 +8,16 @@ import (
 )
 
 type Reactor struct {
-	poll   poller.Poller
-	thread *Thread
+	poll      poller.Poller
+	thread    *Thread
+	container *ContextContainer
 }
 
 func (reactor *Reactor) Run(stopCh <-chan struct{}) {
 	ctx := context.Background()
 	threadCtx, threadCancel := context.WithCancel(ctx)
 	defer threadCancel()
-	go reactor.thread.Polling(threadCtx.Done(), reactor.buildContext)
+	go reactor.thread.Polling(threadCtx.Done(), reactor.container.BuildContext)
 
 	reactor.run(stopCh)
 }
@@ -43,8 +44,6 @@ func (reactor *Reactor) run(stopCh <-chan struct{}) {
 	}
 }
 
-func (reactor *Reactor) buildContext(conn *Connection) (ctx *Context, err error) { return }
-
 func NewReactor() (*Reactor, error) {
 	poll, err := poller.NewPollerWithBuffer(100)
 	if err != nil {
@@ -56,6 +55,7 @@ func NewReactor() (*Reactor, error) {
 			queue:  make(chan int, 10),
 			worker: pool.NewWorkerPool(1000),
 		},
+		container: NewContextContainer(),
 	}, nil
 }
 

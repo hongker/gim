@@ -51,10 +51,26 @@ func (engine *Engine) WithEvent(event *Event) *Engine {
 // Start starts the engine
 func (engine *Engine) Run(stopCh <-chan struct{}) error {
 	ctx := context.Background()
+
+	err := runtime.Call(func() error {
+		return engine.runServer(ctx)
+	}, func() error {
+		return engine.runReactor(ctx)
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Println("engine started")
+	runtime.WaitClose(stopCh)
+
+	return nil
+}
+
+func (engine *Engine) runServer(ctx context.Context) error {
 	if len(engine.schemas) == 0 {
 		return errors.New("empty listen target")
 	}
-
 	// start listen protocol
 	schemaContext, schemeCancel := context.WithCancel(ctx)
 	defer schemeCancel()
@@ -65,21 +81,26 @@ func (engine *Engine) Run(stopCh <-chan struct{}) error {
 		})
 	}
 
-	// start refactor
+	return nil
+}
+
+func (engine *Engine) runReactor(ctx context.Context) error {
+	reactor, err := NewReactor()
+	if err != nil {
+		return err
+	}
 	refactorContext, refactorCancel := context.WithCancel(ctx)
 	defer refactorCancel()
 	go func() {
 		defer runtime.HandleCrash()
-		engine.reactor.Run(refactorContext.Done())
+		reactor.Run(refactorContext.Done())
 	}()
-
-	log.Println("engine started")
-	runtime.WaitClose(stopCh)
-
 	return nil
+
 }
 
-func (engine *Engine) handle(conn net.Conn) {}
+func (engine *Engine) handle(conn net.Conn) {
+}
 
 // New returns a new engine instance
 func New() *Engine {
