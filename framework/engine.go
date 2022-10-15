@@ -54,15 +54,14 @@ func (engine *Engine) Run(stopCh <-chan struct{}) error {
 
 	// listen protocol
 	schemaContext, schemeCancel := context.WithCancel(context.Background())
-	for _, item := range engine.schemas {
-		go func(schema Schema) {
-			err := schema.Listen(schemaContext.Done())
-			runtime.HandleError(err, func(err error) {
-				log.Println("listen error:", err)
-			})
-		}(item)
+	for _, schema := range engine.schemas {
+		err := schema.Listen(schemaContext.Done())
+		runtime.HandleError(err, func(err error) {
+			log.Println("listen error:", err)
+		})
 	}
 
+	log.Println("engine started")
 	runtime.WaitClose(stopCh, schemeCancel, engine.Stop)
 
 	return nil

@@ -1,6 +1,9 @@
 package framework
 
-import "github.com/ebar-go/ego/utils/runtime"
+import (
+	"gim/framework/protocol"
+	"github.com/ebar-go/ego/utils/runtime"
+)
 
 type Protocol string
 
@@ -16,11 +19,11 @@ type Schema struct {
 }
 
 func (schema Schema) Listen(stopCh <-chan struct{}) error {
-	runtime.WaitClose(stopCh, schema.Stop)
-	return nil
+	acceptor := protocol.NewTCPTCPAcceptor(schema.Addr)
+	go runtime.WaitClose(stopCh, acceptor.Shutdown)
+	return acceptor.Run()
 }
 
-func (schema Schema) Stop() {}
 func NewSchema(protocol Protocol, addr string) Schema {
 	return Schema{
 		Protocol: protocol,
