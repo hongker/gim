@@ -6,7 +6,7 @@ import (
 )
 
 type Acceptor interface {
-	Run() error
+	Run(bind string) error
 	Shutdown()
 }
 type Options struct {
@@ -17,7 +17,6 @@ type Options struct {
 }
 
 type Property struct {
-	bind    string
 	once    sync.Once
 	done    chan struct{}
 	handler func(conn net.Conn)
@@ -33,9 +32,8 @@ func (p *Property) Done() {
 	})
 }
 
-func NewProperty(bind string, handler func(conn net.Conn)) *Property {
+func NewProperty(handler func(conn net.Conn)) *Property {
 	return &Property{
-		bind:    bind,
 		once:    sync.Once{},
 		done:    make(chan struct{}),
 		handler: handler,

@@ -12,8 +12,8 @@ type TCPAcceptor struct {
 	property *Property
 }
 
-func (server *TCPAcceptor) Run() (err error) {
-	addr, err := net.ResolveTCPAddr("tcp", server.property.bind)
+func (server *TCPAcceptor) Run(bind string) (err error) {
+	addr, err := net.ResolveTCPAddr("tcp", bind)
 	if err != nil {
 		return errors.WithMessage(err, "resolve tcp addr")
 	}
@@ -72,9 +72,9 @@ func (acceptor *TCPAcceptor) accept(lis *net.TCPListener) {
 
 }
 
-func NewTCPTCPAcceptor(bind string, handler func(conn net.Conn)) *TCPAcceptor {
+func NewTCPTCPAcceptor(handler func(conn net.Conn)) *TCPAcceptor {
 	return &TCPAcceptor{
-		property: NewProperty(bind, handler),
+		property: NewProperty(handler),
 		options: &Options{
 			core:            4,
 			readBufferSize:  0,

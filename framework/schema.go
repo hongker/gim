@@ -24,15 +24,15 @@ func (schema Schema) Listen(stopCh <-chan struct{}, handler func(conn net.Conn))
 	var acceptor protocol.Acceptor
 	switch schema.Protocol {
 	case TCP:
-		acceptor = protocol.NewTCPTCPAcceptor(schema.Addr, handler)
+		acceptor = protocol.NewTCPTCPAcceptor(handler)
 	case WEBSOCKET:
-		acceptor = protocol.NewWSAcceptor(schema.Addr, handler)
+		acceptor = protocol.NewWSAcceptor(handler)
 	default:
 		return fmt.Errorf("unsupported protocol: %v", schema.Protocol)
 	}
 
 	go runtime.WaitClose(stopCh, acceptor.Shutdown)
-	return acceptor.Run()
+	return acceptor.Run(schema.Addr)
 }
 
 func NewSchema(protocol Protocol, addr string) Schema {

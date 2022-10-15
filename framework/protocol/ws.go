@@ -10,24 +10,19 @@ import (
 type WebsocketAcceptor struct {
 	options  *Options
 	property *Property
+	upgrade  ws.Upgrader
 }
 
-func (acceptor *WebsocketAcceptor) Run() (err error) {
-	ln, err := net.Listen("tcp", acceptor.property.bind)
+func (acceptor *WebsocketAcceptor) Run(bind string) (err error) {
+	ln, err := net.Listen("tcp", bind)
 	if err != nil {
 		return err
-	}
-	u := ws.Upgrader{
-		OnHeader: func(key, value []byte) (err error) {
-			log.Printf("non-websocket header: %q=%q", key, value)
-			return
-		},
 	}
 
 	for i := 0; i < acceptor.options.core; i++ {
 		go func() {
 			defer runtime.HandleCrash()
-			acceptor.accept(ln, u)
+			acceptor.accept(ln)
 		}()
 	}
 	return nil
@@ -37,7 +32,7 @@ func (acceptor *WebsocketAcceptor) Shutdown() {
 	acceptor.property.Done()
 }
 
-func (acceptor *WebsocketAcceptor) accept(ln net.Listener, u ws.Upgrader) {
+func (acceptor *WebsocketAcceptor) accept(ln net.Listener) {
 	for {
 		select {
 		case <-acceptor.property.Signal():
@@ -49,7 +44,7 @@ func (acceptor *WebsocketAcceptor) accept(ln net.Listener, u ws.Upgrader) {
 				continue
 			}
 
-			_, err = u.Upgrade(conn)
+			_, err = acceptor.upgrade.Upgrade(conn)
 			if err != nil {
 				log.Printf("upgrade(\"%s\") error(%v)", conn.RemoteAddr().String(), err)
 				continue
@@ -60,13 +55,21 @@ func (acceptor *WebsocketAcceptor) accept(ln net.Listener, u ws.Upgrader) {
 	}
 }
 
-func NewWSAcceptor(bind string, handler func(conn net.Conn)) *WebsocketAcceptor {
+func NewWSAcceptor(handler func(conn net.Conn)) *WebsocketAcceptor {
 	return &WebsocketAcceptor{
-		property: NewProperty(bind, handler),
+		property: NewProperty(handler),
 		options: &Options{
 			core:            4,
 			readBufferSize:  0,
 			writeBufferSize: 0,
 			keepalive:       false,
-		}}
+		},
+		upgrade: ws.Upgrader{
+			OnHeader: func(key, value []byte) (err error) {
+				log.Printf("non-websocket header: %q=%q", key, value)
+				return
+			},
+		},
+	}
+
 }
