@@ -100,6 +100,16 @@ func (engine *Engine) runReactor(ctx context.Context) error {
 }
 
 func (engine *Engine) handle(conn net.Conn) {
+	connection := NewConnection(conn)
+	connection.fd = engine.reactor.poll.SocketFD(conn)
+	if err := engine.reactor.thread.Add(connection); err != nil {
+		connection.Close()
+		return
+	}
+	connection.AddBeforeCloseHook(engine.reactor.thread.Remove, engine.callback.disconnect)
+
+	engine.callback.connect(connection)
+
 }
 
 // New returns a new engine instance

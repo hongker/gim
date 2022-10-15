@@ -14,7 +14,11 @@ type Context struct {
 	conn      *Connection
 	body      []byte
 	index     int8
+	render    *Render
 }
+
+func (c *Context) Bind(container any) error { return nil }
+func (c *Context) Render() *Render          { return c.render }
 
 func (ctx *Context) Conn() *Connection {
 	return ctx.conn

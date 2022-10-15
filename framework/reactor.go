@@ -5,6 +5,7 @@ import (
 	"gim/framework/poller"
 	"gim/pkg/pool"
 	"log"
+	"sync"
 )
 
 type Reactor struct {
@@ -63,14 +64,35 @@ type ThreadProvider struct {
 }
 
 type Thread struct {
-	queue  chan int
-	worker pool.Worker
+	core        *Reactor
+	queue       chan int
+	worker      pool.Worker
+	rmu         sync.RWMutex
+	connections map[int]*Connection
 }
 
-func (thread *Thread) Add(conn *Connection)    {}
-func (thread *Thread) Remove(conn *Connection) {}
-func (thread *Thread) Get(fd int) *Connection  { return nil }
-func (thread *Thread) Offer(fd int)            {}
+func (thread *Thread) Add(conn *Connection) error {
+	fd := conn.FD()
+	if err := thread.core.poll.Add(fd); err != nil {
+		return err
+	}
+
+	thread.rmu.Lock()
+	thread.connections[fd] = conn
+	thread.rmu.Unlock()
+	return nil
+}
+func (thread *Thread) Remove(conn *Connection) {
+	fd := conn.FD()
+	if err := thread.core.poll.Remove(fd); err != nil {
+		return
+	}
+	thread.rmu.Lock()
+	delete(thread.connections, fd)
+	thread.rmu.Unlock()
+}
+func (thread *Thread) Get(fd int) *Connection { return nil }
+func (thread *Thread) Offer(fd int)           {}
 func (thread *Thread) Polling(stopCh <-chan struct{}, builder func(conn *Connection) (*Context, error)) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -87,8 +109,7 @@ func (thread *Thread) run(stopCh <-chan struct{}, builder func(conn *Connection)
 		select {
 		case <-stopCh:
 			return
-		default:
-			fd := <-thread.queue
+		case fd := <-thread.queue:
 			conn := thread.Get(fd)
 			if conn == nil {
 				continue
@@ -96,11 +117,12 @@ func (thread *Thread) run(stopCh <-chan struct{}, builder func(conn *Connection)
 
 			ctx, err = builder(conn)
 			if err != nil {
-				_ = conn.Close()
+				conn.Close()
 				continue
 			}
 			// 读取数据不能放在协程里执行
 			thread.worker.Schedule(ctx.Run)
+		default:
 		}
 
 	}
