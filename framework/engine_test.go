@@ -2,7 +2,9 @@ package framework
 
 import (
 	"context"
+	"github.com/ebar-go/ego/utils/runtime/signal"
 	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -20,10 +22,11 @@ func TestEngine(t *testing.T) {
 	engine := New().
 		WithCallback(callback).
 		WithRouter(router).
-		WithCodec(NewJsonCodec())
+		WithCodec(NewJsonCodec()).Listen(TCP, ":8080")
 
-	engine.Run()
-	defer engine.Close()
+	err := engine.Run(signal.SetupSignalHandler())
+	assert.Nil(t, err)
+
 }
 
 type LoginRequest struct{ Name string }

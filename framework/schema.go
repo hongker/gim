@@ -1,20 +1,21 @@
 package framework
 
 type Schema struct {
-	Protocol string
+	Protocol Protocol
 	Addr     string
 }
 
+type Protocol string
+
 const (
-	tcp       = "tcp"
-	websocket = "websocket"
-	http      = "http"
+	TCP       Protocol = "tcp"
+	WEBSOCKET Protocol = "ws"
+	HTTP      Protocol = "http"
 )
 
-func NewTcpSchema(address string) *Schema {
-	return &Schema{Protocol: tcp, Addr: address}
-}
-
-func NewWebsocketSchema(address string) *Schema {
-	return &Schema{Protocol: websocket, Addr: address}
+func NewSchema(protocol Protocol, addr string) Schema {
+	return Schema{
+		Protocol: protocol,
+		Addr:     addr,
+	}
 }

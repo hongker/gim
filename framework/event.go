@@ -2,5 +2,5 @@ package framework
 
 type Event struct{}
 
-func (e *Engine) Listen(name string)  {}
-func (e *Engine) Trigger(name string) {}
+func (e *Event) Listen(name string)  {}
+func (e *Event) Trigger(name string) {}

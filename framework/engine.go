@@ -1,10 +1,15 @@
 package framework
 
-// Engine represents im framework public access api.
-type Engine struct{}
+import "errors"
 
-// WithSchema use different schema
-func (engine *Engine) WithSchema(schema ...Schema) *Engine {
+// Engine represents im framework public access api.
+type Engine struct {
+	schemas []Schema
+}
+
+// WithProtocol set different protocol
+func (engine *Engine) Listen(protocol Protocol, addr string) *Engine {
+	engine.schemas = append(engine.schemas, NewSchema(protocol, addr))
 	return engine
 }
 
@@ -21,10 +26,18 @@ func (engine *Engine) WithRouter(router *Router) *Engine { return engine }
 func (engine *Engine) WithEvent(event *Event) *Engine { return engine }
 
 // Start starts the engine
-func (engine *Engine) Run() {}
+func (engine *Engine) Run(stopCh <-chan struct{}) error {
+	if len(engine.schemas) == 0 {
+		return errors.New("empty listen target")
+	}
 
-// Close shuts down the engine.
-func (engine *Engine) Close() {}
+	<-stopCh
+	engine.Stop()
+	return nil
+}
+
+// Stop shuts down the engine.
+func (engine *Engine) Stop() {}
 
 // New returns a new engine instance
 func New() *Engine {

@@ -1,9 +1,41 @@
 package framework
 
-type Callback struct{}
+type ConnectionHandler func(conn *Connection)
+type Callback struct {
+	connect    ConnectionHandler
+	disconnect ConnectionHandler
+	request    ConnectionHandler
+}
 
-func NewCallback() *Callback { return &Callback{} }
+func NewCallback() *Callback {
+	return &Callback{
+		connect: func(conn *Connection) {
 
-func (callback *Callback) OnConnect(fn func(conn *Connection)) *Callback    { return callback }
-func (callback *Callback) OnDisconnect(fn func(conn *Connection)) *Callback { return callback }
-func (callback *Callback) OnRequest(fn func(conn *Connection)) *Callback    { return callback }
+		},
+		disconnect: func(conn *Connection) {
+
+		},
+		request: func(conn *Connection) {
+
+		},
+	}
+}
+
+func (callback *Callback) OnConnect(fn ConnectionHandler) *Callback {
+	if fn != nil {
+		callback.connect = fn
+	}
+	return callback
+}
+func (callback *Callback) OnDisconnect(fn ConnectionHandler) *Callback {
+	if fn != nil {
+		callback.disconnect = fn
+	}
+	return callback
+}
+func (callback *Callback) OnRequest(fn ConnectionHandler) *Callback {
+	if fn != nil {
+		callback.request = fn
+	}
+	return callback
+}
