@@ -9,15 +9,14 @@ import (
 )
 
 func TestEngine(t *testing.T) {
-	callback := NewCallback().
-		OnRequest(func(conn *Connection) {
-
-		}).OnConnect(func(conn *Connection) {
-
-	}).OnDisconnect(func(conn *Connection) {})
-
 	router := NewRouter().
 		Handle(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
+
+	callback := NewCallback().
+		OnConnect(func(conn *Connection) {
+
+		}).OnDisconnect(func(conn *Connection) {}).
+		OnRequest(router.Request())
 
 	engine := New().
 		WithCallback(callback).

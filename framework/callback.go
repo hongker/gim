@@ -4,7 +4,7 @@ type ConnectionHandler func(conn *Connection)
 type Callback struct {
 	connect    ConnectionHandler
 	disconnect ConnectionHandler
-	request    ConnectionHandler
+	request    HandleFunc
 }
 
 func NewCallback() *Callback {
@@ -15,7 +15,7 @@ func NewCallback() *Callback {
 		disconnect: func(conn *Connection) {
 
 		},
-		request: func(conn *Connection) {
+		request: func(ctx *Context) {
 
 		},
 	}
@@ -33,7 +33,7 @@ func (callback *Callback) OnDisconnect(fn ConnectionHandler) *Callback {
 	}
 	return callback
 }
-func (callback *Callback) OnRequest(fn ConnectionHandler) *Callback {
+func (callback *Callback) OnRequest(fn HandleFunc) *Callback {
 	if fn != nil {
 		callback.request = fn
 	}

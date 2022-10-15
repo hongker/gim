@@ -1,8 +1,9 @@
 package framework
 
 type Codec interface {
-	Pack()
-	Unpack()
+	Pack(operate int, data any) ([]byte, error)
+	Unpack(msg []byte) (operate int)
+	Serializer() Serializer
 }
 
 func NewJsonCodec() Codec {

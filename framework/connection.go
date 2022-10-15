@@ -12,6 +12,7 @@ type Connection struct {
 	beforeCloseHooks []func(connection *Connection)
 }
 
+func (conn *Connection) Push(p []byte)               {}
 func (conn *Connection) Write(p []byte) (int, error) { return 0, nil }
 func (conn *Connection) Read(p []byte) (int, error)  { return 0, nil }
 func (conn *Connection) Close() {

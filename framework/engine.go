@@ -50,6 +50,7 @@ func (engine *Engine) WithEvent(event *Event) *Engine {
 
 // Start starts the engine
 func (engine *Engine) Run(stopCh <-chan struct{}) error {
+
 	ctx := context.Background()
 
 	err := runtime.Call(func() error {
@@ -89,6 +90,7 @@ func (engine *Engine) runReactor(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	reactor.container.Use(engine.callback.request)
 	refactorContext, refactorCancel := context.WithCancel(ctx)
 	defer refactorCancel()
 	go func() {

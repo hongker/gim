@@ -2,21 +2,15 @@ package framework
 
 import "context"
 
-type Handler func(ctx *Context)
+type Handler func(ctx *Context, serializer Serializer) (any, error)
 
 func StandardHandler[Request, Response any](action func(ctx context.Context, request *Request) (*Response, error)) Handler {
-	return func(ctx *Context) {
+	return func(ctx *Context, serializer Serializer) (any, error) {
 		request := new(Request)
-		if err := ctx.Bind(request); err != nil {
-			ctx.Render().Failure(err)
+		if err := serializer.Unmarshal(ctx.body, request); err != nil {
+			return nil, err
 		}
-
-		response, err := action(ctx, request)
-		if err != nil {
-			ctx.Render().Failure(err)
-		}
-
-		ctx.Render().Success(response)
+		return action(ctx, request)
 
 	}
 }
