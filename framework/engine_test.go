@@ -11,19 +11,18 @@ import (
 )
 
 func TestEngine(t *testing.T) {
-	router := NewRouter().
-		Handle(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
+	engine := New()
 
-	callback := NewCallback().
+	engine.Callback().
 		OnConnect(func(conn *Connection) {
 			log.Printf("[%s] connected\n", conn.UUID())
 		}).OnDisconnect(func(conn *Connection) {
 		log.Printf("[%s] disconnected\n", conn.UUID())
 	})
 
-	engine := New().
-		WithCallback(callback).
-		WithRouter(router).Listen(TCP, ":8080")
+	engine.Router().Handle(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
+
+	engine.Listen(TCP, ":8080")
 
 	err := engine.Run(signal.SetupSignalHandler())
 	assert.Nil(t, err)

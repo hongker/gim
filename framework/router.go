@@ -11,6 +11,7 @@ type Router struct {
 func NewRouter() *Router {
 	return &Router{
 		handlers: map[int]Handler{},
+		codec:    &EmptyCodec{},
 	}
 }
 

@@ -23,16 +23,14 @@ func (engine *Engine) Listen(protocol Protocol, addr string) *Engine {
 	return engine
 }
 
-// WithCallback use callback
-func (engine *Engine) WithCallback(callback *Callback) *Engine {
-	engine.callback = callback
-	return engine
+// Callback return instance of Callback
+func (engine *Engine) Callback() *Callback {
+	return engine.callback
 }
 
-// WithRouter set router
-func (engine *Engine) WithRouter(router *Router) *Engine {
-	engine.router = router
-	return engine
+// Router return instance of Router
+func (engine *Engine) Router() *Router {
+	return engine.router
 }
 
 // WithEvent set event
@@ -127,5 +125,5 @@ func (engine *Engine) handle(conn net.Conn) {
 
 // New returns a new engine instance
 func New() *Engine {
-	return &Engine{}
+	return &Engine{callback: NewCallback(), router: NewRouter()}
 }
