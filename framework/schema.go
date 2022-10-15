@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gim/framework/protocol"
 	"github.com/ebar-go/ego/utils/runtime"
+	"net"
 )
 
 type Protocol string
@@ -19,13 +20,13 @@ type Schema struct {
 	Addr     string
 }
 
-func (schema Schema) Listen(stopCh <-chan struct{}) error {
+func (schema Schema) Listen(stopCh <-chan struct{}, handler func(conn net.Conn)) error {
 	var acceptor protocol.Acceptor
 	switch schema.Protocol {
 	case TCP:
-		acceptor = protocol.NewTCPTCPAcceptor(schema.Addr)
+		acceptor = protocol.NewTCPTCPAcceptor(schema.Addr, handler)
 	case WEBSOCKET:
-		acceptor = protocol.NewWSAcceptor(schema.Addr)
+		acceptor = protocol.NewWSAcceptor(schema.Addr, handler)
 	default:
 		return fmt.Errorf("unsupported protocol: %v", schema.Protocol)
 	}

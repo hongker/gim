@@ -60,9 +60,9 @@ func (acceptor *WebsocketAcceptor) accept(ln net.Listener, u ws.Upgrader) {
 	}
 }
 
-func NewWSAcceptor(bind string) *WebsocketAcceptor {
+func NewWSAcceptor(bind string, handler func(conn net.Conn)) *WebsocketAcceptor {
 	return &WebsocketAcceptor{
-		property: NewProperty(bind),
+		property: NewProperty(bind, handler),
 		options: &Options{
 			core:            4,
 			readBufferSize:  0,

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/ebar-go/ego/utils/runtime"
 	"log"
+	"net"
 )
 
 // Engine represents im framework public access api.
@@ -14,6 +15,7 @@ type Engine struct {
 	codec    Codec
 	router   *Router
 	event    *Event
+	reactor  *Reactor
 }
 
 // WithProtocol set different protocol
@@ -48,24 +50,36 @@ func (engine *Engine) WithEvent(event *Event) *Engine {
 
 // Start starts the engine
 func (engine *Engine) Run(stopCh <-chan struct{}) error {
+	ctx := context.Background()
 	if len(engine.schemas) == 0 {
 		return errors.New("empty listen target")
 	}
 
-	// listen protocol
-	schemaContext, schemeCancel := context.WithCancel(context.Background())
+	// start listen protocol
+	schemaContext, schemeCancel := context.WithCancel(ctx)
+	defer schemeCancel()
 	for _, schema := range engine.schemas {
-		err := schema.Listen(schemaContext.Done())
+		err := schema.Listen(schemaContext.Done(), engine.handle)
 		runtime.HandleError(err, func(err error) {
 			log.Println("listen error:", err)
 		})
 	}
 
+	// start refactor
+	refactorContext, refactorCancel := context.WithCancel(ctx)
+	defer refactorCancel()
+	go func() {
+		defer runtime.HandleCrash()
+		engine.reactor.Run(refactorContext.Done())
+	}()
+
 	log.Println("engine started")
-	runtime.WaitClose(stopCh, schemeCancel)
+	runtime.WaitClose(stopCh)
 
 	return nil
 }
+
+func (engine *Engine) handle(conn net.Conn) {}
 
 // New returns a new engine instance
 func New() *Engine {

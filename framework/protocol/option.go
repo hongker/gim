@@ -33,11 +33,11 @@ func (p *Property) Done() {
 	})
 }
 
-func NewProperty(bind string) *Property {
+func NewProperty(bind string, handler func(conn net.Conn)) *Property {
 	return &Property{
 		bind:    bind,
 		once:    sync.Once{},
 		done:    make(chan struct{}),
-		handler: nil,
+		handler: handler,
 	}
 }
