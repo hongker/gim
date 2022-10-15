@@ -12,7 +12,6 @@ import (
 type Engine struct {
 	schemas  []Schema
 	callback *Callback
-	codec    Codec
 	router   *Router
 	event    *Event
 	reactor  *Reactor
@@ -27,12 +26,6 @@ func (engine *Engine) Listen(protocol Protocol, addr string) *Engine {
 // WithCallback use callback
 func (engine *Engine) WithCallback(callback *Callback) *Engine {
 	engine.callback = callback
-	return engine
-}
-
-// WithCodec use codec to pack/unpack message.
-func (engine *Engine) WithCodec(codec Codec) *Engine {
-	engine.codec = codec
 	return engine
 }
 
@@ -90,7 +83,7 @@ func (engine *Engine) runReactor(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	reactor.container.Use(engine.callback.request)
+	reactor.container.Use(engine.router.Request())
 	refactorContext, refactorCancel := context.WithCancel(ctx)
 	defer refactorCancel()
 	go func() {

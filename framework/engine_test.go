@@ -15,13 +15,11 @@ func TestEngine(t *testing.T) {
 	callback := NewCallback().
 		OnConnect(func(conn *Connection) {
 
-		}).OnDisconnect(func(conn *Connection) {}).
-		OnRequest(router.Request())
+		}).OnDisconnect(func(conn *Connection) {})
 
 	engine := New().
 		WithCallback(callback).
-		WithRouter(router).
-		WithCodec(NewJsonCodec()).Listen(TCP, ":8080")
+		WithRouter(router).Listen(TCP, ":8080")
 
 	err := engine.Run(signal.SetupSignalHandler())
 	assert.Nil(t, err)
