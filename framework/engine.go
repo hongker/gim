@@ -1,6 +1,11 @@
 package framework
 
-import "errors"
+import (
+	"context"
+	"errors"
+	"github.com/ebar-go/ego/utils/runtime"
+	"log"
+)
 
 // Engine represents im framework public access api.
 type Engine struct {
@@ -47,8 +52,19 @@ func (engine *Engine) Run(stopCh <-chan struct{}) error {
 		return errors.New("empty listen target")
 	}
 
-	<-stopCh
-	engine.Stop()
+	// listen protocol
+	schemaContext, schemeCancel := context.WithCancel(context.Background())
+	for _, item := range engine.schemas {
+		go func(schema Schema) {
+			err := schema.Listen(schemaContext.Done())
+			runtime.HandleError(err, func(err error) {
+				log.Println("listen error:", err)
+			})
+		}(item)
+	}
+
+	runtime.WaitClose(stopCh, schemeCancel, engine.Stop)
+
 	return nil
 }
 

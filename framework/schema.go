@@ -1,9 +1,6 @@
 package framework
 
-type Schema struct {
-	Protocol Protocol
-	Addr     string
-}
+import "github.com/ebar-go/ego/utils/runtime"
 
 type Protocol string
 
@@ -13,6 +10,17 @@ const (
 	HTTP      Protocol = "http"
 )
 
+type Schema struct {
+	Protocol Protocol
+	Addr     string
+}
+
+func (schema Schema) Listen(stopCh <-chan struct{}) error {
+	runtime.WaitClose(stopCh, schema.Stop)
+	return nil
+}
+
+func (schema Schema) Stop() {}
 func NewSchema(protocol Protocol, addr string) Schema {
 	return Schema{
 		Protocol: protocol,
