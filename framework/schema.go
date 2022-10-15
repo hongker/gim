@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"fmt"
 	"gim/framework/protocol"
 	"github.com/ebar-go/ego/utils/runtime"
 )
@@ -19,7 +20,16 @@ type Schema struct {
 }
 
 func (schema Schema) Listen(stopCh <-chan struct{}) error {
-	acceptor := protocol.NewTCPTCPAcceptor(schema.Addr)
+	var acceptor protocol.Acceptor
+	switch schema.Protocol {
+	case TCP:
+		acceptor = protocol.NewTCPTCPAcceptor(schema.Addr)
+	case WEBSOCKET:
+		acceptor = protocol.NewWSAcceptor(schema.Addr)
+	default:
+		return fmt.Errorf("unsupported protocol: %v", schema.Protocol)
+	}
+
 	go runtime.WaitClose(stopCh, acceptor.Shutdown)
 	return acceptor.Run()
 }
