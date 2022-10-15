@@ -5,19 +5,15 @@ import (
 	"github.com/gobwas/ws"
 	"log"
 	"net"
-	"sync"
 )
 
 type WebsocketAcceptor struct {
-	bind    string
-	options *Options
-	once    sync.Once
-	done    chan struct{}
-	handler func(conn net.Conn)
+	options  *Options
+	property *Property
 }
 
 func (acceptor *WebsocketAcceptor) Run() (err error) {
-	ln, err := net.Listen("tcp", acceptor.bind)
+	ln, err := net.Listen("tcp", acceptor.property.bind)
 	if err != nil {
 		return err
 	}
@@ -38,15 +34,13 @@ func (acceptor *WebsocketAcceptor) Run() (err error) {
 }
 
 func (acceptor *WebsocketAcceptor) Shutdown() {
-	acceptor.once.Do(func() {
-		close(acceptor.done)
-	})
+	acceptor.property.Done()
 }
 
 func (acceptor *WebsocketAcceptor) accept(ln net.Listener, u ws.Upgrader) {
 	for {
 		select {
-		case <-acceptor.done:
+		case <-acceptor.property.Signal():
 			return
 		default:
 			conn, err := ln.Accept()
@@ -60,17 +54,19 @@ func (acceptor *WebsocketAcceptor) accept(ln net.Listener, u ws.Upgrader) {
 				log.Printf("upgrade(\"%s\") error(%v)", conn.RemoteAddr().String(), err)
 				continue
 			}
-			acceptor.handler(conn)
+			acceptor.property.handler(conn)
 		}
 
 	}
 }
 
 func NewWSAcceptor(bind string) *WebsocketAcceptor {
-	return &WebsocketAcceptor{bind: bind, options: &Options{
-		core:            4,
-		readBufferSize:  0,
-		writeBufferSize: 0,
-		keepalive:       false,
-	}}
+	return &WebsocketAcceptor{
+		property: NewProperty(bind),
+		options: &Options{
+			core:            4,
+			readBufferSize:  0,
+			writeBufferSize: 0,
+			keepalive:       false,
+		}}
 }

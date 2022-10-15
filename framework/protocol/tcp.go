@@ -5,20 +5,15 @@ import (
 	"github.com/pkg/errors"
 	"log"
 	"net"
-	"sync"
 )
 
 type TCPAcceptor struct {
-	bind string
-
-	options *Options
-	once    sync.Once
-	done    chan struct{}
-	handler func(conn net.Conn)
+	options  *Options
+	property *Property
 }
 
 func (server *TCPAcceptor) Run() (err error) {
-	addr, err := net.ResolveTCPAddr("tcp", server.bind)
+	addr, err := net.ResolveTCPAddr("tcp", server.property.bind)
 	if err != nil {
 		return errors.WithMessage(err, "resolve tcp addr")
 	}
@@ -39,9 +34,7 @@ func (server *TCPAcceptor) Run() (err error) {
 }
 
 func (acceptor *TCPAcceptor) Shutdown() {
-	acceptor.once.Do(func() {
-		close(acceptor.done)
-	})
+	acceptor.property.Done()
 }
 
 func (acceptor *TCPAcceptor) accept(lis *net.TCPListener) {
@@ -52,7 +45,7 @@ func (acceptor *TCPAcceptor) accept(lis *net.TCPListener) {
 
 	for {
 		select {
-		case <-acceptor.done:
+		case <-acceptor.property.Signal():
 			return
 		default:
 			if conn, err = lis.AcceptTCP(); err != nil {
@@ -73,17 +66,19 @@ func (acceptor *TCPAcceptor) accept(lis *net.TCPListener) {
 				continue
 			}
 
-			acceptor.handler(conn)
+			acceptor.property.handler(conn)
 		}
 	}
 
 }
 
 func NewTCPTCPAcceptor(bind string) *TCPAcceptor {
-	return &TCPAcceptor{bind: bind, options: &Options{
-		core:            4,
-		readBufferSize:  0,
-		writeBufferSize: 0,
-		keepalive:       false,
-	}}
+	return &TCPAcceptor{
+		property: NewProperty(bind),
+		options: &Options{
+			core:            4,
+			readBufferSize:  0,
+			writeBufferSize: 0,
+			keepalive:       false,
+		}}
 }

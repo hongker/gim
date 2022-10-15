@@ -62,13 +62,10 @@ func (engine *Engine) Run(stopCh <-chan struct{}) error {
 	}
 
 	log.Println("engine started")
-	runtime.WaitClose(stopCh, schemeCancel, engine.Stop)
+	runtime.WaitClose(stopCh, schemeCancel)
 
 	return nil
 }
-
-// Stop shuts down the engine.
-func (engine *Engine) Stop() {}
 
 // New returns a new engine instance
 func New() *Engine {
