@@ -4,7 +4,11 @@ import "errors"
 
 // Engine represents im framework public access api.
 type Engine struct {
-	schemas []Schema
+	schemas  []Schema
+	callback *Callback
+	codec    Codec
+	router   *Router
+	event    *Event
 }
 
 // WithProtocol set different protocol
@@ -14,16 +18,28 @@ func (engine *Engine) Listen(protocol Protocol, addr string) *Engine {
 }
 
 // WithCallback use callback
-func (engine *Engine) WithCallback(callback *Callback) *Engine { return engine }
+func (engine *Engine) WithCallback(callback *Callback) *Engine {
+	engine.callback = callback
+	return engine
+}
 
 // WithCodec use codec to pack/unpack message.
-func (engine *Engine) WithCodec(codec Codec) *Engine { return engine }
+func (engine *Engine) WithCodec(codec Codec) *Engine {
+	engine.codec = codec
+	return engine
+}
 
 // WithRouter set router
-func (engine *Engine) WithRouter(router *Router) *Engine { return engine }
+func (engine *Engine) WithRouter(router *Router) *Engine {
+	engine.router = router
+	return engine
+}
 
 // WithEvent set event
-func (engine *Engine) WithEvent(event *Event) *Engine { return engine }
+func (engine *Engine) WithEvent(event *Event) *Engine {
+	engine.event = event
+	return engine
+}
 
 // Start starts the engine
 func (engine *Engine) Run(stopCh <-chan struct{}) error {
