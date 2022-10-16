@@ -67,12 +67,7 @@ type SessionMessage struct {
 	Message *Message
 }
 
-type MessagePacket struct {
+type SessionMessageItems struct {
 	Session *Session   `json:"session"`
 	Items   []*Message `json:"items"`
-}
-
-func (packet MessagePacket) Encode() []byte {
-	b, _ := json.Marshal(packet)
-	return b
 }

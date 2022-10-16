@@ -6,7 +6,6 @@ import (
 	"gim/internal/application"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/types"
-	"gim/pkg/queue"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
@@ -16,7 +15,7 @@ import (
 type MessageTask struct {
 	cometApp application.CometApplication
 	mu       sync.Mutex
-	queues   map[string]*queue.GenericQueue[*types.Message]
+	queues   map[string]*Queue[*types.Message]
 
 	pollInterval time.Duration
 	pollCount    int
@@ -25,7 +24,7 @@ type MessageTask struct {
 
 func NewMessageTask(queuePollInterval time.Duration, queuePollCount int) *MessageTask {
 	return &MessageTask{
-		queues:       make(map[string]*queue.GenericQueue[*types.Message]),
+		queues:       make(map[string]*Queue[*types.Message]),
 		cometApp:     application.GetCometApplication(),
 		pollInterval: queuePollInterval,
 		pollCount:    queuePollCount,
@@ -33,51 +32,48 @@ func NewMessageTask(queuePollInterval time.Duration, queuePollCount int) *Messag
 }
 
 func (task *MessageTask) Start() {
-	task.initialize()
-}
-
-func (task *MessageTask) initialize() {
-	// listen event.
-	task.listenEvent()
-}
-
-func (task *MessageTask) listenEvent() {
+	// listen delivery message event
 	component.ListenEvent[*types.SessionMessage](dto.EventDeliveryMessage, func(item *types.SessionMessage) {
-		task.getOrInitQueue(item.Session).Offer(item.Message)
+		task.getOrCreateQueue(item.Session).Offer(item.Message)
 	})
 }
 
-func (task *MessageTask) getOrInitQueue(session *types.Session) *queue.GenericQueue[*types.Message] {
+// getOrCreateQueue returns a queue for the given session
+func (task *MessageTask) getOrCreateQueue(session *types.Session) *Queue[*types.Message] {
 	task.mu.Lock()
 	defer task.mu.Unlock()
-	if q, ok := task.queues[session.Id]; ok {
-		return q
+	if queue, ok := task.queues[session.Id]; ok {
+		return queue
 	}
 
-	q := task.initQueue(session)
-	task.queues[session.Id] = q
-	return q
+	queue := task.createSessionQueue(session)
+	task.queues[session.Id] = queue
+	return queue
 }
 
-func (task *MessageTask) initQueue(session *types.Session) *queue.GenericQueue[*types.Message] {
-	q := queue.NewGenericQueue[*types.Message](task.pollCount, true)
+// newSessionQueue return a new queue for the given session
+func (task *MessageTask) createSessionQueue(session *types.Session) *Queue[*types.Message] {
+	queue := NewQueue[*types.Message](task.pollCount, true)
 	go func() {
 		defer runtime.HandleCrash()
-		q.Poll(task.pollInterval, func(items []*types.Message) {
-			task.handleSessionMessage(session, items)
+
+		// poll with handler
+		queue.Poll(task.pollInterval, func(items []*types.Message) {
+			task.pushMessages(session, items)
 		})
 	}()
-	return q
+	return queue
 }
 
-func (task *MessageTask) handleSessionMessage(session *types.Session, messages []*types.Message) {
-	packet := &types.MessagePacket{Session: session, Items: messages}
-
-	bytes, err := task.codec.Pack(&codec.Packet{
+// pushMessages push session messages to client
+func (task *MessageTask) pushMessages(session *types.Session, messages []*types.Message) {
+	packet := &codec.Packet{
 		Operate:     api.MessagePushOperate,
 		ContentType: codec.ContentTypeJSON,
 		Seq:         0,
-	}, packet)
+	}
+
+	bytes, err := task.codec.Pack(packet, &types.SessionMessageItems{Session: session, Items: messages})
 	if err != nil {
 		return
 	}
