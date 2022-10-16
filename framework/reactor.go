@@ -33,6 +33,27 @@ func (reactor *Reactor) Run(stopCh <-chan struct{}) {
 	reactor.run(stopCh)
 }
 
+// run receive active connection file descriptor and offer to thread
+func (reactor *Reactor) run(stopCh <-chan struct{}) {
+	for {
+		select {
+		case <-stopCh:
+			return
+		default:
+			// get the active connections
+			active, err := reactor.poll.Wait()
+			if err != nil {
+				log.Println("unable to get active socket connection from epoll:", err)
+				continue
+			}
+
+			// push the active connections to queue
+			reactor.thread.Offer(active...)
+		}
+
+	}
+}
+
 // handleActiveConnection handles active connection request
 func (reactor *Reactor) handleActiveConnection(active int) {
 	// receive an active connection
@@ -56,30 +77,19 @@ func (reactor *Reactor) handleActiveConnection(active int) {
 	reactor.worker.Schedule(ctx.Run)
 }
 
-func (reactor *Reactor) run(stopCh <-chan struct{}) {
-	for {
-		select {
-		case <-stopCh:
-			return
-		default:
-			// get the active connections
-			active, err := reactor.poll.Wait()
-			if err != nil {
-				log.Println("unable to get active socket connection from epoll:", err)
-				continue
-			}
-
-			// push the active connections to queue
-			reactor.thread.Offer(active...)
-		}
-
-	}
-}
-
+// ReactorOptions
 type ReactorOptions struct {
-	EpollBufferSize  int
-	WorkerPoolSize   int
+	// EpollBufferSize is the size of the active connections in every duration
+	EpollBufferSize int
+
+	// WorkerPollSize is the size of the worker pool
+	WorkerPoolSize int
+
+	// PacketLengthSize is the size of the packet length offset
 	PacketLengthSize int
+
+	// ThreadQueueCapacity is the cap of the thread queue
+	ThreadQueueCapacity int
 }
 
 func NewReactor(options ReactorOptions) (*Reactor, error) {
@@ -94,6 +104,6 @@ func NewReactor(options ReactorOptions) (*Reactor, error) {
 		packetLengthSize: options.PacketLengthSize,
 	}
 
-	reactor.thread = NewThread(reactor)
+	reactor.thread = NewThread(poll, options.ThreadQueueCapacity)
 	return reactor, nil
 }

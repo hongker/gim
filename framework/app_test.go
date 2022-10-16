@@ -14,7 +14,7 @@ import (
 func TestApp(t *testing.T) {
 	app := New()
 
-	app.Router().Route(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
+	app.Router().Route(2, StandardHandler[LoginRequest, LoginResponse](LoginAction))
 
 	err := app.Listen(TCP, ":8080").
 		Listen(WEBSOCKET, ":8081").

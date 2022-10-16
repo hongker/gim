@@ -25,9 +25,10 @@ func defaultOptions() *Options {
 		OnDisconnect:      func(conn *Connection) {},
 		MaxReadBufferSize: 512,
 		Reactor: ReactorOptions{
-			EpollBufferSize:  100,
-			WorkerPoolSize:   1000,
-			PacketLengthSize: 4,
+			EpollBufferSize:     100,
+			WorkerPoolSize:      1000,
+			PacketLengthSize:    4,
+			ThreadQueueCapacity: 100,
 		},
 	}
 }

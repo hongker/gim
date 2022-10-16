@@ -1,10 +1,13 @@
 package framework
 
-import "sync"
+import (
+	"gim/framework/poller"
+	"sync"
+)
 
 // Thread represents sub reactor
 type Thread struct {
-	core  *Reactor
+	poll  poller.Poller
 	queue chan int
 
 	rmu         sync.RWMutex
@@ -14,7 +17,7 @@ type Thread struct {
 // RegisterConnection registers a new connection to the epoll listener
 func (thread *Thread) RegisterConnection(conn *Connection) error {
 	fd := conn.FD()
-	if err := thread.core.poll.Add(fd); err != nil {
+	if err := thread.poll.Add(fd); err != nil {
 		return err
 	}
 
@@ -27,7 +30,7 @@ func (thread *Thread) RegisterConnection(conn *Connection) error {
 // UnregisterConnection removes the connection from the epoll listener
 func (thread *Thread) UnregisterConnection(conn *Connection) {
 	fd := conn.FD()
-	if err := thread.core.poll.Remove(fd); err != nil {
+	if err := thread.poll.Remove(fd); err != nil {
 		return
 	}
 	thread.rmu.Lock()
@@ -69,10 +72,10 @@ func (thread *Thread) Polling(stopCh <-chan struct{}, handler func(active int)) 
 	}
 }
 
-func NewThread(reactor *Reactor) *Thread {
+func NewThread(poller poller.Poller, queueSize int) *Thread {
 	return &Thread{
-		core:  reactor,
-		queue: make(chan int, 100),
+		poll:  poller,
+		queue: make(chan int, queueSize),
 
 		connections: map[int]*Connection{},
 	}
