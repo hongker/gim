@@ -55,6 +55,17 @@ func (router *Router) OnError(handler func(ctx *Context, err error)) *Router {
 	return router
 }
 
+func (router *Router) unpack(ctx *Context) {
+	// unpack
+	packet, err := router.codec.Unpack(ctx.body)
+	if err != nil {
+		router.handleError(ctx, err)
+		ctx.Abort()
+		return
+	}
+	ctx.packet = packet
+	ctx.Next()
+}
 func (router *Router) onRequest(ctx *Context) {
 	packet := ctx.packet
 	// match handler

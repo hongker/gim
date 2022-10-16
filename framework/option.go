@@ -4,6 +4,7 @@ package framework
 type Options struct {
 	OnConnect         ConnectionHandler
 	OnDisconnect      ConnectionHandler
+	Middlewares       []HandleFunc
 	MaxReadBufferSize int
 
 	Reactor ReactorOptions
@@ -50,6 +51,12 @@ func WithDisconnectCallback(onDisconnect ConnectionHandler) Option {
 			return
 		}
 		options.OnDisconnect = onDisconnect
+	}
+}
+
+func WithMiddleware(handlers ...HandleFunc) Option {
+	return func(options *Options) {
+		options.Middlewares = append(options.Middlewares, handlers...)
 	}
 }
 

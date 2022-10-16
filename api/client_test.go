@@ -3,6 +3,7 @@ package api
 import (
 	"gim/framework/codec"
 	"gim/internal/domain/dto"
+	"github.com/ebar-go/ego/utils/runtime/signal"
 	"log"
 	"net"
 	"testing"
@@ -14,8 +15,41 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
 	defaultCodec := codec.Default()
+	go func() {
+		for {
+			receive := make([]byte, 512)
+			n, err := conn.Read(receive)
+			if err != nil {
+				panic(err)
+			}
+			log.Println("receive: ", string(receive[:n]))
+			packet, err := defaultCodec.Unpack(receive[:n])
+			if err != nil {
+				panic(err)
+			}
+
+			log.Println("packet:", packet.Operate, packet.Seq, packet.ContentType, string(packet.Body))
+		}
+	}()
+
+	login(defaultCodec, conn)
+
+	time.Sleep(time.Second * 1)
+
+	// send heartbeat
+	go func() {
+		for {
+			heartbeat(defaultCodec, conn)
+			time.Sleep(time.Second * 5)
+		}
+	}()
+
+	<-signal.SetupSignalHandler()
+
+}
+
+func login(defaultCodec codec.Codec, conn net.Conn) {
 	buf, err := defaultCodec.Pack(&codec.Packet{
 		Operate:     LoginOperate,
 		Seq:         1,
@@ -25,29 +59,31 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	_, err = conn.Write(buf)
+
+	write(conn, buf)
+
+}
+
+func heartbeat(defaultCodec codec.Codec, conn net.Conn) {
+	buf, err := defaultCodec.Pack(&codec.Packet{
+		Operate:     HeartbeatOperate,
+		Seq:         1,
+		ContentType: codec.ContentTypeJSON,
+	}, dto.SocketHeartbeatRequest{})
+
 	if err != nil {
 		panic(err)
 	}
 
-	log.Println("send success")
+	write(conn, buf)
 
-	receive := make([]byte, 512)
-	n, err := conn.Read(receive)
+}
+
+func write(conn net.Conn, buf []byte) {
+	_, err := conn.Write(buf)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Println("receive: ", string(receive[:n]))
-	packet, err := defaultCodec.Unpack(receive[:n])
-	if err != nil {
-		panic(err)
-	}
-
-	log.Println("packet:", packet.Operate, packet.Seq, packet.ContentType, string(packet.Body))
-
-	time.Sleep(time.Second * 30)
-
-	// send heartbeat
-
+	log.Println("send  success")
 }

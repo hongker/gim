@@ -83,8 +83,6 @@ func (o *completedServerRunOptions) Validate() error {
 func (o *completedServerRunOptions) applyTo(config *internal.Config) {
 	config.GatewayControllerConfig.Address = o.gatewayAddress
 	config.GatewayControllerConfig.HeartbeatInterval = o.heartbeatInterval
-	config.GatewayControllerConfig.WorkerNumber = o.workerNumber
-	config.GatewayControllerConfig.Codec = o.gatewayCodec
 
 	config.ApiControllerConfig.Address = o.apiAddress
 	config.ApiControllerConfig.TraceHeader = o.traceHeader

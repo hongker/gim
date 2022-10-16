@@ -5,8 +5,6 @@ import "time"
 type Config struct {
 	Address           string
 	HeartbeatInterval time.Duration
-	WorkerNumber      int
-	Codec             string
 }
 
 func (c *Config) New(name string) *Controller {

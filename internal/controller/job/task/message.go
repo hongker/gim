@@ -2,6 +2,7 @@ package task
 
 import (
 	"gim/api"
+	"gim/framework/codec"
 	"gim/internal/application"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/types"
@@ -16,17 +17,16 @@ type MessageTask struct {
 	cometApp application.CometApplication
 	mu       sync.Mutex
 	queues   map[string]*queue.GenericQueue[*types.Message]
-	provider *api.SharedProtoProvider
 
 	pollInterval time.Duration
 	pollCount    int
+	codec        codec.Codec
 }
 
 func NewMessageTask(queuePollInterval time.Duration, queuePollCount int) *MessageTask {
 	return &MessageTask{
 		queues:       make(map[string]*queue.GenericQueue[*types.Message]),
 		cometApp:     application.GetCometApplication(),
-		provider:     api.NewSharedProtoProvider(),
 		pollInterval: queuePollInterval,
 		pollCount:    queuePollCount,
 	}
@@ -73,14 +73,14 @@ func (task *MessageTask) initQueue(session *types.Session) *queue.GenericQueue[*
 func (task *MessageTask) handleSessionMessage(session *types.Session, messages []*types.Message) {
 	packet := &types.MessagePacket{Session: session, Items: messages}
 
-	proto := task.provider.Acquire()
-	proto.Operate = api.MessagePushOperate
-	defer task.provider.Release(proto)
-	runtime.HandleError(proto.Marshal(packet), func(err error) {
-		component.Provider().Logger().Errorf("proto marshal: %v", err)
-	})
-
-	bytes := api.DefaultCodec().Encode(proto)
+	bytes, err := task.codec.Pack(&codec.Packet{
+		Operate:     api.MessagePushOperate,
+		ContentType: codec.ContentTypeJSON,
+		Seq:         0,
+	}, packet)
+	if err != nil {
+		return
+	}
 	// send private message
 	if session.IsPrivate() {
 		uid := session.GetPrivateUid()

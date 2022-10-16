@@ -6,6 +6,7 @@ import (
 	"gim/internal/application"
 	"gim/internal/domain/dto"
 	"gim/internal/domain/stateful"
+	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
 	"time"
@@ -33,6 +34,37 @@ func NewHandler(heartbeatInterval time.Duration) *Handler {
 		messageApp:  application.NewMessageApplication(),
 		chatroomApp: application.NewChatroomApplication(),
 	}
+}
+
+func (handler *Handler) filter(ctx *framework.Context) {
+	if ctx.Operate() != api.LoginOperate {
+		// check user login state
+		if uid := stateful.GetUidFromConnection(ctx.Conn()); uid == "" {
+			ctx.Abort()
+		}
+	}
+
+	ctx.Next()
+}
+
+func (handler *Handler) OnConnect(conn *framework.Connection) {
+	component.Provider().Logger().Infof("[%s] Connected", conn.UUID())
+	handler.InitializeConn(conn)
+}
+
+func (handler *Handler) OnDisconnect(conn *framework.Connection) {
+	component.Provider().Logger().Infof("[%s] Disconnected", conn.UUID())
+	handler.FinalizeConn(conn)
+}
+
+func (handler *Handler) Install(router *framework.Router) {
+	router.Route(api.LoginOperate, framework.StandardHandler(handler.Login))
+	router.Route(api.HeartbeatOperate, framework.StandardHandler(handler.Heartbeat))
+	router.Route(api.LogoutOperate, framework.StandardHandler(handler.Logout))
+	router.Route(api.MessageSendOperate, framework.StandardHandler(handler.SendMessage))
+	router.Route(api.MessageQueryOperate, framework.StandardHandler(handler.QueryMessage))
+	router.Route(api.SessionListOperate, framework.StandardHandler(handler.ListSession))
+	router.Route(api.ChatroomJoinOperate, framework.StandardHandler(handler.JoinChatroom))
 }
 
 // InitializeConn initializes connection
