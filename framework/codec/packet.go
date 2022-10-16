@@ -1,4 +1,4 @@
-package framework
+package codec
 
 import (
 	"encoding/json"
@@ -6,8 +6,9 @@ import (
 )
 
 type Packet struct {
-	Operate     int32
+	Operate     int16
 	ContentType int16
+	Seq         int16
 	Body        []byte
 }
 

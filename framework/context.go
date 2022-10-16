@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"gim/framework/codec"
 	"log"
 	"math"
 	"sync"
@@ -24,7 +25,7 @@ type Context struct {
 	conn   *Connection
 	body   []byte
 	index  int8
-	packet *Packet
+	packet *codec.Packet
 }
 
 func (ctx *Context) Bind(container any) error {

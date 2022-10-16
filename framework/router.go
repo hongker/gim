@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"gim/framework/codec"
 	"log"
 	"sync"
 )
@@ -8,12 +9,12 @@ import (
 // Router
 type Router struct {
 	rwm      sync.RWMutex
-	handlers map[int32]Handler
-	codec    Codec
+	handlers map[int16]Handler
+	codec    codec.Codec
 }
 
 // Route register handler for operate
-func (router *Router) Route(operate int32, handler Handler) *Router {
+func (router *Router) Route(operate int16, handler Handler) *Router {
 	router.rwm.Lock()
 	router.handlers[operate] = handler
 	router.rwm.Unlock()
@@ -53,7 +54,7 @@ func (router *Router) Request(ctx *Context) {
 
 func NewRouter() *Router {
 	return &Router{
-		handlers: map[int32]Handler{},
-		codec:    &DefaultCodec{},
+		handlers: map[int16]Handler{},
+		codec:    codec.Default(),
 	}
 }

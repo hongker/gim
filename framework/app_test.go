@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"gim/framework/codec"
 	"github.com/ebar-go/ego/utils/runtime/signal"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
@@ -43,9 +44,9 @@ func TestClient(t *testing.T) {
 		panic(err)
 	}
 
-	buf, err := DefaultCodec{}.Pack(&Packet{
+	buf, err := codec.Default().Pack(&codec.Packet{
 		Operate:     1,
-		ContentType: ContentTypeJSON,
+		ContentType: codec.ContentTypeJSON,
 	}, LoginRequest{Name: "test"})
 
 	if err != nil {
