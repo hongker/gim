@@ -8,6 +8,18 @@ import (
 	"net"
 )
 
+// Instance represents an app interface
+type Instance interface {
+	// Router return an router instance
+	Router() *Router
+
+	// Listen listens for different schema and address
+	Listen(protocol string, addr string) *App
+
+	// Run runs the application with the given signal handler
+	Run(stopCh <-chan struct{}) error
+}
+
 // App represents im framework public access api.
 type App struct {
 	options  *Options
@@ -83,7 +95,7 @@ func (app *App) registerConnection(conn net.Conn) {
 }
 
 // New returns a new app instance
-func New(opts ...Option) *App {
+func New(opts ...Option) Instance {
 	options := defaultOptions()
 	for _, setter := range opts {
 		setter(options)

@@ -12,11 +12,7 @@ import (
 )
 
 func TestApp(t *testing.T) {
-	app := New(WithConnectCallback(func(conn *Connection) {
-		log.Printf("[%s] connected\n", conn.UUID())
-	}), WithDisconnectCallback(func(conn *Connection) {
-		log.Printf("[%s] disconnected\n", conn.UUID())
-	}), WithMaxReadBufferSize(1024))
+	app := New()
 
 	app.Router().Route(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
 
