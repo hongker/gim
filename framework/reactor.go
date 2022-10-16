@@ -10,11 +10,11 @@ import (
 
 // Reactor represents the epoll model for processing action connections.
 type Reactor struct {
-	poll         poller.Poller
-	thread       *Thread
-	engine       *Engine
-	worker       pool.Worker
-	maxReadBytes int
+	poll             poller.Poller
+	thread           *Thread
+	engine           *Engine
+	worker           pool.Worker
+	packetLengthSize int
 }
 
 // Run runs the Reactor with the given signal.
@@ -42,7 +42,7 @@ func (reactor *Reactor) handleActiveConnection(active int) {
 	}
 
 	// read message
-	msg, err := conn.readLine(reactor.maxReadBytes)
+	msg, err := conn.readLine(reactor.packetLengthSize)
 	if err != nil {
 		conn.Close()
 		return
@@ -82,10 +82,10 @@ func NewReactor() (*Reactor, error) {
 		return nil, err
 	}
 	reactor := &Reactor{
-		maxReadBytes: 512,
-		poll:         poll,
-		engine:       NewEngine(),
-		worker:       pool.NewWorkerPool(1000),
+		poll:             poll,
+		engine:           NewEngine(),
+		worker:           pool.NewWorkerPool(1000),
+		packetLengthSize: 4,
 	}
 
 	reactor.thread = NewThread(reactor)

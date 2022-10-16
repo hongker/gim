@@ -7,17 +7,15 @@ import (
 	"net"
 )
 
-type Protocol string
-
 const (
-	TCP       Protocol = "tcp"
-	WEBSOCKET Protocol = "ws"
-	HTTP      Protocol = "http"
+	TCP       = "tcp"
+	WEBSOCKET = "ws"
+	HTTP      = "http"
 )
 
 // Schema represents a protocol specification
 type Schema struct {
-	Protocol Protocol
+	Protocol string
 	Addr     string
 }
 
@@ -40,7 +38,7 @@ func (schema Schema) Listen(stopCh <-chan struct{}, handler func(conn net.Conn))
 	return acceptor.Run(schema.Addr)
 }
 
-func NewSchema(protocol Protocol, addr string) Schema {
+func NewSchema(protocol string, addr string) Schema {
 	return Schema{
 		Protocol: protocol,
 		Addr:     addr,

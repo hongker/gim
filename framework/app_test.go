@@ -12,29 +12,27 @@ import (
 )
 
 func TestApp(t *testing.T) {
-	app := New()
-
-	app.Callback().
-		OnConnect(func(conn *Connection) {
-			log.Printf("[%s] connected\n", conn.UUID())
-		}).OnDisconnect(func(conn *Connection) {
+	app := New(WithConnectCallback(func(conn *Connection) {
+		log.Printf("[%s] connected\n", conn.UUID())
+	}), WithDisconnectCallback(func(conn *Connection) {
 		log.Printf("[%s] disconnected\n", conn.UUID())
-	})
+	}), WithMaxReadBufferSize(1024))
 
 	app.Router().Route(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
 
-	app.Listen(TCP, ":8080")
-
-	err := app.Run(signal.SetupSignalHandler())
+	err := app.Listen(TCP, ":8080").Run(signal.SetupSignalHandler())
 	assert.Nil(t, err)
 
 }
 
 type LoginRequest struct{ Name string }
-type LoginResponse struct{ Token string }
+type LoginResponse struct {
+	Token string
+	Name  string
+}
 
 func LoginAction(ctx context.Context, req *LoginRequest) (response *LoginResponse, err error) {
-	response = &LoginResponse{Token: uuid.NewV4().String()}
+	response = &LoginResponse{Token: uuid.NewV4().String(), Name: req.Name}
 	return
 }
 

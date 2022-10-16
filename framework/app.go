@@ -10,6 +10,7 @@ import (
 
 // App represents im framework public access api.
 type App struct {
+	options  *Options
 	schemas  []Schema
 	callback *Callback
 	router   *Router
@@ -18,25 +19,14 @@ type App struct {
 }
 
 // Listen register different protocols
-func (app *App) Listen(protocol Protocol, addr string) *App {
+func (app *App) Listen(protocol string, addr string) *App {
 	app.schemas = append(app.schemas, NewSchema(protocol, addr))
 	return app
-}
-
-// Callback return instance of Callback
-func (app *App) Callback() *Callback {
-	return app.callback
 }
 
 // Router return instance of Router
 func (app *App) Router() *Router {
 	return app.router
-}
-
-// WithEvent set event
-func (app *App) WithEvent(event *Event) *App {
-	app.event = event
-	return app
 }
 
 // Run starts the app
@@ -79,7 +69,7 @@ func (app *App) Run(stopCh <-chan struct{}) error {
 }
 
 func (app *App) registerConnection(conn net.Conn) {
-	connection := NewConnection(conn)
+	connection := NewConnection(conn, app.options.MaxReadBufferSize)
 	connection.fd = app.reactor.poll.SocketFD(conn)
 	if err := app.reactor.thread.RegisterConnection(connection); err != nil {
 		connection.Close()
@@ -93,6 +83,15 @@ func (app *App) registerConnection(conn net.Conn) {
 }
 
 // New returns a new app instance
-func New() *App {
-	return &App{callback: NewCallback(), router: NewRouter()}
+func New(opts ...Option) *App {
+	options := defaultOptions()
+	for _, setter := range opts {
+		setter(options)
+	}
+
+	return &App{
+		options:  options,
+		callback: NewCallback().OnConnect(options.OnConnect).OnDisconnect(options.OnDisconnect),
+		router:   NewRouter(),
+	}
 }
