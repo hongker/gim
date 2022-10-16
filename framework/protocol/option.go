@@ -5,10 +5,15 @@ import (
 	"sync"
 )
 
+// Acceptor represents a server for accepting connections
 type Acceptor interface {
+	// Run runs the thread that will receive the connection
 	Run(bind string) error
+
+	// Shutdown shuts down the acceptor
 	Shutdown()
 }
+
 type Options struct {
 	core            int
 	readBufferSize  int

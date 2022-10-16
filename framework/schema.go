@@ -15,11 +15,13 @@ const (
 	HTTP      Protocol = "http"
 )
 
+// Schema represents a protocol specification
 type Schema struct {
 	Protocol Protocol
 	Addr     string
 }
 
+// Listen run acceptor with handler
 func (schema Schema) Listen(stopCh <-chan struct{}, handler func(conn net.Conn)) error {
 	var acceptor protocol.Acceptor
 	switch schema.Protocol {
@@ -31,7 +33,10 @@ func (schema Schema) Listen(stopCh <-chan struct{}, handler func(conn net.Conn))
 		return fmt.Errorf("unsupported protocol: %v", schema.Protocol)
 	}
 
-	go runtime.WaitClose(stopCh, acceptor.Shutdown)
+	go func() {
+		defer runtime.HandleCrash()
+		runtime.WaitClose(stopCh, acceptor.Shutdown)
+	}()
 	return acceptor.Run(schema.Addr)
 }
 

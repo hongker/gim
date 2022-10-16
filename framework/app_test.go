@@ -10,21 +10,21 @@ import (
 	"testing"
 )
 
-func TestEngine(t *testing.T) {
-	engine := New()
+func TestApp(t *testing.T) {
+	app := New()
 
-	engine.Callback().
+	app.Callback().
 		OnConnect(func(conn *Connection) {
 			log.Printf("[%s] connected\n", conn.UUID())
 		}).OnDisconnect(func(conn *Connection) {
 		log.Printf("[%s] disconnected\n", conn.UUID())
 	})
 
-	engine.Router().Handle(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
+	app.Router().Handle(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
 
-	engine.Listen(TCP, ":8080")
+	app.Listen(TCP, ":8080")
 
-	err := engine.Run(signal.SetupSignalHandler())
+	err := app.Run(signal.SetupSignalHandler())
 	assert.Nil(t, err)
 
 }

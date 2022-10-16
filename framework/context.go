@@ -2,8 +2,6 @@ package framework
 
 import (
 	"context"
-	"errors"
-	"gim/pkg/bytes"
 	"log"
 	"math"
 	"sync"
@@ -16,10 +14,10 @@ type Serializer interface {
 
 type Context struct {
 	context.Context
-	container *ContextContainer
-	conn      *Connection
-	body      []byte
-	index     int8
+	engine *Engine
+	conn   *Connection
+	body   []byte
+	index  int8
 }
 
 func (ctx *Context) Conn() *Connection {
@@ -30,13 +28,13 @@ func (ctx *Context) Body() []byte {
 	return ctx.body
 }
 func (ctx *Context) Run() {
-	ctx.container.processContext(ctx)
+	ctx.engine.processContext(ctx)
 }
 
 func (ctx *Context) Next() {
 	if ctx.index < maxIndex {
 		ctx.index++
-		ctx.container.handleChains[ctx.index](ctx)
+		ctx.engine.handleChains[ctx.index](ctx)
 	}
 }
 func (ctx *Context) Abort() {
@@ -44,7 +42,7 @@ func (ctx *Context) Abort() {
 	log.Println("已被终止...")
 }
 
-func (ctx *Context) Reset(conn *Connection, body []byte) {
+func (ctx *Context) reset(conn *Connection, body []byte) {
 	ctx.index = 0
 	ctx.body = body
 	ctx.conn = conn
@@ -76,51 +74,4 @@ func (provider *SyncPoolContextProvider) ReleaseContext(ctx *Context) {
 
 func NewSyncPoolContextProvider(constructor func() interface{}) ContextProvider {
 	return &SyncPoolContextProvider{pool: &sync.Pool{New: constructor}}
-}
-
-type ContextContainer struct {
-	handleChains    []HandleFunc
-	contextProvider ContextProvider
-	packetMaxLength int
-}
-
-func (e *ContextContainer) Use(handler ...HandleFunc) {
-	e.handleChains = append(e.handleChains, handler...)
-}
-
-func (e *ContextContainer) BuildContext(conn *Connection) (*Context, error) {
-	buf := bytes.Get(e.packetMaxLength)
-	n, err := conn.Read(buf)
-	if err != nil {
-		bytes.Put(buf)
-		return nil, err
-	}
-
-	if n == 0 {
-		bytes.Put(buf)
-		return nil, errors.New("empty packet")
-	}
-	ctx := e.contextProvider.AcquireContext()
-	ctx.Reset(conn, buf[:n])
-	return ctx, nil
-}
-
-// ------------------------private methods------------------------
-
-func (e *ContextContainer) processContext(ctx *Context) {
-	e.handleChains[0](ctx)
-	e.releaseContext(ctx)
-}
-
-func (e *ContextContainer) releaseContext(ctx *Context) {
-	bytes.Put(ctx.body)
-	e.contextProvider.ReleaseContext(ctx)
-}
-
-func NewContextContainer() *ContextContainer {
-	engine := &ContextContainer{packetMaxLength: 512}
-	engine.contextProvider = NewSyncPoolContextProvider(func() interface{} {
-		return &Context{Context: context.Background(), container: engine}
-	})
-	return engine
 }
