@@ -7,6 +7,12 @@ import (
 	"sync"
 )
 
+const (
+	maxIndex = math.MaxInt8 / 2
+)
+
+type HandleFunc func(ctx *Context)
+
 type Serializer interface {
 	Marshal(v interface{}) ([]byte, error)
 	Unmarshal(p []byte, v interface{}) error
@@ -18,6 +24,11 @@ type Context struct {
 	conn   *Connection
 	body   []byte
 	index  int8
+	packet *Packet
+}
+
+func (ctx *Context) Bind(container any) error {
+	return ctx.packet.Unmarshal(container)
 }
 
 func (ctx *Context) Conn() *Connection {
@@ -39,7 +50,7 @@ func (ctx *Context) Next() {
 }
 func (ctx *Context) Abort() {
 	ctx.index = maxIndex
-	log.Println("已被终止...")
+	log.Println("context aborted...")
 }
 
 func (ctx *Context) reset(conn *Connection, body []byte) {
@@ -48,12 +59,6 @@ func (ctx *Context) reset(conn *Connection, body []byte) {
 	ctx.conn = conn
 	ctx.Context = context.Background()
 }
-
-const (
-	maxIndex = math.MaxInt8 / 2
-)
-
-type HandleFunc func(ctx *Context)
 
 type ContextProvider interface {
 	AcquireContext() *Context

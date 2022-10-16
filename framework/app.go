@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/ebar-go/ego/utils/runtime"
+	"log"
 	"net"
 )
 
@@ -61,7 +62,7 @@ func (app *App) Run(stopCh <-chan struct{}) error {
 	if err != nil {
 		return err
 	}
-	reactor.engine.Use(app.router.Request())
+	reactor.engine.Use(app.router.Request)
 	reactorCtx, reactorCancel := context.WithCancel(ctx)
 	// cancel reactor context when app is stopped
 	defer reactorCancel()
@@ -72,6 +73,7 @@ func (app *App) Run(stopCh <-chan struct{}) error {
 
 	app.reactor = reactor
 
+	log.Println("app started")
 	runtime.WaitClose(stopCh)
 	return nil
 }

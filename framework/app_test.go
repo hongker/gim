@@ -20,7 +20,7 @@ func TestApp(t *testing.T) {
 		log.Printf("[%s] disconnected\n", conn.UUID())
 	})
 
-	app.Router().Handle(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
+	app.Router().Route(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
 
 	app.Listen(TCP, ":8080")
 
@@ -43,7 +43,15 @@ func TestClient(t *testing.T) {
 		panic(err)
 	}
 
-	_, err = conn.Write([]byte("hello"))
+	buf, err := DefaultCodec{}.Pack(&Packet{
+		Operate:     1,
+		ContentType: ContentTypeJSON,
+	}, LoginRequest{Name: "test"})
+
+	if err != nil {
+		panic(err)
+	}
+	_, err = conn.Write(buf)
 	if err != nil {
 		panic(err)
 	}

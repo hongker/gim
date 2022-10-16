@@ -1,49 +1,59 @@
 package framework
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
+// Router
 type Router struct {
 	rwm      sync.RWMutex
-	handlers map[int]Handler
+	handlers map[int32]Handler
 	codec    Codec
 }
 
-func NewRouter() *Router {
-	return &Router{
-		handlers: map[int]Handler{},
-		codec:    &EmptyCodec{},
-	}
-}
-
-func (router *Router) Handle(operate int, handler Handler) *Router {
+// Route register handler for operate
+func (router *Router) Route(operate int32, handler Handler) *Router {
 	router.rwm.Lock()
 	router.handlers[operate] = handler
 	router.rwm.Unlock()
 	return router
 }
 
-func (router *Router) Request() HandleFunc {
-	return func(ctx *Context) {
-		operate, err := router.codec.Unpack(ctx.body)
-		if err != nil {
-			return
-		}
-		router.rwm.RLock()
-		defer router.rwm.RUnlock()
+func (router *Router) Request(ctx *Context) {
+	// unpack
+	packet, err := router.codec.Unpack(ctx.body)
+	if err != nil {
+		log.Println("unpack:", err)
+		return
+	}
+	router.rwm.RLock()
+	defer router.rwm.RUnlock()
 
-		handler, ok := router.handlers[operate]
-		if !ok {
-			return
-		}
-		response, err := handler(ctx, router.codec.Serializer())
-		if err != nil {
-			return
-		}
+	// find handler
+	handler, ok := router.handlers[packet.Operate]
+	if !ok {
+		return
+	}
 
-		msg, err := router.codec.Pack(operate+1, response)
-		if err != nil {
-			return
-		}
-		ctx.Conn().Push(msg)
+	ctx.packet = packet
+	response, err := handler(ctx)
+	if err != nil {
+		return
+	}
+
+	packet.Operate++
+	// pack response
+	msg, err := router.codec.Pack(packet, response)
+	if err != nil {
+		return
+	}
+	ctx.Conn().Push(msg)
+}
+
+func NewRouter() *Router {
+	return &Router{
+		handlers: map[int32]Handler{},
+		codec:    &DefaultCodec{},
 	}
 }

@@ -23,11 +23,13 @@ func (conn *Connection) UUID() string { return conn.uuid }
 
 // Push send message to the connection
 func (conn *Connection) Push(p []byte) {
-
+	conn.Write(p)
 }
 
 // Write writes message to the connection
-func (conn *Connection) Write(p []byte) (int, error) { return 0, nil }
+func (conn *Connection) Write(p []byte) (int, error) {
+	return conn.conn.Write(p)
+}
 
 // Read reads message from the connection
 func (conn *Connection) Read(p []byte) (int, error) {

@@ -6,15 +6,15 @@ import (
 	"gim/pkg/pool"
 	"github.com/ebar-go/ego/utils/runtime"
 	"log"
-	"sync"
 )
 
 // Reactor represents the epoll model for processing action connections.
 type Reactor struct {
-	poll   poller.Poller
-	thread *Thread
-	engine *Engine
-	worker pool.Worker
+	poll         poller.Poller
+	thread       *Thread
+	engine       *Engine
+	worker       pool.Worker
+	maxReadBytes int
 }
 
 // Run runs the Reactor with the given signal.
@@ -33,6 +33,7 @@ func (reactor *Reactor) Run(stopCh <-chan struct{}) {
 	reactor.run(stopCh)
 }
 
+// handleActiveConnection handles active connection request
 func (reactor *Reactor) handleActiveConnection(active int) {
 	// receive an active connection
 	conn := reactor.thread.GetConnection(active)
@@ -41,7 +42,7 @@ func (reactor *Reactor) handleActiveConnection(active int) {
 	}
 
 	// read message
-	msg, err := conn.readLine(512)
+	msg, err := conn.readLine(reactor.maxReadBytes)
 	if err != nil {
 		conn.Close()
 		return
@@ -81,86 +82,12 @@ func NewReactor() (*Reactor, error) {
 		return nil, err
 	}
 	reactor := &Reactor{
-		poll:   poll,
-		engine: NewEngine(),
-		worker: pool.NewWorkerPool(1000),
+		maxReadBytes: 512,
+		poll:         poll,
+		engine:       NewEngine(),
+		worker:       pool.NewWorkerPool(1000),
 	}
 
-	reactor.thread = &Thread{
-		core:  reactor,
-		queue: make(chan int, 100),
-
-		connections: map[int]*Connection{},
-	}
+	reactor.thread = NewThread(reactor)
 	return reactor, nil
-}
-
-type ThreadProvider struct {
-}
-
-// Thread represents sub reactor
-type Thread struct {
-	core  *Reactor
-	queue chan int
-
-	rmu         sync.RWMutex
-	connections map[int]*Connection
-}
-
-// RegisterConnection registers a new connection to the epoll listener
-func (thread *Thread) RegisterConnection(conn *Connection) error {
-	fd := conn.FD()
-	if err := thread.core.poll.Add(fd); err != nil {
-		return err
-	}
-
-	thread.rmu.Lock()
-	thread.connections[fd] = conn
-	thread.rmu.Unlock()
-	return nil
-}
-
-// UnregisterConnection removes the connection from the epoll listener
-func (thread *Thread) UnregisterConnection(conn *Connection) {
-	fd := conn.FD()
-	if err := thread.core.poll.Remove(fd); err != nil {
-		return
-	}
-	thread.rmu.Lock()
-	delete(thread.connections, fd)
-	thread.rmu.Unlock()
-}
-
-// GetConnection returns a connection by fd
-func (thread *Thread) GetConnection(fd int) *Connection {
-	thread.rmu.RLock()
-	conn := thread.connections[fd]
-	thread.rmu.RUnlock()
-	return conn
-}
-
-// Offer push the active connections fd to the queue
-func (thread *Thread) Offer(fds ...int) {
-	for _, fd := range fds {
-		// depose fd when queue is full
-		select {
-		case thread.queue <- fd:
-		}
-	}
-
-}
-
-// Polling poll with callback function
-func (thread *Thread) Polling(stopCh <-chan struct{}, handler func(active int)) {
-	for {
-		select {
-		// stop when signal is closed
-		case <-stopCh:
-			return
-		case active := <-thread.queue:
-			handler(active)
-		default:
-		}
-
-	}
 }

@@ -1,13 +1,11 @@
 package framework
 
 import (
-	"context"
 	"gim/pkg/bytes"
 )
 
 // Engine represents context manager
 type Engine struct {
-	packetMaxLength int
 	handleChains    []HandleFunc
 	contextProvider ContextProvider
 }
@@ -25,19 +23,25 @@ func (e *Engine) AcquireContext() *Context {
 // ------------------------private methods------------------------
 
 func (e *Engine) processContext(ctx *Context) {
+	// invoke handler chain
 	e.handleChains[0](ctx)
+
+	// release context after process
 	e.releaseContext(ctx)
 }
 
 func (e *Engine) releaseContext(ctx *Context) {
+	// release body
 	bytes.Put(ctx.body)
+
+	// release Context
 	e.contextProvider.ReleaseContext(ctx)
 }
 
 func NewEngine() *Engine {
-	engine := &Engine{packetMaxLength: 512}
+	engine := &Engine{}
 	engine.contextProvider = NewSyncPoolContextProvider(func() interface{} {
-		return &Context{Context: context.Background(), engine: engine}
+		return &Context{engine: engine}
 	})
 	return engine
 }
