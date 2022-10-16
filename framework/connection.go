@@ -21,6 +21,11 @@ type Connection struct {
 	once              sync.Once
 	beforeCloseHooks  []func(connection *Connection)
 	maxReadBufferSize int
+	property          *Property
+}
+
+func (conn *Connection) Property() *Property {
+	return conn.property
 }
 
 // UIID returns the uuid associated with the connection
@@ -103,5 +108,31 @@ func (conn *Connection) readLine(packetLengthSize int) ([]byte, error) {
 
 }
 func NewConnection(conn net.Conn, fd, maxReadBufferSize int) *Connection {
-	return &Connection{conn: conn, fd: fd, uuid: uuid.NewV4().String(), maxReadBufferSize: maxReadBufferSize}
+	return &Connection{conn: conn, fd: fd, uuid: uuid.NewV4().String(), maxReadBufferSize: maxReadBufferSize, property: &Property{properties: map[string]any{}}}
+}
+
+type Property struct {
+	mu         sync.RWMutex // guards the properties
+	properties map[string]any
+}
+
+func (p *Property) Set(key string, value any) {
+	p.mu.Lock()
+	p.properties[key] = value
+	p.mu.Unlock()
+}
+
+func (p *Property) Get(key string) any {
+	p.mu.RLock()
+	property := p.properties[key]
+	p.mu.RUnlock()
+	return property
+}
+
+func (p *Property) GetString(key string) string {
+	property := p.Get(key)
+	if property == nil {
+		return ""
+	}
+	return property.(string)
 }

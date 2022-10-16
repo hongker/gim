@@ -6,6 +6,7 @@ import (
 	"github.com/ebar-go/ego/utils/runtime"
 	"log"
 	"net"
+	"sync"
 )
 
 // Instance represents an app interface
@@ -18,6 +19,8 @@ type Instance interface {
 
 	// Run runs the application with the given signal handler
 	Run(stopCh <-chan struct{}) error
+
+	Use(handleFunc ...HandleFunc)
 }
 
 // App represents im framework public access api.
@@ -28,6 +31,7 @@ type App struct {
 	router   *Router
 	event    *Event
 	reactor  *Reactor
+	once     sync.Once
 }
 
 // Listen register different protocols
@@ -63,7 +67,7 @@ func (app *App) Run(stopCh <-chan struct{}) error {
 
 	// prepare reactor
 
-	app.reactor.engine.Use(app.router.Request)
+	app.reactor.engine.Use(app.router.onRequest)
 	reactorCtx, reactorCancel := context.WithCancel(ctx)
 	// cancel reactor context when app is stopped
 	defer reactorCancel()
@@ -98,6 +102,25 @@ func (app *App) handleNewConnection(conn net.Conn) {
 
 	app.callback.handleConnect(connection)
 
+}
+
+func (app *App) Use(handleFunc ...HandleFunc) {
+	app.once.Do(app.prepare)
+	app.reactor.engine.Use(handleFunc...)
+}
+
+func (app *App) prepare() {
+	app.reactor.engine.Use(func(ctx *Context) {
+		// unpack
+		packet, err := app.router.codec.Unpack(ctx.body)
+		if err != nil {
+			app.router.handleError(ctx, err)
+			ctx.Abort()
+			return
+		}
+		ctx.packet = packet
+		ctx.Next()
+	})
 }
 
 // New returns a new app instance

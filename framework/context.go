@@ -24,6 +24,10 @@ type Context struct {
 	packet *codec.Packet
 }
 
+func (ctx *Context) Operate() int16 {
+	return ctx.packet.Operate
+}
+
 // Bind checks the Content-Type to select a binding engine automatically
 func (ctx *Context) Bind(container any) error {
 	return ctx.packet.Unmarshal(container)

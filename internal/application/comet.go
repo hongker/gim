@@ -2,17 +2,15 @@ package application
 
 import (
 	"context"
+	"gim/framework"
 	"gim/internal/domain/repository"
-	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/errors"
-	"github.com/ebar-go/ego/server/socket"
-	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
 )
 
 type CometApplication interface {
-	SetUserConnection(uid string, conn socket.Connection)
-	GetUserConnection(uid string) (socket.Connection, error)
+	SetUserConnection(uid string, conn *framework.Connection)
+	GetUserConnection(uid string) (*framework.Connection, error)
 	RemoveUserConnection(uid string)
 	PushUserMessage(uid string, msg []byte) error
 	PushChatroomMessage(roomId string, msg []byte) error
@@ -20,17 +18,17 @@ type CometApplication interface {
 
 type cometApplication struct {
 	mu           sync.RWMutex
-	connections  map[string]socket.Connection
+	connections  map[string]*framework.Connection
 	chatroomRepo repository.ChatroomRepository
 }
 
-func (app *cometApplication) SetUserConnection(uid string, conn socket.Connection) {
+func (app *cometApplication) SetUserConnection(uid string, conn *framework.Connection) {
 	app.mu.Lock()
 	app.connections[uid] = conn
 	app.mu.Unlock()
 }
 
-func (app *cometApplication) GetUserConnection(uid string) (socket.Connection, error) {
+func (app *cometApplication) GetUserConnection(uid string) (*framework.Connection, error) {
 	app.mu.RLock()
 	conn := app.connections[uid]
 	app.mu.RUnlock()
@@ -54,7 +52,8 @@ func (app *cometApplication) PushUserMessage(uid string, msg []byte) error {
 	if err != nil {
 		return err
 	}
-	return conn.Push(msg)
+	conn.Push(msg)
+	return nil
 }
 
 func (app *cometApplication) PushChatroomMessage(roomId string, msg []byte) error {
@@ -74,9 +73,7 @@ func (app *cometApplication) PushChatroomMessage(roomId string, msg []byte) erro
 		if err != nil {
 			continue
 		}
-		runtime.HandleError(conn.Push(msg), func(err error) {
-			component.Provider().Logger().Errorf("[%s] push message: %v", conn.ID(), err)
-		})
+		conn.Push(msg)
 	}
 	return nil
 }
@@ -89,7 +86,7 @@ var cometApplicationOnce struct {
 func GetCometApplication() CometApplication {
 	cometApplicationOnce.once.Do(func() {
 		cometApplicationOnce.instance = &cometApplication{
-			connections:  map[string]socket.Connection{},
+			connections:  map[string]*framework.Connection{},
 			chatroomRepo: repository.NewChatroomRepository(),
 		}
 	})

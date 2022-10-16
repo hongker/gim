@@ -43,7 +43,7 @@ func (o *ServerRunOptions) Flags() []cli.Flag {
 		&cli.StringFlag{Name: flagTraceHeader, Aliases: []string{"trace"}, Value: "trace", Usage: "Set trace header"},
 		&cli.StringFlag{Name: flagApiAddress, Aliases: []string{"http"}, Value: ":8081", Usage: "Set http server bind address"},
 		&cli.StringFlag{Name: flagGatewayCodec, Aliases: []string{"codec"}, Value: "json", Usage: "Set packet codec type(json/protobuf)"},
-		&cli.DurationFlag{Name: flagGatewayHeartbeatInterval, Aliases: []string{"heartbeat-interval"}, Value: time.Minute * 10, Usage: "Set connection heartbeat interval"},
+		&cli.DurationFlag{Name: flagGatewayHeartbeatInterval, Aliases: []string{"heartbeat-interval"}, Value: time.Second * 10, Usage: "Set connection heartbeat interval"},
 		&cli.DurationFlag{Name: flagJobQueuePollInterval, Aliases: []string{"queue-poll-interval"}, Value: time.Second, Usage: "Set job queue poll interval"},
 	}
 }

@@ -8,29 +8,29 @@ import (
 type OperateType int
 
 const (
-	LoginOperate      OperateType = 101
-	LoginOperateReply OperateType = 102
+	LoginOperate      = 101
+	LoginOperateReply = 102
 
-	LogoutOperate      OperateType = 103
+	LogoutOperate                  = 103
 	LogoutOperateReply OperateType = 104
 
-	HeartbeatOperate      OperateType = 105
-	HeartbeatOperateReply OperateType = 106
+	HeartbeatOperate      = 105
+	HeartbeatOperateReply = 106
 
-	MessageSendOperate      OperateType = 201
+	MessageSendOperate                  = 201
 	MessageSendOperateReply OperateType = 202
 
-	MessageQueryOperate      OperateType = 203
+	MessageQueryOperate                  = 203
 	MessageQueryOperateReply OperateType = 204
 
-	MessagePushOperate      OperateType = 205
+	MessagePushOperate                  = 205
 	MessagePushOperateReply OperateType = 206
 
-	SessionListOperate      OperateType = 205
+	SessionListOperate                  = 205
 	SessionListOperateReply OperateType = 206
 
-	ChatroomJoinOperate      OperateType = 301
-	ChatroomJoinOperateReply OperateType = 302
+	ChatroomJoinOperate      = 301
+	ChatroomJoinOperateReply = 302
 )
 
 type Proto struct {

@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"context"
 	"gim/framework/codec"
 	"github.com/ebar-go/ego/utils/runtime/signal"
 	uuid "github.com/satori/go.uuid"
@@ -33,7 +32,7 @@ type LoginResponse struct {
 	Name  string
 }
 
-func LoginAction(ctx context.Context, req *LoginRequest) (response *LoginResponse, err error) {
+func LoginAction(ctx *Context, req *LoginRequest) (response *LoginResponse, err error) {
 	response = &LoginResponse{Token: uuid.NewV4().String(), Name: req.Name}
 	return
 }

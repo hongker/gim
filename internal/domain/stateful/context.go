@@ -2,6 +2,7 @@ package stateful
 
 import (
 	"context"
+	"gim/framework"
 	"github.com/ebar-go/ego/server/socket"
 	"time"
 )
@@ -32,15 +33,15 @@ func NewConnectionContext(ctx context.Context, conn socket.Connection) context.C
 	return context.WithValue(ctx, connectionParam, conn)
 }
 
-func GetUidFromConnection(conn socket.Connection) string {
+func GetUidFromConnection(conn *framework.Connection) string {
 	return conn.Property().GetString(uidParam)
 }
 
-func SetConnectionUid(conn socket.Connection, uid string) {
+func SetConnectionUid(conn *framework.Connection, uid string) {
 	conn.Property().Set(uidParam, uid)
 }
 
-func GetTimerFromConnection(conn socket.Connection) *time.Timer {
+func GetTimerFromConnection(conn *framework.Connection) *time.Timer {
 	if conn == nil {
 		return nil
 	}
@@ -52,6 +53,6 @@ func GetTimerFromConnection(conn socket.Connection) *time.Timer {
 	return timer
 }
 
-func SetConnectionTimer(conn socket.Connection, timer *time.Timer) {
+func SetConnectionTimer(conn *framework.Connection, timer *time.Timer) {
 	conn.Property().Set(timerParam, timer)
 }
