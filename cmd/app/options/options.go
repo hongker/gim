@@ -10,19 +10,21 @@ import (
 
 // ServerRunOptions run a server.
 type ServerRunOptions struct {
-	gatewayAddress    string
-	apiAddress        string
-	traceHeader       string
-	enableProfiling   bool
-	heartbeatInterval time.Duration
-	workerNumber      int
-	gatewayCodec      string
-	queuePollInterval time.Duration
-	queuePollCount    int
+	gatewayTCPAddress       string
+	gatewayWebsocketAddress string
+	apiAddress              string
+	traceHeader             string
+	enableProfiling         bool
+	heartbeatInterval       time.Duration
+	workerNumber            int
+	gatewayCodec            string
+	queuePollInterval       time.Duration
+	queuePollCount          int
 }
 
 const (
-	flagGatewayAddress           = "gateway-address"
+	flagGatewayTCPAddress        = "gateway-tcp-address"
+	flagGatewayWebsocketAddress  = "gateway-websocket-address"
 	flagProfilingEnabled         = "profiling-enabled" //
 	flagTraceHeader              = "trace-header"
 	flagApiAddress               = "api-address"
@@ -39,7 +41,9 @@ func (o *ServerRunOptions) Flags() []cli.Flag {
 		&cli.IntFlag{Name: flagJobQueuePollCount, Aliases: []string{"queue-poll-count"}, Value: 10, Usage: "Set job queue poll count"},
 		&cli.IntFlag{Name: flagGatewayWorker, Aliases: []string{"ws-worker"}, Value: runtime.NumCPU(), Usage: "Set websocket server worker number"},
 		&cli.BoolFlag{Name: flagProfilingEnabled, Aliases: []string{"profiling"}, Value: false, Usage: "Set pprof switch"},
-		&cli.StringFlag{Name: flagGatewayAddress, Aliases: []string{"ws"}, Value: ":8080", Usage: "Set websocket server bind address"},
+		&cli.StringFlag{Name: flagGatewayTCPAddress, Aliases: []string{"tcp"}, Value: ":8080", Usage: "Set tcp server bind address"},
+		&cli.StringFlag{Name: flagGatewayWebsocketAddress, Aliases: []string{"websocket"}, Value: ":8082", Usage: "Set websocket server bind address"},
+
 		&cli.StringFlag{Name: flagTraceHeader, Aliases: []string{"trace"}, Value: "trace", Usage: "Set trace header"},
 		&cli.StringFlag{Name: flagApiAddress, Aliases: []string{"http"}, Value: ":8081", Usage: "Set http server bind address"},
 		&cli.StringFlag{Name: flagGatewayCodec, Aliases: []string{"codec"}, Value: "json", Usage: "Set packet codec type(json/protobuf)"},
@@ -49,7 +53,8 @@ func (o *ServerRunOptions) Flags() []cli.Flag {
 }
 
 func (o *ServerRunOptions) ParseArgsFromContext(ctx *cli.Context) {
-	o.gatewayAddress = ctx.String(flagGatewayAddress)
+	o.gatewayTCPAddress = ctx.String(flagGatewayTCPAddress)
+	o.gatewayWebsocketAddress = ctx.String(flagGatewayWebsocketAddress)
 	o.traceHeader = ctx.String(flagTraceHeader)
 	o.enableProfiling = ctx.Bool(flagProfilingEnabled)
 	o.workerNumber = ctx.Int(flagGatewayWorker)
@@ -77,11 +82,16 @@ func (o *completedServerRunOptions) Validate() error {
 	if o.workerNumber <= 0 {
 		return errors.InvalidParam("worker number must be greater than zero")
 	}
+
+	if o.gatewayTCPAddress == "" && o.gatewayWebsocketAddress == "" {
+		return errors.InvalidParam("gateway address must be provided")
+	}
 	return nil
 }
 
 func (o *completedServerRunOptions) applyTo(config *internal.Config) {
-	config.GatewayControllerConfig.Address = o.gatewayAddress
+	config.GatewayControllerConfig.TCPAddress = o.gatewayTCPAddress
+	config.GatewayControllerConfig.WebsocketAddress = o.gatewayWebsocketAddress
 	config.GatewayControllerConfig.HeartbeatInterval = o.heartbeatInterval
 
 	config.ApiControllerConfig.Address = o.apiAddress

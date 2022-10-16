@@ -13,9 +13,7 @@ import (
 )
 
 type Handler struct {
-	once   sync.Once
-	routes map[api.OperateType]framework.HandleFunc
-
+	once        sync.Once
 	userApp     application.UserApplication
 	cometApp    application.CometApplication
 	messageApp  application.MessageApplication
@@ -27,7 +25,6 @@ type Handler struct {
 func NewHandler(heartbeatInterval time.Duration) *Handler {
 	return &Handler{
 		heartbeatInterval: heartbeatInterval,
-		routes:            map[api.OperateType]framework.HandleFunc{},
 
 		userApp:     application.NewUserApplication(),
 		cometApp:    application.GetCometApplication(),
@@ -36,7 +33,7 @@ func NewHandler(heartbeatInterval time.Duration) *Handler {
 	}
 }
 
-func (handler *Handler) filter(ctx *framework.Context) {
+func (handler *Handler) checkLogin(ctx *framework.Context) {
 	if ctx.Operate() != api.LoginOperate {
 		// check user login state
 		if uid := stateful.GetUidFromConnection(ctx.Conn()); uid == "" {
@@ -49,55 +46,39 @@ func (handler *Handler) filter(ctx *framework.Context) {
 
 func (handler *Handler) OnConnect(conn *framework.Connection) {
 	component.Provider().Logger().Infof("[%s] Connected", conn.UUID())
-	handler.InitializeConn(conn)
+
+	// start release timer
+	handler.startReleaseTimer(conn)
+
 }
 
 func (handler *Handler) OnDisconnect(conn *framework.Connection) {
 	component.Provider().Logger().Infof("[%s] Disconnected", conn.UUID())
-	handler.FinalizeConn(conn)
+
+	// stop release timer
+	handler.stopReleaseTimer(conn)
 }
 
 func (handler *Handler) Install(router *framework.Router) {
 	router.Route(api.LoginOperate, framework.StandardHandler(handler.Login))
 	router.Route(api.HeartbeatOperate, framework.StandardHandler(handler.Heartbeat))
-	router.Route(api.LogoutOperate, framework.StandardHandler(handler.Logout))
 	router.Route(api.MessageSendOperate, framework.StandardHandler(handler.SendMessage))
 	router.Route(api.MessageQueryOperate, framework.StandardHandler(handler.QueryMessage))
 	router.Route(api.SessionListOperate, framework.StandardHandler(handler.ListSession))
 	router.Route(api.ChatroomJoinOperate, framework.StandardHandler(handler.JoinChatroom))
 }
 
-// InitializeConn initializes connection
-func (handler *Handler) InitializeConn(conn *framework.Connection) {
-	// start release timer
-	handler.startReleaseTimer(conn)
-}
-
-// FinalizeConn finalizes connection
-func (handler *Handler) FinalizeConn(conn *framework.Connection) {
-	// stop release timer
-	handler.stopReleaseTimer(conn)
-}
-
-func (handler *Handler) buildReleaseTimer(callback func()) *time.Timer {
+// startReleaseTimer
+func (handler *Handler) startReleaseTimer(conn *framework.Connection) {
 	timer := time.NewTimer(handler.heartbeatInterval)
+
 	go func() {
 		defer runtime.HandleCrash()
 		<-timer.C
-		callback()
-	}()
-	return timer
-}
 
-// startReleaseTimer
-func (handler *Handler) startReleaseTimer(conn *framework.Connection) {
-	// close the connection if client don't send heartbeat request.
-	timer := handler.buildReleaseTimer(func() {
+		// close the connection
 		conn.Close()
-
-		handler.cometApp.RemoveUserConnection(stateful.GetUidFromConnection(conn))
-
-	})
+	}()
 
 	stateful.SetConnectionTimer(conn, timer)
 }
@@ -123,24 +104,22 @@ func (handler *Handler) Login(ctx *framework.Context, req *dto.UserLoginRequest)
 		return
 	}
 
+	// bind userId to connection
 	stateful.SetConnectionUid(ctx.Conn(), req.ID)
+
+	// associated userId with connection
 	handler.cometApp.SetUserConnection(req.ID, ctx.Conn())
-	return
-}
 
-// Logout handle user logout request
-
-func (handler *Handler) Logout(ctx *framework.Context, req *dto.UserLogoutRequest) (resp *dto.UserLogoutResponse, err error) {
-	resp, err = handler.userApp.Logout(ctx, req)
-
-	if err == nil {
-		handler.cometApp.RemoveUserConnection(stateful.UserFromContext(ctx))
-	}
+	// add close hook
+	ctx.Conn().AddBeforeCloseHook(func(conn *framework.Connection) {
+		handler.cometApp.RemoveUserConnection(stateful.GetUidFromConnection(conn))
+	})
 	return
 }
 
 // Heartbeat handle user heartbeat request
 func (handler *Handler) Heartbeat(ctx *framework.Context, req *dto.SocketHeartbeatRequest) (resp *dto.SocketHeartbeatResponse, err error) {
+	_ = req
 	resp = &dto.SocketHeartbeatResponse{ServerTime: time.Now().UnixMilli()}
 
 	// lease timer for close connection

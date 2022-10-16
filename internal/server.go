@@ -1,22 +1,21 @@
 package internal
 
 import (
+	"context"
 	"gim/internal/controller"
 	"github.com/ebar-go/ego/component"
 	"github.com/ebar-go/ego/utils/runtime"
 	"github.com/ebar-go/ego/utils/runtime/signal"
 	"sync"
-	"time"
 )
 
 // Server represents a controller server
 type Server struct {
-	once   sync.Once
 	config *Config
 
-	gatewayController controller.Controller
-	apiController     controller.Controller
-	jobController     controller.Controller
+	once sync.Once
+
+	controllers []controller.Controller
 }
 
 // Run runs the server
@@ -24,34 +23,28 @@ func (srv *Server) Run() error {
 	// run one times.
 	srv.once.Do(srv.initialize)
 
-	return srv.run()
+	controllerCtx, controllerCancel := context.WithCancel(context.Background())
+	defer controllerCancel()
+
+	for _, c := range srv.controllers {
+		target := c
+		go func() {
+			defer runtime.HandleCrash()
+			target.Run(controllerCtx.Done())
+		}()
+	}
+
+	component.Provider().Logger().Infof("server started successfully")
+	runtime.WaitClose(signal.SetupSignalHandler())
+	return nil
+
 }
 
 // initialize init controllers.
 func (srv *Server) initialize() {
-	srv.gatewayController = srv.config.GatewayControllerConfig.New("gateway")
-	srv.apiController = srv.config.ApiControllerConfig.New("api")
-	srv.jobController = srv.config.JobControllerConfig.New("job")
-}
-
-// run start controller async.
-func (srv *Server) run() error {
-	// use watcher to watch daemon controllers.
-	watch := runtime.NewWatcher(
-		controller.NewDaemonController(srv.gatewayController).NonBlockingRun(),
-		controller.NewDaemonController(srv.apiController).NonBlockingRun(),
-		controller.NewDaemonController(srv.jobController).NonBlockingRun(),
+	srv.controllers = append(srv.controllers,
+		srv.config.GatewayControllerConfig.New("gateway"),
+		srv.config.ApiControllerConfig.New("api"),
+		srv.config.JobControllerConfig.New("job"),
 	)
-
-	component.Provider().Logger().Infof("server started successfully")
-
-	// call watch.Stop() and shutdown() when closed signal is received
-	runtime.WaitClose(signal.SetupSignalHandler(), watch.Stop, srv.shutdown)
-	return nil
-}
-
-// shutdown stops the server.
-func (srv *Server) shutdown() {
-	time.Sleep(time.Second)
-	component.Provider().Logger().Info("server shutdown completed")
 }

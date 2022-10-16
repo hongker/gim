@@ -3,7 +3,8 @@ package gateway
 import "time"
 
 type Config struct {
-	Address           string
+	TCPAddress        string
+	WebsocketAddress  string
 	HeartbeatInterval time.Duration
 }
 

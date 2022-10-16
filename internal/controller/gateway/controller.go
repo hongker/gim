@@ -3,32 +3,36 @@ package gateway
 import (
 	"gim/framework"
 	"github.com/ebar-go/ego/component"
-	"sync"
 )
 
 // Controller represents gateway module.
 type Controller struct {
 	name string
-	once sync.Once
 
 	config *Config
 }
 
 // Run runs the controller.
 func (c *Controller) Run(stopCh <-chan struct{}) {
-	c.once.Do(c.initialize)
-
 	component.Provider().Logger().Infof("controller running: [%s]", c.name)
 
 	handler := NewHandler(c.config.HeartbeatInterval)
 	app := framework.New(
 		framework.WithConnectCallback(handler.OnConnect),
 		framework.WithDisconnectCallback(handler.OnDisconnect),
+		framework.WithMiddleware(handler.checkLogin),
 	)
 
 	handler.Install(app.Router())
 
-	if err := app.Listen(framework.TCP, c.config.Address).Run(stopCh); err != nil {
+	if c.config.TCPAddress != "" {
+		app.Listen(framework.TCP, c.config.TCPAddress)
+	}
+
+	if c.config.WebsocketAddress != "" {
+		app.Listen(framework.WEBSOCKET, c.config.WebsocketAddress)
+	}
+	if err := app.Run(stopCh); err != nil {
 		panic(err)
 	}
 
@@ -40,11 +44,6 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 func (c *Controller) WithName(name string) *Controller {
 	c.name = name
 	return c
-}
-
-// initialize init controller dependencies.
-func (c *Controller) initialize() {
-
 }
 
 // shutdown shuts down the controller.
