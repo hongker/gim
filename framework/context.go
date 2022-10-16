@@ -14,11 +14,7 @@ const (
 
 type HandleFunc func(ctx *Context)
 
-type Serializer interface {
-	Marshal(v interface{}) ([]byte, error)
-	Unmarshal(p []byte, v interface{}) error
-}
-
+// Context represents a context for request
 type Context struct {
 	context.Context
 	engine *Engine
@@ -28,30 +24,30 @@ type Context struct {
 	packet *codec.Packet
 }
 
+// Bind checks the Content-Type to select a binding engine automatically
 func (ctx *Context) Bind(container any) error {
 	return ctx.packet.Unmarshal(container)
 }
 
+// Conn return instance of Connection
 func (ctx *Context) Conn() *Connection {
 	return ctx.conn
 }
 
-func (ctx *Context) Body() []byte {
+// RawBody returns request raw body
+func (ctx *Context) RawBody() []byte {
 	return ctx.body
-}
-func (ctx *Context) Run() {
-	ctx.engine.processContext(ctx)
 }
 
 func (ctx *Context) Next() {
 	if ctx.index < maxIndex {
 		ctx.index++
-		ctx.engine.handleChains[ctx.index](ctx)
+		ctx.engine.invokeContextHandler(ctx, ctx.index)
 	}
 }
 func (ctx *Context) Abort() {
 	ctx.index = maxIndex
-	log.Println("context aborted...")
+	log.Printf("[%s] context aborted\n", ctx.Conn().UUID())
 }
 
 func (ctx *Context) reset(conn *Connection, body []byte) {

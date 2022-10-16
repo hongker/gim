@@ -7,26 +7,26 @@ type Callback struct {
 }
 
 func NewCallback() *Callback {
-	return &Callback{
-		connect: func(conn *Connection) {
-
-		},
-		disconnect: func(conn *Connection) {
-
-		},
-	}
+	return &Callback{}
 }
 
 func (callback *Callback) OnConnect(fn ConnectionHandler) *Callback {
-	if fn != nil {
-		callback.connect = fn
-	}
+	callback.connect = fn
 	return callback
 }
 func (callback *Callback) OnDisconnect(fn ConnectionHandler) *Callback {
-	if fn != nil {
-		callback.disconnect = fn
-	}
+	callback.disconnect = fn
 	return callback
 }
 
+func (callback *Callback) handleConnect(conn *Connection) {
+	if callback.connect != nil {
+		callback.connect(conn)
+	}
+}
+
+func (callback *Callback) handleDisconnect(conn *Connection) {
+	if callback.disconnect != nil {
+		callback.disconnect(conn)
+	}
+}

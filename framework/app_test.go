@@ -12,9 +12,13 @@ import (
 )
 
 func TestApp(t *testing.T) {
-	app := New()
+	app := New(WithConnectCallback(func(conn *Connection) {
+		log.Printf("[%s] connected\n", conn.UUID())
+	}), WithDisconnectCallback(func(conn *Connection) {
+		log.Printf("[%s] disconnected\n", conn.UUID())
+	}))
 
-	app.Router().Route(2, StandardHandler[LoginRequest, LoginResponse](LoginAction))
+	app.Router().Route(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
 
 	err := app.Listen(TCP, ":8080").
 		Listen(WEBSOCKET, ":8081").
@@ -40,8 +44,10 @@ func TestClient(t *testing.T) {
 		panic(err)
 	}
 
-	buf, err := codec.Default().Pack(&codec.Packet{
+	defaultCodec := codec.Default()
+	buf, err := defaultCodec.Pack(&codec.Packet{
 		Operate:     1,
+		Seq:         1,
 		ContentType: codec.ContentTypeJSON,
 	}, LoginRequest{Name: "test"})
 
@@ -61,5 +67,12 @@ func TestClient(t *testing.T) {
 		panic(err)
 	}
 
-	log.Println(string(receive[:n]))
+	log.Println("receive: ", string(receive[:n]))
+	packet, err := defaultCodec.Unpack(receive[:n])
+	if err != nil {
+		panic(err)
+	}
+
+	log.Println("packet:", packet.Operate, packet.Seq, packet.ContentType, string(packet.Body))
+
 }

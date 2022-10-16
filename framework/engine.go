@@ -2,6 +2,7 @@ package framework
 
 import (
 	"gim/pkg/bytes"
+	"github.com/ebar-go/ego/utils/runtime"
 )
 
 // Engine represents context manager
@@ -20,22 +21,25 @@ func (e *Engine) AcquireContext() *Context {
 	return e.contextProvider.AcquireContext()
 }
 
-// ------------------------private methods------------------------
+// HandleContext handles context
+func (e *Engine) HandleContext(ctx *Context) {
+	defer func() {
+		runtime.HandleCrash()
+		// release body
+		bytes.Put(ctx.body)
+		// release Context
+		e.contextProvider.ReleaseContext(ctx)
+	}()
 
-func (e *Engine) processContext(ctx *Context) {
-	// invoke handler chain
-	e.handleChains[0](ctx)
+	e.invokeContextHandler(ctx, 0)
 
-	// release context after process
-	e.releaseContext(ctx)
 }
 
-func (e *Engine) releaseContext(ctx *Context) {
-	// release body
-	bytes.Put(ctx.body)
+// ------------------------private methods------------------------
 
-	// release Context
-	e.contextProvider.ReleaseContext(ctx)
+// invokeContextHandler invoke context handler chain
+func (e *Engine) invokeContextHandler(ctx *Context, index int8) {
+	e.handleChains[index](ctx)
 }
 
 func NewEngine() *Engine {

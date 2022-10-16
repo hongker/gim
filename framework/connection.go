@@ -12,12 +12,15 @@ import (
 
 // Connection represents client connection
 type Connection struct {
-	uuid             string
-	conn             net.Conn
-	fd               int
-	once             sync.Once
-	beforeCloseHooks []func(connection *Connection)
-	maxReadBytes     int
+	// fd is the file descriptor
+	fd int
+	// uuid is the unique identifier
+	uuid string
+	// conn is the connection
+	conn              net.Conn
+	once              sync.Once
+	beforeCloseHooks  []func(connection *Connection)
+	maxReadBufferSize int
 }
 
 // UIID returns the uuid associated with the connection
@@ -48,9 +51,6 @@ func (conn *Connection) Close() {
 	})
 }
 
-// FD returns the file descriptor of the connection
-func (conn *Connection) FD() int { return conn.fd }
-
 // AddBeforeCloseHook adds a hook to the connection before closed
 func (conn *Connection) AddBeforeCloseHook(hooks ...func(conn *Connection)) {
 	conn.beforeCloseHooks = append(conn.beforeCloseHooks, hooks...)
@@ -63,7 +63,7 @@ func (conn *Connection) readLine(packetLengthSize int) ([]byte, error) {
 	)
 
 	// get bytes from pool
-	buf := bytes.Get(conn.maxReadBytes)
+	buf := bytes.Get(conn.maxReadBufferSize)
 
 	lastErr := runtime.Call(func() error {
 		var err error
@@ -80,7 +80,7 @@ func (conn *Connection) readLine(packetLengthSize int) ([]byte, error) {
 		}
 
 		packetLength := int(binary.BigEndian.Int32(buf[:packetLengthSize]))
-		if packetLength > conn.maxReadBytes {
+		if packetLength > conn.maxReadBufferSize {
 			return errors.New("packet exceeded")
 		}
 		_, err = conn.Read(buf[packetLengthSize:packetLength])
@@ -102,6 +102,6 @@ func (conn *Connection) readLine(packetLengthSize int) ([]byte, error) {
 	return buf[:n], nil
 
 }
-func NewConnection(conn net.Conn, maxReadBytes int) *Connection {
-	return &Connection{conn: conn, uuid: uuid.NewV4().String(), maxReadBytes: maxReadBytes}
+func NewConnection(conn net.Conn, fd, maxReadBufferSize int) *Connection {
+	return &Connection{conn: conn, fd: fd, uuid: uuid.NewV4().String(), maxReadBufferSize: maxReadBufferSize}
 }

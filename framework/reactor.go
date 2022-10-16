@@ -74,10 +74,12 @@ func (reactor *Reactor) handleActiveConnection(active int) {
 	ctx.reset(conn, msg)
 
 	// process request
-	reactor.worker.Schedule(ctx.Run)
+	reactor.worker.Schedule(func() {
+		reactor.engine.HandleContext(ctx)
+	})
 }
 
-// ReactorOptions
+// ReactorOptions represents the options for the reactor
 type ReactorOptions struct {
 	// EpollBufferSize is the size of the active connections in every duration
 	EpollBufferSize int
@@ -102,8 +104,8 @@ func NewReactor(options ReactorOptions) (*Reactor, error) {
 		engine:           NewEngine(),
 		worker:           pool.NewWorkerPool(options.WorkerPoolSize),
 		packetLengthSize: options.PacketLengthSize,
+		thread:           NewThread(options.ThreadQueueCapacity),
 	}
 
-	reactor.thread = NewThread(poll, options.ThreadQueueCapacity)
 	return reactor, nil
 }

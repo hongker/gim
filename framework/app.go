@@ -54,7 +54,7 @@ func (app *App) Run(stopCh <-chan struct{}) error {
 	defer schemeCancel()
 	for _, schema := range app.schemas {
 		// listen with context and connection register callback function
-		if err := schema.Listen(schemaCtx.Done(), app.registerConnection); err != nil {
+		if err := schema.Listen(schemaCtx.Done(), app.handleNewConnection); err != nil {
 			return err
 		}
 
@@ -80,17 +80,23 @@ func (app *App) shutdown() {
 	log.Println("application shutdown complete")
 }
 
-func (app *App) registerConnection(conn net.Conn) {
-	connection := NewConnection(conn, app.options.MaxReadBufferSize)
-	connection.fd = app.reactor.poll.SocketFD(conn)
-	if err := app.reactor.thread.RegisterConnection(connection); err != nil {
+func (app *App) handleNewConnection(conn net.Conn) {
+	connection := NewConnection(conn, app.reactor.poll.SocketFD(conn), app.options.MaxReadBufferSize)
+	if err := app.reactor.poll.Add(connection.fd); err != nil {
 		connection.Close()
 		return
 	}
+	app.reactor.thread.RegisterConnection(connection)
 
-	connection.AddBeforeCloseHook(app.callback.disconnect, app.reactor.thread.UnregisterConnection)
+	connection.AddBeforeCloseHook(
+		app.callback.handleDisconnect,
+		func(conn *Connection) {
+			_ = app.reactor.poll.Remove(conn.fd)
+		},
+		app.reactor.thread.UnregisterConnection,
+	)
 
-	app.callback.connect(connection)
+	app.callback.handleConnect(connection)
 
 }
 
