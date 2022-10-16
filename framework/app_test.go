@@ -16,7 +16,9 @@ func TestApp(t *testing.T) {
 
 	app.Router().Route(1, StandardHandler[LoginRequest, LoginResponse](LoginAction))
 
-	err := app.Listen(TCP, ":8080").Run(signal.SetupSignalHandler())
+	err := app.Listen(TCP, ":8080").
+		Listen(WEBSOCKET, ":8081").
+		Run(signal.SetupSignalHandler())
 	assert.Nil(t, err)
 
 }

@@ -19,6 +19,10 @@ type Schema struct {
 	Addr     string
 }
 
+func (schema Schema) String() string {
+	return fmt.Sprintf("%s://%s", schema.Protocol, schema.Addr)
+}
+
 // Listen run acceptor with handler
 func (schema Schema) Listen(stopCh <-chan struct{}, handler func(conn net.Conn)) error {
 	var acceptor protocol.Acceptor

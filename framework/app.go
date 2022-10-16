@@ -57,27 +57,27 @@ func (app *App) Run(stopCh <-chan struct{}) error {
 		if err := schema.Listen(schemaCtx.Done(), app.registerConnection); err != nil {
 			return err
 		}
+
+		log.Printf("start listener: %v\n", schema)
 	}
 
 	// prepare reactor
-	reactor, err := NewReactor()
-	if err != nil {
-		return err
-	}
-	reactor.engine.Use(app.router.Request)
+
+	app.reactor.engine.Use(app.router.Request)
 	reactorCtx, reactorCancel := context.WithCancel(ctx)
 	// cancel reactor context when app is stopped
 	defer reactorCancel()
 	go func() {
 		defer runtime.HandleCrash()
-		reactor.Run(reactorCtx.Done())
+		app.reactor.Run(reactorCtx.Done())
 	}()
 
-	app.reactor = reactor
-
-	log.Println("app started")
-	runtime.WaitClose(stopCh)
+	runtime.WaitClose(stopCh, app.shutdown)
 	return nil
+}
+
+func (app *App) shutdown() {
+	log.Println("application shutdown complete")
 }
 
 func (app *App) registerConnection(conn net.Conn) {
@@ -103,6 +103,7 @@ func New(opts ...Option) Instance {
 
 	return &App{
 		options:  options,
+		reactor:  options.NewReactor(),
 		callback: NewCallback().OnConnect(options.OnConnect).OnDisconnect(options.OnDisconnect),
 		router:   NewRouter(),
 	}

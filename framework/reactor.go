@@ -76,16 +76,22 @@ func (reactor *Reactor) run(stopCh <-chan struct{}) {
 	}
 }
 
-func NewReactor() (*Reactor, error) {
-	poll, err := poller.NewPollerWithBuffer(100)
+type ReactorOptions struct {
+	EpollBufferSize  int
+	WorkerPoolSize   int
+	PacketLengthSize int
+}
+
+func NewReactor(options ReactorOptions) (*Reactor, error) {
+	poll, err := poller.NewPollerWithBuffer(options.EpollBufferSize)
 	if err != nil {
 		return nil, err
 	}
 	reactor := &Reactor{
 		poll:             poll,
 		engine:           NewEngine(),
-		worker:           pool.NewWorkerPool(1000),
-		packetLengthSize: 4,
+		worker:           pool.NewWorkerPool(options.WorkerPoolSize),
+		packetLengthSize: options.PacketLengthSize,
 	}
 
 	reactor.thread = NewThread(reactor)

@@ -5,6 +5,16 @@ type Options struct {
 	OnConnect         ConnectionHandler
 	OnDisconnect      ConnectionHandler
 	MaxReadBufferSize int
+
+	Reactor ReactorOptions
+}
+
+func (options *Options) NewReactor() *Reactor {
+	reactor, err := NewReactor(options.Reactor)
+	if err != nil {
+		panic(err)
+	}
+	return reactor
 }
 
 type Option func(options *Options)
@@ -14,6 +24,11 @@ func defaultOptions() *Options {
 		OnConnect:         func(conn *Connection) {},
 		OnDisconnect:      func(conn *Connection) {},
 		MaxReadBufferSize: 512,
+		Reactor: ReactorOptions{
+			EpollBufferSize:  100,
+			WorkerPoolSize:   1000,
+			PacketLengthSize: 4,
+		},
 	}
 }
 
@@ -41,5 +56,23 @@ func WithDisconnectCallback(onDisconnect ConnectionHandler) Option {
 func WithMaxReadBufferSize(size int) Option {
 	return func(options *Options) {
 		options.MaxReadBufferSize = size
+	}
+}
+
+func WithEpollBufferSize(size int) Option {
+	return func(options *Options) {
+		options.Reactor.EpollBufferSize = size
+	}
+}
+
+func WithWorkerPoolSize(size int) Option {
+	return func(options *Options) {
+		options.Reactor.WorkerPoolSize = size
+	}
+}
+
+func WithPacketLengthSize(size int) Option {
+	return func(options *Options) {
+		options.Reactor.PacketLengthSize = size
 	}
 }
