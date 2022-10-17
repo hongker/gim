@@ -85,7 +85,7 @@ func (app *App) shutdown() {
 }
 
 func (app *App) handleNewConnection(conn net.Conn) {
-	connection := NewConnection(conn, app.reactor.poll.SocketFD(conn), app.options.MaxReadBufferSize)
+	connection := NewConnection(conn, app.reactor.poll.SocketFD(conn))
 	if err := app.reactor.poll.Add(connection.fd); err != nil {
 		connection.Close()
 		return

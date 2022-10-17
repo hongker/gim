@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"gim/framework/poller"
+	"gim/pkg/bytes"
 	"gim/pkg/pool"
 	"github.com/ebar-go/ego/utils/runtime"
 	"log"
@@ -10,11 +11,12 @@ import (
 
 // Reactor represents the epoll model for processing action connections.
 type Reactor struct {
-	poll             poller.Poller
-	thread           *Thread
-	engine           *Engine
-	worker           pool.Worker
-	packetLengthSize int
+	poll              poller.Poller
+	thread            *Thread
+	engine            *Engine
+	worker            pool.Worker
+	packetLengthSize  int
+	maxReadBufferSize int
 }
 
 // Run runs the Reactor with the given signal.
@@ -62,20 +64,24 @@ func (reactor *Reactor) handleActiveConnection(active int) {
 		return
 	}
 
+	p := bytes.Get(reactor.maxReadBufferSize)
 	// read message
-	msg, err := conn.readLine(reactor.packetLengthSize)
+	n, err := conn.readLine(p, reactor.packetLengthSize)
 	if err != nil {
 		conn.Close()
+		bytes.Put(p)
 		return
 	}
 
 	// prepare Context
 	ctx := reactor.engine.AcquireContext()
-	ctx.reset(conn, msg)
+	ctx.reset(conn, p[:n])
 
 	// process request
 	reactor.worker.Schedule(func() {
 		reactor.engine.HandleContext(ctx)
+
+		bytes.Put(p)
 	})
 }
 
@@ -92,6 +98,8 @@ type ReactorOptions struct {
 
 	// ThreadQueueCapacity is the cap of the thread queue
 	ThreadQueueCapacity int
+
+	MaxReadBufferSize int
 }
 
 func NewReactor(options ReactorOptions) (*Reactor, error) {
@@ -100,11 +108,12 @@ func NewReactor(options ReactorOptions) (*Reactor, error) {
 		return nil, err
 	}
 	reactor := &Reactor{
-		poll:             poll,
-		engine:           NewEngine(),
-		worker:           pool.NewWorkerPool(options.WorkerPoolSize),
-		packetLengthSize: options.PacketLengthSize,
-		thread:           NewThread(options.ThreadQueueCapacity),
+		poll:              poll,
+		engine:            NewEngine(),
+		worker:            pool.NewWorkerPool(options.WorkerPoolSize),
+		packetLengthSize:  options.PacketLengthSize,
+		maxReadBufferSize: options.MaxReadBufferSize,
+		thread:            NewThread(options.ThreadQueueCapacity),
 	}
 
 	return reactor, nil

@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"gim/pkg/bytes"
 	"github.com/ebar-go/ego/utils/runtime"
 )
 
@@ -25,8 +24,6 @@ func (e *Engine) AcquireContext() *Context {
 func (e *Engine) HandleContext(ctx *Context) {
 	defer func() {
 		runtime.HandleCrash()
-		// release body
-		bytes.Put(ctx.body)
 		// release Context
 		e.contextProvider.ReleaseContext(ctx)
 	}()
