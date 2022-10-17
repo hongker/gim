@@ -3,8 +3,7 @@ package framework
 import (
 	"context"
 	"gim/framework/poller"
-	"gim/pkg/bytes"
-	"gim/pkg/pool"
+	"github.com/ebar-go/ego/utils/pool"
 	"github.com/ebar-go/ego/utils/runtime"
 	"log"
 )
@@ -64,24 +63,24 @@ func (reactor *Reactor) handleActiveConnection(active int) {
 		return
 	}
 
-	p := bytes.Get(reactor.maxReadBufferSize)
+	bytes := pool.GetByte(reactor.maxReadBufferSize)
 	// read message
-	n, err := conn.readLine(p, reactor.packetLengthSize)
+	n, err := conn.readLine(bytes, reactor.packetLengthSize)
 	if err != nil {
 		conn.Close()
-		bytes.Put(p)
+		pool.PutByte(bytes)
 		return
 	}
 
 	// prepare Context
 	ctx := reactor.engine.AcquireContext()
-	ctx.reset(conn, p[:n])
+	ctx.reset(conn, bytes[:n])
 
 	// process request
 	reactor.worker.Schedule(func() {
 		reactor.engine.HandleContext(ctx)
 
-		bytes.Put(p)
+		pool.PutByte(bytes)
 	})
 }
 

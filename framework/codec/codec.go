@@ -2,7 +2,7 @@ package codec
 
 import (
 	"errors"
-	"gim/pkg/binary"
+	"github.com/ebar-go/ego/utils/binary"
 )
 
 type Codec interface {
@@ -12,6 +12,7 @@ type Codec interface {
 
 type DefaultCodec struct {
 	options *Options
+	endian  binary.Endian
 }
 
 type Option func(options *Options)
@@ -30,7 +31,7 @@ func Default(options ...Option) Codec {
 	for _, setter := range options {
 		setter(defaultOptions)
 	}
-	return DefaultCodec{options: defaultOptions}
+	return DefaultCodec{options: defaultOptions, endian: binary.BigEndian()}
 }
 
 type Options struct {
@@ -56,11 +57,11 @@ func (codec DefaultCodec) Pack(packet *Packet, data any) ([]byte, error) {
 	contentTypeOffset := operateOffset + codec.options.contentTypeSize
 	seqOffset := contentTypeOffset + codec.options.seqSize
 
-	binary.BigEndian.PutInt32(buf[0:packetLengthOffset], int32(length))
-	binary.BigEndian.PutInt16(buf[packetLengthOffset:operateOffset], packet.Operate)
-	binary.BigEndian.PutInt16(buf[operateOffset:contentTypeOffset], packet.ContentType)
-	binary.BigEndian.PutInt16(buf[contentTypeOffset:seqOffset], packet.Seq)
-	binary.BigEndian.PutString(buf[seqOffset:], string(body))
+	codec.endian.PutInt32(buf[0:packetLengthOffset], int32(length))
+	codec.endian.PutInt16(buf[packetLengthOffset:operateOffset], packet.Operate)
+	codec.endian.PutInt16(buf[operateOffset:contentTypeOffset], packet.ContentType)
+	codec.endian.PutInt16(buf[contentTypeOffset:seqOffset], packet.Seq)
+	codec.endian.PutString(buf[seqOffset:], string(body))
 	return buf, nil
 }
 
@@ -75,10 +76,10 @@ func (codec DefaultCodec) Unpack(msg []byte) (*Packet, error) {
 	seqOffset := contentTypeOffset + codec.options.seqSize
 
 	packet := &Packet{}
-	length := int(binary.BigEndian.Int32(msg[:packetLengthOffset]))
-	packet.Operate = binary.BigEndian.Int16(msg[packetLengthOffset:operateOffset])
-	packet.ContentType = binary.BigEndian.Int16(msg[operateOffset:contentTypeOffset])
-	packet.Seq = binary.BigEndian.Int16(msg[contentTypeOffset:seqOffset])
+	length := int(codec.endian.Int32(msg[:packetLengthOffset]))
+	packet.Operate = codec.endian.Int16(msg[packetLengthOffset:operateOffset])
+	packet.ContentType = codec.endian.Int16(msg[operateOffset:contentTypeOffset])
+	packet.Seq = codec.endian.Int16(msg[contentTypeOffset:seqOffset])
 
 	if length > seqOffset {
 		packet.Body = msg[seqOffset:length]

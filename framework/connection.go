@@ -2,7 +2,7 @@ package framework
 
 import (
 	"errors"
-	"gim/pkg/binary"
+	"github.com/ebar-go/ego/utils/binary"
 	uuid "github.com/satori/go.uuid"
 	"net"
 	"sync"
@@ -72,7 +72,7 @@ func (conn *Connection) readLine(buf []byte, packetLengthSize int) (n int, err e
 		return
 	}
 
-	packetLength := int(binary.BigEndian.Int32(buf[:packetLengthSize]))
+	packetLength := int(binary.BigEndian().Int32(buf[:packetLengthSize]))
 	if packetLength > len(buf) {
 		err = errors.New("packet exceeded")
 		return
