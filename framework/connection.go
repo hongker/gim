@@ -2,9 +2,7 @@ package framework
 
 import (
 	"errors"
-	"gim/pkg/binary"
-	"gim/pkg/bytes"
-	"github.com/ebar-go/ego/utils/runtime"
+	"github.com/ebar-go/ego/utils/binary"
 	uuid "github.com/satori/go.uuid"
 	"net"
 	"sync"
@@ -17,11 +15,10 @@ type Connection struct {
 	// uuid is the unique identifier
 	uuid string
 	// conn is the connection
-	conn              net.Conn
-	once              sync.Once
-	beforeCloseHooks  []func(connection *Connection)
-	maxReadBufferSize int
-	property          *Property
+	conn             net.Conn
+	once             sync.Once
+	beforeCloseHooks []func(connection *Connection)
+	property         *Property
 }
 
 func (conn *Connection) Property() *Property {
@@ -62,53 +59,31 @@ func (conn *Connection) AddBeforeCloseHook(hooks ...func(conn *Connection)) {
 }
 
 // readLine reads a line message from the connection
-func (conn *Connection) readLine(packetLengthSize int) ([]byte, error) {
-	var (
-		n int
-	)
-
-	// get bytes from pool
-	buf := bytes.Get(conn.maxReadBufferSize)
-
-	lastErr := runtime.Call(func() error {
-		var err error
-		// if not set packetLengthSize, read buf directly
-		if packetLengthSize == 0 {
-			n, err = conn.Read(buf)
-			return err
-		}
-
-		// process tcp sticky package, read packet length first
-		_, err = conn.Read(buf[:packetLengthSize])
-		if err != nil {
-			return err
-		}
-
-		packetLength := int(binary.BigEndian.Int32(buf[:packetLengthSize]))
-		if packetLength > conn.maxReadBufferSize {
-			return errors.New("packet exceeded")
-		}
-		_, err = conn.Read(buf[packetLengthSize:packetLength])
-		n = packetLength
-		return err
-	}, func() error {
-		if n == 0 {
-			return errors.New("empty packet")
-		}
-		return nil
-	})
-
-	if lastErr != nil {
-		// release bytes immediately
-		bytes.Put(buf)
-		return nil, lastErr
+func (conn *Connection) readLine(buf []byte, packetLengthSize int) (n int, err error) {
+	// if not set packetLengthSize, read buf directly
+	if packetLengthSize == 0 {
+		n, err = conn.Read(buf)
+		return
 	}
 
-	return buf[:n], nil
+	// process tcp sticky package, read packet length first
+	_, err = conn.Read(buf[:packetLengthSize])
+	if err != nil {
+		return
+	}
+
+	packetLength := int(binary.BigEndian().Int32(buf[:packetLengthSize]))
+	if packetLength > len(buf) {
+		err = errors.New("packet exceeded")
+		return
+	}
+	_, err = conn.Read(buf[packetLengthSize:packetLength])
+	n = packetLength
+	return
 
 }
-func NewConnection(conn net.Conn, fd, maxReadBufferSize int) *Connection {
-	return &Connection{conn: conn, fd: fd, uuid: uuid.NewV4().String(), maxReadBufferSize: maxReadBufferSize, property: &Property{properties: map[string]any{}}}
+func NewConnection(conn net.Conn, fd int) *Connection {
+	return &Connection{conn: conn, fd: fd, uuid: uuid.NewV4().String(), property: &Property{properties: map[string]any{}}}
 }
 
 type Property struct {
