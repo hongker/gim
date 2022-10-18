@@ -5,6 +5,8 @@ package poller
 import (
 	"golang.org/x/sys/unix"
 	"net"
+	"reflect"
+	"sync"
 	"syscall"
 )
 
@@ -16,7 +18,7 @@ type Epoll struct {
 	// max event size, default: 100
 	maxEventSize int
 
-	connections []int
+	connBuffers []int
 	events      []unix.EpollEvent
 }
 
@@ -52,8 +54,12 @@ func (e *Epoll) Remove(fd int) error {
 
 func (e *Epoll) Wait() ([]int, error) {
 	events := e.events
+	var (
+		n   int
+		err error
+	)
 	for {
-		n, err := unix.EpollWait(e.fd, events, e.maxEventSize)
+		n, err = unix.EpollWait(e.fd, events, e.maxEventSize)
 		if err == nil {
 			break
 		}
@@ -73,7 +79,7 @@ func (e *Epoll) Wait() ([]int, error) {
 		connections = append(connections, int(e.events[i].Fd))
 	}
 
-	e.lock.RULock()
+	e.lock.RUnlock()
 	return connections, nil
 }
 
@@ -93,7 +99,7 @@ func NewPollerWithBuffer(size int) (Poller, error) {
 		fd:           fd,
 		maxEventSize: size,
 		events:       make([]unix.EpollEvent, size, size),
-		connections:  make([]int, size, size),
+		connBuffers:  make([]int, size, size),
 	}, nil
 }
 

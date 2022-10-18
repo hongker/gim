@@ -101,4 +101,4 @@ require (
 	gorm.io/plugin/dbresolver v1.0.0 // indirect
 )
 
-replace github.com/ebar-go/ego => D:\Workspace\go\src\github.com\ebar-go\ego
+replace github.com/ebar-go/ego => /home/hongker/Workspace/go/src/github.com/ebar-go/ego

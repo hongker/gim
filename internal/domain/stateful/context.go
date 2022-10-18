@@ -3,7 +3,6 @@ package stateful
 import (
 	"context"
 	"gim/framework"
-	"github.com/ebar-go/ego/server/socket"
 	"time"
 )
 
@@ -21,16 +20,6 @@ func NewUserContext(ctx context.Context, uid string) context.Context {
 // UserFromContext returns user from context
 func UserFromContext(ctx context.Context) string {
 	return ctx.Value(uidParam).(string)
-}
-
-// ConnectionFromContext returns connection from context
-func ConnectionFromContext(ctx context.Context) socket.Connection {
-	return ctx.Value(connectionParam).(socket.Connection)
-}
-
-// NewConnectionContext returns context.Context with socket.Connection
-func NewConnectionContext(ctx context.Context, conn socket.Connection) context.Context {
-	return context.WithValue(ctx, connectionParam, conn)
 }
 
 func GetUidFromConnection(conn *framework.Connection) string {
