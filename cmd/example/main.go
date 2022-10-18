@@ -4,6 +4,7 @@ import (
 	"context"
 	"gim/framework"
 	"gim/framework/codec"
+	"gim/logic/bucket"
 	"github.com/ebar-go/ego/utils/runtime"
 	"github.com/ebar-go/ego/utils/runtime/signal"
 	uuid "github.com/satori/go.uuid"
@@ -24,7 +25,9 @@ func main() {
 			log.Println("operation error: ", ctx.Operate(), err)
 		})
 
-		router.Route(1, framework.StandardHandler[LoginRequest, LoginResponse](Login))
+		controller := NewController()
+		router.Route(1, framework.StandardHandler[LoginRequest, LoginResponse](controller.Login))
+		router.Route(2, framework.StandardHandler[SubscribeChannelRequest, SubscribeChannelResponse](controller.SubscribeChannel))
 
 	}(app.Router())
 
@@ -48,6 +51,23 @@ type LoginResponse struct {
 	Token string
 }
 
-func Login(ctx *framework.Context, req *LoginRequest) (*LoginResponse, error) {
+type Controller struct {
+	bucket *bucket.Bucket
+}
+
+func NewController() *Controller {
+	return &Controller{bucket: bucket.NewBucket()}
+}
+func (c *Controller) Login(ctx *framework.Context, req *LoginRequest) (*LoginResponse, error) {
 	return &LoginResponse{ID: "1001", Token: uuid.NewV4().String()}, nil
+}
+
+type SubscribeChannelRequest struct{ Id string }
+type SubscribeChannelResponse struct{}
+
+func (c *Controller) SubscribeChannel(ctx *framework.Context, req *SubscribeChannelRequest) (*SubscribeChannelResponse, error) {
+	channel := c.bucket.GetChannel(req.Id)
+	if channel == nil {
+		c.bucket.AddChannel(req.Id)
+	}
 }
