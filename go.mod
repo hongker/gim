@@ -3,7 +3,7 @@ module gim
 go 1.18
 
 require (
-	github.com/ebar-go/ego v1.1.3
+	github.com/ebar-go/ego v1.1.4
 	github.com/gin-gonic/gin v1.8.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.8.0
@@ -101,4 +101,3 @@ require (
 	gorm.io/plugin/dbresolver v1.0.0 // indirect
 )
 
-replace github.com/ebar-go/ego => /home/hongker/Workspace/go/src/github.com/ebar-go/ego

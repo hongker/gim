@@ -7,5 +7,5 @@ type Channel struct {
 }
 
 func NewChannel(id string) *Channel {
-	return &Channel{ID: id, Room: NewRoom(32, 8)}
+	return &Channel{ID: id, Room: NewRoom()}
 }

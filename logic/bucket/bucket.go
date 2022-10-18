@@ -1,8 +1,9 @@
 package bucket
 
 import (
-	"log"
+	"github.com/ebar-go/ego/utils/runtime"
 	"sync"
+	"sync/atomic"
 )
 
 // Bucket represents a bucket for all connections
@@ -10,6 +11,19 @@ type Bucket struct {
 	rmu      sync.RWMutex
 	channels map[string]*Channel
 	*Room
+
+	once sync.Once
+	done chan struct{}
+
+	workerNum  uint64
+	queueSize  uint64
+	queueCount uint64
+	queues     []chan QueueItem
+}
+
+type QueueItem struct {
+	Channel *Channel
+	Msg     []byte
 }
 
 func (bucket *Bucket) AddChannel(id string) {
@@ -22,7 +36,6 @@ func (bucket *Bucket) RemoveChannel(channel *Channel) {
 	bucket.rmw.Lock()
 	delete(bucket.channels, channel.ID)
 	bucket.rmw.Unlock()
-	channel.stop()
 }
 func (bucket *Bucket) GetChannel(id string) *Channel {
 	bucket.rmw.RLock()
@@ -43,29 +56,49 @@ func (bucket *Bucket) UnsubscribeChannel(channel *Channel, sessions ...*Session)
 	}
 }
 
+func (bucket *Bucket) BroadcastChannel(channel *Channel, msg []byte) {
+	num := atomic.AddUint64(&bucket.workerNum, 1) % bucket.queueCount
+	bucket.queues[num] <- QueueItem{Channel: channel, Msg: msg}
+}
+
 func (bucket *Bucket) Stop() {
-	bucket.Room.stop()
-	for _, channel := range bucket.channels {
-		channel.Room.stop()
+	bucket.once.Do(func() {
+		close(bucket.done)
+	})
+}
+
+func (room *Bucket) start() {
+	for i := 0; i < int(room.queueCount); i++ {
+		go func(idx int) {
+			defer runtime.HandleCrash()
+			room.polling(room.done, room.queues[idx])
+		}(i)
+	}
+}
+
+func (room *Bucket) polling(done <-chan struct{}, queue chan QueueItem) {
+	for {
+		select {
+		case <-done:
+			return
+		case item, ok := <-queue:
+			if !ok {
+				return
+			}
+
+			item.Channel.Broadcast(item.Msg)
+		}
 	}
 }
 
 func NewBucket() *Bucket {
-	return &Bucket{
-		channels: make(map[string]*Channel),
-		Room:     NewRoom(1024, 32),
+	bucket := &Bucket{
+		channels:   make(map[string]*Channel),
+		Room:       NewRoom(),
+		queues:     make([]chan QueueItem, 32),
+		queueSize:  1024,
+		queueCount: 32,
 	}
-}
-
-// Session represents a session for one connection
-type Session struct {
-	ID string
-}
-
-func NewSession(id string) *Session {
-	return &Session{ID: id}
-}
-
-func (session *Session) Send(msg []byte) {
-	log.Println("session send msg: ", session.ID, string(msg))
+	bucket.start()
+	return bucket
 }

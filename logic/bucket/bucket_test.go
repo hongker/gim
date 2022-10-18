@@ -24,5 +24,5 @@ func TestBucket(t *testing.T) {
 	bucket.UnsubscribeChannel(channel1, session1)
 	channel1.Broadcast([]byte("world, again"))
 
-	runtime.Shutdown(bucket.stop)
+	runtime.Shutdown(bucket.Stop)
 }

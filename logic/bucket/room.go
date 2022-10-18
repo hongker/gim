@@ -1,54 +1,16 @@
 package bucket
 
 import (
-	"github.com/ebar-go/ego/utils/runtime"
+	"log"
 	"sync"
 )
 
 type Room struct {
 	rmw      sync.RWMutex
 	sessions map[string]*Session
-	queue    chan []byte
-	once     sync.Once
-	done     chan struct{}
 }
 
 func (room *Room) Broadcast(msg []byte) {
-	select {
-	case room.queue <- msg:
-	}
-}
-
-func (room *Room) start(goroutineSize int) {
-	for i := 0; i < goroutineSize; i++ {
-		go func() {
-			defer runtime.HandleCrash()
-			room.polling(room.done)
-		}()
-	}
-}
-func (room *Room) stop() {
-	room.once.Do(func() {
-		close(room.done)
-	})
-}
-
-func (room *Room) polling(done <-chan struct{}) {
-	for {
-		select {
-		case <-done:
-			return
-		case msg, ok := <-room.queue:
-			if !ok {
-				return
-			}
-
-			room.broadcast(msg)
-		}
-	}
-}
-
-func (room *Room) broadcast(msg []byte) {
 	for _, session := range room.sessions {
 		session.Send(msg)
 	}
@@ -71,13 +33,22 @@ func (room *Room) GetSession(id string) *Session {
 	return session
 }
 
-func NewRoom(queueSize int, goroutineSize int) *Room {
+func NewRoom() *Room {
 	room := &Room{
 		sessions: make(map[string]*Session),
-		queue:    make(chan []byte, queueSize),
-		done:     make(chan struct{}),
 	}
-	room.start(goroutineSize)
-
 	return room
+}
+
+// Session represents a session for one connection
+type Session struct {
+	ID string
+}
+
+func NewSession(id string) *Session {
+	return &Session{ID: id}
+}
+
+func (session *Session) Send(msg []byte) {
+	log.Println("session send msg: ", session.ID, string(msg))
 }
