@@ -113,7 +113,7 @@ func NewRouter() *Router {
 			log.Printf("[%s] error: %v\n", ctx.Conn().UUID(), err)
 		},
 		notFoundHandler: func(ctx *Context) {
-			log.Printf("[%s] operate not found\n", ctx.Conn().UUID(), ctx.packet.Operate)
+			log.Printf("[%s] operate not found:%d\n", ctx.Conn().UUID(), ctx.packet.Operate)
 		},
 	}
 }

@@ -38,7 +38,7 @@ func LoginAction(ctx *Context, req *LoginRequest) (response *LoginResponse, err 
 }
 
 func TestClient(t *testing.T) {
-	conn, err := net.Dial("tcp", ":8080")
+	conn, err := net.Dial("tcp", ":8090")
 	if err != nil {
 		panic(err)
 	}

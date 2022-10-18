@@ -2,10 +2,9 @@ package framework
 
 // Options represents app options
 type Options struct {
-	OnConnect         ConnectionHandler
-	OnDisconnect      ConnectionHandler
-	Middlewares       []HandleFunc
-	MaxReadBufferSize int
+	OnConnect    ConnectionHandler
+	OnDisconnect ConnectionHandler
+	Middlewares  []HandleFunc
 
 	Reactor ReactorOptions
 }
@@ -22,14 +21,14 @@ type Option func(options *Options)
 
 func defaultOptions() *Options {
 	return &Options{
-		OnConnect:         func(conn *Connection) {},
-		OnDisconnect:      func(conn *Connection) {},
-		MaxReadBufferSize: 512,
+		OnConnect:    func(conn *Connection) {},
+		OnDisconnect: func(conn *Connection) {},
 		Reactor: ReactorOptions{
 			EpollBufferSize:     100,
 			WorkerPoolSize:      1000,
 			PacketLengthSize:    4,
 			ThreadQueueCapacity: 100,
+			MaxReadBufferSize:   512,
 		},
 	}
 }
@@ -63,7 +62,7 @@ func WithMiddleware(handlers ...HandleFunc) Option {
 // WithMaxReadBufferSize set MaxReadBufferSize
 func WithMaxReadBufferSize(size int) Option {
 	return func(options *Options) {
-		options.MaxReadBufferSize = size
+		options.Reactor.MaxReadBufferSize = size
 	}
 }
 
