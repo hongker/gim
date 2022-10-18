@@ -44,6 +44,17 @@ func (bucket *Bucket) GetChannel(id string) *Channel {
 	return channel
 }
 
+func (bucket *Bucket) GetOrCreate(id string) *Channel {
+	bucket.rmw.Lock()
+	channel, exist := bucket.channels[id]
+	if !exist {
+		channel = NewChannel(id)
+		bucket.channels[id] = channel
+	}
+	bucket.rmw.Unlock()
+	return channel
+}
+
 func (bucket *Bucket) SubscribeChannel(channel *Channel, sessions ...*Session) {
 	for _, session := range sessions {
 		channel.AddSession(session)
