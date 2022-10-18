@@ -1,7 +1,7 @@
 package bucket
 
 import (
-	"log"
+	"gim/framework"
 	"sync"
 )
 
@@ -42,13 +42,18 @@ func NewRoom() *Room {
 
 // Session represents a session for one connection
 type Session struct {
-	ID string
+	ID         string
+	Connection *framework.Connection
 }
 
-func NewSession(id string) *Session {
-	return &Session{ID: id}
+func NewSession(id string, connection *framework.Connection) *Session {
+	return &Session{ID: id, Connection: connection}
 }
 
 func (session *Session) Send(msg []byte) {
-	log.Println("session send msg: ", session.ID, string(msg))
+	//log.Println("session send msg: ", session.ID, string(msg))
+	if session.Connection == nil {
+		return
+	}
+	session.Connection.Push(msg)
 }

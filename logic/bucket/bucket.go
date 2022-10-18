@@ -78,16 +78,17 @@ func (bucket *Bucket) Stop() {
 	})
 }
 
-func (room *Bucket) start() {
-	for i := 0; i < int(room.queueCount); i++ {
+func (bucket *Bucket) start() {
+	for i := 0; i < int(bucket.queueCount); i++ {
+		bucket.queues[i] = make(chan QueueItem, bucket.queueSize)
 		go func(idx int) {
 			defer runtime.HandleCrash()
-			room.polling(room.done, room.queues[idx])
+			bucket.polling(bucket.done, bucket.queues[idx])
 		}(i)
 	}
 }
 
-func (room *Bucket) polling(done <-chan struct{}, queue chan QueueItem) {
+func (bucket *Bucket) polling(done <-chan struct{}, queue chan QueueItem) {
 	for {
 		select {
 		case <-done:
@@ -100,6 +101,7 @@ func (room *Bucket) polling(done <-chan struct{}, queue chan QueueItem) {
 			item.Channel.Broadcast(item.Msg)
 		}
 	}
+
 }
 
 func NewBucket() *Bucket {

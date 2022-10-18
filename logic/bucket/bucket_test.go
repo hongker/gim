@@ -8,10 +8,10 @@ import (
 
 func TestBucket(t *testing.T) {
 	bucket := NewBucket()
-	session1 := NewSession("1001")
+	session1 := NewSession("1001", nil)
 	bucket.AddSession(session1)
 
-	session2 := NewSession("1002")
+	session2 := NewSession("1002", nil)
 	bucket.AddSession(session2)
 	bucket.AddChannel("1")
 	bucket.Broadcast([]byte("hello"))

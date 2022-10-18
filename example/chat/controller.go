@@ -28,7 +28,7 @@ func (c *Controller) Install(router *framework.Router) {
 
 func (c *Controller) Login(ctx *framework.Context, req *LoginRequest) (*LoginResponse, error) {
 	id := uuid.NewV4().String()
-	c.bucket.AddSession(bucket.NewSession(id))
+	c.bucket.AddSession(bucket.NewSession(id, ctx.Conn()))
 	ctx.Conn().Property().Set("uid", id)
 	ctx.Conn().Property().Set("name", req.Name)
 	return &LoginResponse{ID: id}, nil
@@ -36,7 +36,10 @@ func (c *Controller) Login(ctx *framework.Context, req *LoginRequest) (*LoginRes
 
 func (c *Controller) SubscribeChannel(ctx *framework.Context, req *SubscribeChannelRequest) (*SubscribeChannelResponse, error) {
 	channel := c.bucket.GetOrCreate(req.ID)
-	c.bucket.SubscribeChannel(channel, bucket.NewSession(GetUIDFromContext(ctx)))
+	session := c.bucket.GetSession(GetUIDFromContext(ctx))
+	c.bucket.SubscribeChannel(channel, session)
+	log.Println("SubscribeChannel:", channel.ID, session.ID)
+
 	return &SubscribeChannelResponse{}, nil
 }
 
@@ -47,12 +50,22 @@ func (c *Controller) SendMessage(ctx *framework.Context, req *SendMessageRequest
 		return nil, errors.NotFound("channel not found")
 	}
 
-	c.bucket.BroadcastChannel(channel, Message{
+	bytes, err := codec.Default().Pack(&codec.Packet{
+		Operate:     5,
+		ContentType: codec.ContentTypeJSON,
+		Seq:         0,
+		Body:        nil,
+	}, Message{
 		ID: msgId, Content: req.Content,
 		Sender: MessageUser{
 			ID:   GetUIDFromContext(ctx),
 			Name: GetNameFromContext(ctx),
-		}}.Serialize())
+		}})
+
+	if err != nil {
+		return nil, err
+	}
+	c.bucket.BroadcastChannel(channel, bytes)
 
 	return &SendMessageResponse{MsgID: msgId}, nil
 }

@@ -2,21 +2,25 @@ package main
 
 import "encoding/json"
 
-type LoginRequest struct{ Name string }
+type LoginRequest struct {
+	Name string `json:"name"`
+}
 type LoginResponse struct {
-	ID string
+	ID string `json:"id"`
 }
 
-type SubscribeChannelRequest struct{ ID string }
+type SubscribeChannelRequest struct {
+	ID string `json:"id"`
+}
 type SubscribeChannelResponse struct{}
 
 type SendMessageRequest struct {
-	ChannelID string
-	Content   string
+	ChannelID string `json:"channel_id"`
+	Content   string `json:"content"`
 }
 
 type SendMessageResponse struct {
-	MsgID string
+	MsgID string `json:"msg_id"`
 }
 
 type Message struct {
